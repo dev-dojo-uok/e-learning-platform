@@ -58,10 +58,11 @@ app.use('/api/assignments', assignmentRoutes);
 app.use((err, req, res, next) => {
   console.error('[Error Handler] Stack:', err.stack || err);
   const statusCode = err.statusCode || 500;
-  const message = err.message || 'Internal Server Error';
+  const message =
+    statusCode >= 500 ? 'Internal Server Error' : (err.message || 'Bad Request');
   res.status(statusCode).json({
     error: message,
-    ...(err.errors && { errors: err.errors })
+    ...(err.errors && statusCode < 500 && { errors: err.errors })
   });
 });
 
