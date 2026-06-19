@@ -215,7 +215,7 @@ Authorization: Bearer <jwt_token>
 ### 🔗 Route Registration in `src/index.js`
 
 ```js
-import moduleRoutes from './modules/modules/index.js';
+import moduleRoutes from './modules/courseModules/index.js';
 // ...
 app.use('/api/modules', moduleRoutes);
 ```
