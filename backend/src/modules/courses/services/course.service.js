@@ -119,6 +119,9 @@ export class CourseService {
 
     // 3. Update database record
     return await prisma.course.update({
+      where: { id },
+      data: updateData,
+      include: {
         teacher: {
           select: {
             id: true,
