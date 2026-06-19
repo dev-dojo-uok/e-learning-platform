@@ -113,7 +113,8 @@ async function main() {
 
   // Get one material from the course we just created to complete
   const firstMaterial = await prisma.material.findFirst({
-    where: { section: { courseId: course.id } }
+    where: { section: { courseId: course.id } },
+    orderBy: { createdAt: 'asc' }
   });
 
   if (firstMaterial) {
