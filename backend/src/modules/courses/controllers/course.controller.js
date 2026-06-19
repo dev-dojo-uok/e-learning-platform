@@ -6,8 +6,8 @@ export class CourseController {
    */
   static async create(req, res, next) {
     try {
-      const { title, description, teacherId } = req.body;
-      const course = await CourseService.createCourse({ title, description, teacherId });
+      const { title, description } = req.body;
+      const course = await CourseService.createCourse({ title, description, teacherId: req.user.id });
       return res.status(201).json(course);
     } catch (error) {
       next(error);
