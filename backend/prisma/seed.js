@@ -32,12 +32,14 @@ async function main() {
   }
 
   const courses = await prisma.course.findMany({})
+  let course;
 
   if (courses.length > 0) {
     console.log(`Courses already exist: ${courses.length} courses found.`);
+    course = courses[0];
   }
   else {
-    const course = await prisma.course.create({
+    course = await prisma.course.create({
       data: {
         title: 'Introduction to Software Architecture',
         description: 'Learn the fundamental concepts of software architecture, design patterns, clean layouts, and architectural styles.',
