@@ -81,7 +81,7 @@ Before you start writing code, please review the following files:
 ### 🗂️ CourseModule CRUD — Folder Structure
 
 ```text
-backend/src/modules/modules/
+backend/src/modules/courseModules/
 ├── routes/
 │   └── module.routes.js        ← Express Router with auth & validation middleware
 ├── controllers/
