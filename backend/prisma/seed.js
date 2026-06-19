@@ -4,8 +4,11 @@ import bcrypt from 'bcryptjs';
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('Start seeding database...');
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('Refusing to run prisma seed in production.');
+  }
 
+  console.log('Start seeding database...');
   // 1. Create a Teacher
   const teacherEmail = 'teacher@test.com';
   const hashedPassword = await bcrypt.hash('password123', 10);
