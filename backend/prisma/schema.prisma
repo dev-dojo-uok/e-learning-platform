@@ -64,7 +64,6 @@ model CourseSection {
   course    Course     @relation("CourseSections", fields: [courseId], references: [id], onDelete: Cascade)
   materials Material[] @relation("SectionMaterials")
 
-  @@index([courseId])
   @@index([courseId, sortOrder])
   @@map("course_sections")
 }
