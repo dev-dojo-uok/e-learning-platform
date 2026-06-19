@@ -6,7 +6,7 @@ import dotenv from 'dotenv';
 // Import route modules
 import authRoutes from './modules/auth/auth.routes.js';
 import usersRoutes from './modules/users/users.routes.js';
-import courseRoutes from './modules/courses/courses.routes.js';
+import courseRoutes from './modules/courses/index.js';
 import quizRoutes from './modules/quizzes/quizzes.routes.js';
 import forumRoutes from './modules/forums/forums.routes.js';
 import completionRoutes from './modules/completion/completion.routes.js';
@@ -54,8 +54,13 @@ app.use('/api/assignments', assignmentRoutes);
 
 // Error Handling middleware
 app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ error: 'Internal Server Error' });
+  console.error('[Error Handler] Stack:', err.stack || err);
+  const statusCode = err.statusCode || 500;
+  const message = err.message || 'Internal Server Error';
+  res.status(statusCode).json({
+    error: message,
+    ...(err.errors && { errors: err.errors })
+  });
 });
 
 app.listen(PORT, () => {
