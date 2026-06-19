@@ -12,7 +12,7 @@ async function main() {
   // 1. Create a Teacher
   const teacherEmail = 'teacher@test.com';
   const hashedPassword = await bcrypt.hash('password123', 10);
-  
+
   let teacher = await prisma.user.findUnique({
     where: { email: teacherEmail }
   });
@@ -31,65 +31,74 @@ async function main() {
     console.log(`Teacher already exists: ${teacher.name} (${teacher.email})`);
   }
 
-  // 2. Create a Course
-  const course = await prisma.course.create({
-    data: {
-      title: 'Introduction to Software Architecture',
-      description: 'Learn the fundamental concepts of software architecture, design patterns, clean layouts, and architectural styles.',
-      teacherId: teacher.id,
-      sections: {
-        create: [
-          {
-            title: 'Week 1: Fundamentals of Software Architecture',
-            sortOrder: 1,
-            materials: {
-              create: [
-                {
-                  title: 'Architectural Style Overview PDF',
-                  description: 'A comprehensive slide deck summarizing monolithic, microservices, and event-driven architectures.',
-                  type: 'PDF',
-                  contentUrl: 'https://example.com/materials/week1-styles.pdf',
-                  isGraded: false
-                },
-                {
-                  title: 'Introduction to Software Architecture Video',
-                  description: 'An overview video introduction to software architecture concepts.',
-                  type: 'VIDEO_SRC',
-                  contentUrl: 'https://example.com/videos/intro-arch.mp4',
-                  isGraded: false
-                }
-              ]
-            }
-          },
-          {
-            title: 'Week 2: Clean Architecture & Monoliths',
-            sortOrder: 2,
-            materials: {
-              create: [
-                {
-                  title: 'Clean Architecture Principles Document',
-                  description: 'A supplementary word document detailing dependencies and entity layers.',
-                  type: 'FILE',
-                  contentUrl: 'https://example.com/materials/week2-clean-arch.docx',
-                  isGraded: true,
-                  gradingWeight: 10.0
-                },
-                {
-                  title: 'Design Principles & Solid (Embedded)',
-                  description: 'An embedded video lecture on SOLID principles and design patterns.',
-                  type: 'VIDEO_EMBED',
-                  embedCode: '<iframe src="https://www.youtube.com/embed/t86t3KDG5ds" width="560" height="315" frameborder="0"></iframe>',
-                  isGraded: false
-                }
-              ]
-            }
-          }
-        ]
-      }
-    }
-  });
+  const courses = await prisma.course.findMany({})
 
-  console.log(`Seeded Course: ${course.title} with 2 sections and 4 materials.`);
+  if (courses.length > 0) {
+    console.log(`Courses already exist: ${courses.length} courses found.`);
+  }
+  else {
+    const course = await prisma.course.create({
+      data: {
+        title: 'Introduction to Software Architecture',
+        description: 'Learn the fundamental concepts of software architecture, design patterns, clean layouts, and architectural styles.',
+        teacherId: teacher.id,
+        sections: {
+          create: [
+            {
+              title: 'Week 1: Fundamentals of Software Architecture',
+              sortOrder: 1,
+              materials: {
+                create: [
+                  {
+                    title: 'Architectural Style Overview PDF',
+                    description: 'A comprehensive slide deck summarizing monolithic, microservices, and event-driven architectures.',
+                    type: 'PDF',
+                    contentUrl: 'https://example.com/materials/week1-styles.pdf',
+                    isGraded: false
+                  },
+                  {
+                    title: 'Introduction to Software Architecture Video',
+                    description: 'An overview video introduction to software architecture concepts.',
+                    type: 'VIDEO_SRC',
+                    contentUrl: 'https://example.com/videos/intro-arch.mp4',
+                    isGraded: false
+                  }
+                ]
+              }
+            },
+            {
+              title: 'Week 2: Clean Architecture & Monoliths',
+              sortOrder: 2,
+              materials: {
+                create: [
+                  {
+                    title: 'Clean Architecture Principles Document',
+                    description: 'A supplementary word document detailing dependencies and entity layers.',
+                    type: 'FILE',
+                    contentUrl: 'https://example.com/materials/week2-clean-arch.docx',
+                    isGraded: true,
+                    gradingWeight: 10.0
+                  },
+                  {
+                    title: 'Design Principles & Solid (Embedded)',
+                    description: 'An embedded video lecture on SOLID principles and design patterns.',
+                    type: 'VIDEO_EMBED',
+                    embedCode: '<iframe src="https://www.youtube.com/embed/t86t3KDG5ds" width="560" height="315" frameborder="0"></iframe>',
+                    isGraded: false
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    });
+
+    console.log(`Seeded Course: ${course.title} with 2 sections and 4 materials.`);
+  }
+
+  // 2. Create a Course
+
 
   // 3. Create a Student
   const studentEmail = 'student@test.com';
@@ -117,7 +126,17 @@ async function main() {
     orderBy: { createdAt: 'asc' }
   });
 
-  if (firstMaterial) {
+  const firstMaterialComplete = await prisma.materialCompletion.findFirst({
+    where: {
+      studentId: student.id,
+      materialId: firstMaterial.id
+    }
+  })
+
+  if (firstMaterialComplete) {
+    console.log(`Material completion already exists: Student "${student.name}" completed material "${firstMaterial.title}"`);
+  } else {
+    if (!firstMaterialComplete) {
     // Create material completion record
     await prisma.materialCompletion.upsert({
       where: {
@@ -133,6 +152,7 @@ async function main() {
       }
     });
     console.log(`Created completion record: Student "${student.name}" completed material "${firstMaterial.title}"`);
+  }
   }
 
   console.log('Seeding finished successfully.');
