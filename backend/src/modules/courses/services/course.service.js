@@ -111,11 +111,14 @@ export class CourseService {
     if (title !== undefined) updateData.title = title;
     if (description !== undefined) updateData.description = description || null;
 
+    if (Object.keys(updateData).length === 0) {
+      const error = new Error('At least one field (title or description) must be provided.');
+      error.statusCode = 400;
+      throw error;
+    }
+
     // 3. Update database record
     return await prisma.course.update({
-      where: { id },
-      data: updateData,
-      include: {
         teacher: {
           select: {
             id: true,
