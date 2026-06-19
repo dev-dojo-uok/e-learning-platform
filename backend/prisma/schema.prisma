@@ -13,12 +13,95 @@ enum Role {
   ADMIN
 }
 
+enum MaterialType {
+  PDF
+  FILE
+  VIDEO_SRC
+  VIDEO_EMBED
+}
+
 model User {
   id        String   @id @default(uuid())
   email     String   @unique
   password  String
   name      String
   role      Role     @default(STUDENT)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  courses     Course[]             @relation("UserCourses")
+  completions MaterialCompletion[] @relation("UserCompletions")
+
+  @@map("users")
+}
+
+model Course {
+  id          String   @id @default(uuid())
+  title       String
+  description String?  @db.Text
+  teacherId   String   @map("teacher_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  teacher  User            @relation("UserCourses", fields: [teacherId], references: [id], onDelete: Cascade)
+  sections CourseSection[] @relation("CourseSections")
+
+  @@index([teacherId])
+  @@map("courses")
+}
+
+model CourseSection {
+  id        String   @id @default(uuid())
+  courseId  String   @map("course_id")
+  title     String
+  sortOrder Int      @map("sort_order")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  course    Course     @relation("CourseSections", fields: [courseId], references: [id], onDelete: Cascade)
+  materials Material[] @relation("SectionMaterials")
+
+  @@index([courseId])
+  @@index([courseId, sortOrder])
+  @@map("course_sections")
+}
+
+model Material {
+  id            String       @id @default(uuid())
+  sectionId     String       @map("section_id")
+  title         String
+  description   String?      @db.Text
+  type          MaterialType
+  contentUrl    String?      @map("content_url")
+  embedCode     String?      @db.Text @map("embed_code")
+  itemId        String?      @map("item_id")
+  isGraded      Boolean      @default(false) @map("is_graded")
+  gradingWeight Float        @default(0.0) @map("grading_weight")
+  createdAt     DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime     @updatedAt @map("updated_at")
+
+  // Relations
+  section     CourseSection        @relation("SectionMaterials", fields: [sectionId], references: [id], onDelete: Cascade)
+  completions MaterialCompletion[] @relation("MaterialCompletions")
+
+  @@index([sectionId])
+  @@map("materials")
+}
+
+model MaterialCompletion {
+  id          String   @id @default(uuid())
+  studentId   String   @map("student_id")
+  materialId  String   @map("material_id")
+  completedAt DateTime @default(now()) @map("completed_at")
+
+  // Relations
+  student  User     @relation("UserCompletions", fields: [studentId], references: [id], onDelete: Cascade)
+  material Material @relation("MaterialCompletions", fields: [materialId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, materialId])
+  @@index([materialId])
+  @@map("material_completions")
 }
