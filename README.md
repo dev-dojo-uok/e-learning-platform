@@ -81,7 +81,7 @@ Before you start writing code, please review the following files:
 ### 🗂️ CourseModule CRUD — Folder Structure
 
 ```text
-backend/src/modules/modules/
+backend/src/modules/courseModules/
 ├── routes/
 │   └── module.routes.js        ← Express Router with auth & validation middleware
 ├── controllers/
@@ -215,7 +215,7 @@ Authorization: Bearer <jwt_token>
 ### 🔗 Route Registration in `src/index.js`
 
 ```js
-import moduleRoutes from './modules/modules/index.js';
+import moduleRoutes from './modules/courseModules/index.js';
 // ...
 app.use('/api/modules', moduleRoutes);
 ```
