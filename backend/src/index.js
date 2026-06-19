@@ -7,6 +7,7 @@ import dotenv from 'dotenv';
 import authRoutes from './modules/auth/auth.routes.js';
 import usersRoutes from './modules/users/users.routes.js';
 import courseRoutes from './modules/courses/index.js';
+import moduleRoutes from './modules/courseModules/index.js';
 import quizRoutes from './modules/quizzes/quizzes.routes.js';
 import forumRoutes from './modules/forums/forums.routes.js';
 import completionRoutes from './modules/completion/completion.routes.js';
@@ -47,6 +48,7 @@ app.get('/api/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/users', usersRoutes);
 app.use('/api/courses', courseRoutes);
+app.use('/api/modules', moduleRoutes);
 app.use('/api/quizzes', quizRoutes);
 app.use('/api/forums', forumRoutes);
 app.use('/api/completion', completionRoutes);
