@@ -13,7 +13,36 @@ import courseService from '../services/courseService';
  *  - selectedCourse {Object|null}  The currently viewed / selected course.
  *  - loading        {boolean}      True while any async operation is in flight.
  *  - error          {string|null}  Last error message; null when no error.
+ *
+ * Note: The backend (Prisma/PostgreSQL) returns `id` not `_id`.
+ * We normalize every course object to always expose `_id` so UI
+ * components work consistently regardless of backend type.
  */
+
+/**
+ * Normalise a single course object from the backend.
+ * Adds `_id` alias for `id` so UI components (CourseCard, CourseTable)
+ * that reference `course._id` work correctly.
+ */
+const normalizeCourse = (course) => {
+  if (!course) return course;
+  return { ...course, _id: course.id };
+};
+
+/**
+ * Extract a human-readable error message from an axios error.
+ * Handles both { message } and express-validator { errors: [] } shapes.
+ */
+const extractErrorMessage = (error, fallback) => {
+  const data = error?.response?.data;
+  if (!data) return error?.message || fallback;
+  // express-validator validation error array
+  if (Array.isArray(data.errors) && data.errors.length > 0) {
+    return data.errors.map((e) => e.msg || e.message).join('. ');
+  }
+  return data.message || data.error || error.message || fallback;
+};
+
 const useCourseStore = create((set) => ({
   // ── Initial State ────────────────────────────────────────────────────────────
   courses: [],
@@ -31,13 +60,9 @@ const useCourseStore = create((set) => ({
     set({ loading: true, error: null });
     try {
       const data = await courseService.getCourses();
-      set({ courses: data });
+      set({ courses: (data || []).map(normalizeCourse) });
     } catch (error) {
-      const message =
-        error?.response?.data?.message ||
-        error.message ||
-        'Failed to fetch courses.';
-      set({ error: message });
+      set({ error: extractErrorMessage(error, 'Failed to fetch courses.') });
     } finally {
       set({ loading: false });
     }
@@ -52,13 +77,9 @@ const useCourseStore = create((set) => ({
     set({ loading: true, error: null });
     try {
       const data = await courseService.getCourseById(id);
-      set({ selectedCourse: data });
+      set({ selectedCourse: normalizeCourse(data) });
     } catch (error) {
-      const message =
-        error?.response?.data?.message ||
-        error.message ||
-        'Failed to fetch course.';
-      set({ error: message });
+      set({ error: extractErrorMessage(error, 'Failed to fetch course.') });
     } finally {
       set({ loading: false });
     }
@@ -68,19 +89,18 @@ const useCourseStore = create((set) => ({
    * createCourse
    * Sends a new course payload to the backend and appends the returned
    * course object to the local courses list.
-   * @param {Object} courseData - Course fields (title, description, teacherId, …).
+   * @param {Object} courseData - Course fields (title, description, teacherId).
    */
   createCourse: async (courseData) => {
     set({ loading: true, error: null });
     try {
-      const newCourse = await courseService.createCourse(courseData);
+      const newCourse = normalizeCourse(await courseService.createCourse(courseData));
       set((state) => ({ courses: [...state.courses, newCourse] }));
+      return newCourse;
     } catch (error) {
-      const message =
-        error?.response?.data?.message ||
-        error.message ||
-        'Failed to create course.';
+      const message = extractErrorMessage(error, 'Failed to create course.');
       set({ error: message });
+      throw new Error(message);
     } finally {
       set({ loading: false });
     }
@@ -96,23 +116,20 @@ const useCourseStore = create((set) => ({
   updateCourse: async (id, courseData) => {
     set({ loading: true, error: null });
     try {
-      const updatedCourse = await courseService.updateCourse(id, courseData);
+      const updatedCourse = normalizeCourse(await courseService.updateCourse(id, courseData));
       set((state) => ({
         courses: state.courses.map((course) =>
           course._id === id ? updatedCourse : course
         ),
         // Keep selectedCourse in sync if it is the course being updated
         selectedCourse:
-          state.selectedCourse?._id === id
-            ? updatedCourse
-            : state.selectedCourse,
+          state.selectedCourse?._id === id ? updatedCourse : state.selectedCourse,
       }));
+      return updatedCourse;
     } catch (error) {
-      const message =
-        error?.response?.data?.message ||
-        error.message ||
-        'Failed to update course.';
+      const message = extractErrorMessage(error, 'Failed to update course.');
       set({ error: message });
+      throw new Error(message);
     } finally {
       set({ loading: false });
     }
@@ -135,11 +152,9 @@ const useCourseStore = create((set) => ({
           state.selectedCourse?._id === id ? null : state.selectedCourse,
       }));
     } catch (error) {
-      const message =
-        error?.response?.data?.message ||
-        error.message ||
-        'Failed to delete course.';
+      const message = extractErrorMessage(error, 'Failed to delete course.');
       set({ error: message });
+      throw new Error(message);
     } finally {
       set({ loading: false });
     }

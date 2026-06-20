@@ -65,6 +65,11 @@ export function AppSidebar({
       url: "/",
       icon: <LayoutDashboardIcon />,
     }] : []),
+    {
+      title: "Courses",
+      url: "/courses",
+      icon: <BookOpen />,
+    },
   ];
 
   return (
