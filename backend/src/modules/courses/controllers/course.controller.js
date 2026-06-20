@@ -64,6 +64,11 @@ export class CourseController {
   static async delete(req, res, next) {
     try {
       const { id } = req.params;
+      const existingCourse = await CourseService.getCourseById(id);
+      if (req.user?.role !== 'ADMIN' && existingCourse.teacherId !== req.user?.id) {
+        return res.status(403).json({ error: 'You are not allowed to delete this course.' });
+      }
+
       await CourseService.deleteCourse(id);
       return res.status(200).json({ message: 'Course deleted successfully.' });
     } catch (error) {
