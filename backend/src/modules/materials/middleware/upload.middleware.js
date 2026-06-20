@@ -104,7 +104,22 @@ const upload = multer({
  */
 export const handleFileUpload = (req, res, next) => {
   upload.single('file')(req, res, (err) => {
-    if (!err) return next();
+    if (!err) {
+      if (req.file && req.body?.type) {
+        const ext = path.extname(req.file.originalname).toLowerCase();
+        const allowed = ALLOWED_EXTENSIONS[req.body.type];
+
+        // Reject files for non-file-based types (e.g., VIDEO/YOUTUBE) or mismatched extensions
+        if (!allowed || !allowed.includes(ext)) {
+          try { fs.unlinkSync(req.file.path); } catch (_) {}
+          return res.status(400).json({
+            errors: [{ msg: 'Uploaded file does not match the provided material "type".' }]
+          });
+        }
+      }
+
+      return next();
+    }
 
     if (err instanceof multer.MulterError) {
       if (err.code === 'LIMIT_FILE_SIZE') {
