@@ -35,7 +35,8 @@ export const validateCreateModule = [
     .notEmpty()
     .withMessage('Sort order is required')
     .isInt({ min: 0 })
-    .withMessage('Sort order must be a non-negative integer'),
+    .withMessage('Sort order must be a non-negative integer')
+    .toInt(),
 
   handleValidationErrors
 ];
