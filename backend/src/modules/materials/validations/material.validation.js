@@ -82,12 +82,14 @@ export const validateCreateMaterial = [
   body('isGraded')
     .optional()
     .isBoolean()
-    .withMessage('isGraded must be a boolean value'),
+    .withMessage('isGraded must be a boolean value')
+    .toBoolean(),
 
   body('gradingWeight')
     .optional()
     .isFloat({ min: 0, max: 100 })
-    .withMessage('Grading weight must be a number between 0 and 100'),
+    .withMessage('Grading weight must be a number between 0 and 100')
+    .toFloat(),
 
   handleValidationErrors
 ];
