@@ -12,7 +12,11 @@ const api = axios.create({
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    const message = error.response?.data?.message || error.message || 'Something went wrong';
+    const message =
+      error.response?.data?.error ||
+      error.response?.data?.message ||
+      error.message ||
+      'Something went wrong';
     console.error('API Error:', message);
     return Promise.reject(error);
   }
