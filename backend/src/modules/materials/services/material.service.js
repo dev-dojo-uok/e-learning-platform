@@ -298,8 +298,9 @@ export class MaterialService {
    */
   static _deleteFile(filePath) {
     try {
-      if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
+      const resolvedPath = path.isAbsolute(filePath) ? filePath : path.resolve(process.cwd(), filePath);
+      if (fs.existsSync(resolvedPath)) {
+        fs.unlinkSync(resolvedPath);
       }
     } catch (err) {
       console.warn(`[MaterialService] Could not delete file at "${filePath}":`, err.message);
