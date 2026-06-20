@@ -1,7 +1,7 @@
 import prisma from '../../../config/db.js';
 import fs from 'fs';
 import path from 'path';
-import { MATERIAL_TYPE_MAP, SUPPORTED_MATERIAL_TYPES } from '../validations/material.validation.js';
+import { MATERIAL_TYPE_MAP } from '../validations/material.validation.js';
 import { UPLOAD_DIR } from '../middleware/upload.middleware.js';
 
 // ---------------------------------------------------------------------------
