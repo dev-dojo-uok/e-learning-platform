@@ -6,7 +6,9 @@ import dotenv from 'dotenv';
 // Import route modules
 import authRoutes from './modules/auth/auth.routes.js';
 import usersRoutes from './modules/users/users.routes.js';
-import courseRoutes from './modules/courses/courses.routes.js';
+import courseRoutes from './modules/courses/index.js';
+import moduleRoutes from './modules/courseModules/index.js';
+import materialRoutes from './modules/materials/index.js';
 import quizRoutes from './modules/quizzes/quizzes.routes.js';
 import forumRoutes from './modules/forums/forums.routes.js';
 import completionRoutes from './modules/completion/completion.routes.js';
@@ -47,6 +49,8 @@ app.get('/api/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/users', usersRoutes);
 app.use('/api/courses', courseRoutes);
+app.use('/api/modules', moduleRoutes);
+app.use('/api/materials', materialRoutes);
 app.use('/api/quizzes', quizRoutes);
 app.use('/api/forums', forumRoutes);
 app.use('/api/completion', completionRoutes);
@@ -54,8 +58,14 @@ app.use('/api/assignments', assignmentRoutes);
 
 // Error Handling middleware
 app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ error: 'Internal Server Error' });
+  console.error('[Error Handler] Stack:', err.stack || err);
+  const statusCode = err.statusCode || 500;
+  const message =
+    statusCode >= 500 ? 'Internal Server Error' : (err.message || 'Bad Request');
+  res.status(statusCode).json({
+    error: message,
+    ...(err.errors && statusCode < 500 && { errors: err.errors })
+  });
 });
 
 app.listen(PORT, () => {
