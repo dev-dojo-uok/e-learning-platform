@@ -65,7 +65,8 @@ export const validateUpdateModule = [
   body('sortOrder')
     .optional()
     .isInt({ min: 0 })
-    .withMessage('Sort order must be a non-negative integer'),
+    .withMessage('Sort order must be a non-negative integer')
+    .toInt(),
 
   handleValidationErrors
 ];
