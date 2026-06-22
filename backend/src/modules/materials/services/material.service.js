@@ -1,7 +1,7 @@
 import prisma from '../../../config/db.js';
 import fs from 'fs';
 import path from 'path';
-import { MATERIAL_TYPE_MAP, SUPPORTED_MATERIAL_TYPES } from '../validations/material.validation.js';
+import { MATERIAL_TYPE_MAP } from '../validations/material.validation.js';
 import { UPLOAD_DIR } from '../middleware/upload.middleware.js';
 
 // ---------------------------------------------------------------------------
@@ -161,16 +161,34 @@ export class MaterialService {
     } else {
       // No type change; handle file replacement or plain URL update
       if (file) {
-        // New file uploaded – replace stored file
+        // Only allow file replacement for file-based persisted types
+        if (!['PDF', 'FILE'].includes(existing.type)) {
+          const error = new Error('File upload is only allowed for file-based materials. Provide "type" to change the material type.');
+          error.statusCode = 400;
+          throw error;
+        }
+
         updateData.contentUrl = `${UPLOAD_DIR}/${file.filename}`;
         if (existing.contentUrl && MaterialService._isLocalFile(existing.contentUrl)) {
           MaterialService._deleteFile(existing.contentUrl);
         }
       } else if (contentUrl !== undefined) {
+        // Only VIDEO_SRC materials should have a contentUrl
+        if (existing.type !== 'VIDEO_SRC') {
+          const error = new Error('contentUrl can only be set for VIDEO materials.');
+          error.statusCode = 400;
+          throw error;
+        }
         updateData.contentUrl = contentUrl || null;
       }
 
       if (embedCode !== undefined) {
+        // Only VIDEO_EMBED materials should have embedCode
+        if (existing.type !== 'VIDEO_EMBED') {
+          const error = new Error('embedCode can only be set for YOUTUBE materials.');
+          error.statusCode = 400;
+          throw error;
+        }
         updateData.embedCode = embedCode || null;
       }
     }
@@ -280,8 +298,9 @@ export class MaterialService {
    */
   static _deleteFile(filePath) {
     try {
-      if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
+      const resolvedPath = path.isAbsolute(filePath) ? filePath : path.resolve(process.cwd(), filePath);
+      if (fs.existsSync(resolvedPath)) {
+        fs.unlinkSync(resolvedPath);
       }
     } catch (err) {
       console.warn(`[MaterialService] Could not delete file at "${filePath}":`, err.message);

@@ -74,7 +74,7 @@ Before you start writing code, please review the following files:
 |---|---|
 | Course CRUD APIs | ✅ Completed |
 | CourseModule CRUD APIs | ✅ Completed |
-| Material APIs | 🔲 Pending |
+| Material APIs | ✅ Completed |
 
 ---
 
