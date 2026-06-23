@@ -296,9 +296,9 @@ export default function CourseDetails() {
         size="lg"
       >
         {selectedModule && (
-          <div className="flex flex-col gap-6 max-h-[70vh] pr-1">
+          <div className="flex flex-col gap-6 max-h-[70vh] overflow-y-auto pr-1">
             {selectedModule.description && (
-              <div className="p-4 bg-slate-50 border border-slate-100 rounded-xl text-sm text-slate-600 leading-relaxed whitespace-pre-wrap">
+              <div className="p-4 bg-slate-50 border border-slate-100 rounded-xl text-sm text-slate-600 leading-relaxed whitespace-pre-wrap flex-shrink-0">
                 {selectedModule.description}
               </div>
             )}
@@ -312,7 +312,7 @@ export default function CourseDetails() {
             )}
             
             {/* List of materials */}
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-2 flex-shrink-0">
               <h4 className="text-sm font-bold text-slate-700 uppercase tracking-wider">Learning Resources</h4>
               <MaterialList
                 moduleId={selectedModule._id}
