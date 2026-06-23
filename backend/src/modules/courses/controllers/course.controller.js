@@ -6,8 +6,8 @@ export class CourseController {
    */
   static async create(req, res, next) {
     try {
-      const { title, description, teacherId } = req.body;
-      const course = await CourseService.createCourse({ title, description, teacherId });
+      const { title, description } = req.body;
+      const course = await CourseService.createCourse({ title, description, teacherId: req.user.id });
       return res.status(201).json(course);
     } catch (error) {
       next(error);
@@ -45,6 +45,11 @@ export class CourseController {
   static async update(req, res, next) {
     try {
       const { id } = req.params;
+      const existingCourse = await CourseService.getCourseById(id);
+      if (req.user?.role !== 'ADMIN' && existingCourse.teacherId !== req.user?.id) {
+        return res.status(403).json({ error: 'You are not allowed to update this course.' });
+      }
+
       const { title, description } = req.body;
       const course = await CourseService.updateCourse(id, { title, description });
       return res.status(200).json(course);
@@ -59,6 +64,11 @@ export class CourseController {
   static async delete(req, res, next) {
     try {
       const { id } = req.params;
+      const existingCourse = await CourseService.getCourseById(id);
+      if (req.user?.role !== 'ADMIN' && existingCourse.teacherId !== req.user?.id) {
+        return res.status(403).json({ error: 'You are not allowed to delete this course.' });
+      }
+
       await CourseService.deleteCourse(id);
       return res.status(200).json({ message: 'Course deleted successfully.' });
     } catch (error) {
