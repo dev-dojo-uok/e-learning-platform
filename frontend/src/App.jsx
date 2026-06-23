@@ -4,7 +4,7 @@ import axios from 'axios';
 import Layout from './components/Layout';
 import Login from './modules/auth/Login';
 import Register from './modules/auth/Register';
-import CoursesPlaceholder from './modules/courses';
+import courseRoutes from './modules/courses/routes/courseRoutes';
 import QuizzesPlaceholder from './modules/quizzes';
 import ForumsPlaceholder from './modules/forums';
 import CompletionPlaceholder from './modules/completion';
@@ -63,8 +63,11 @@ function App() {
             user ? (
               <Layout>
                 <Routes>
-                  <Route path="/" element={user?.role === 'TEACHER' || user?.role === 'ADMIN' ? <TeacherDashboard /> : <CoursesPlaceholder />} />
-                  <Route path="/courses" element={<CoursesPlaceholder />} />
+                  <Route path="/" element={user?.role === 'TEACHER' || user?.role === 'ADMIN' ? <TeacherDashboard /> : <Navigate to="/courses" replace />} />
+                  {/* Course routes */}
+                  {courseRoutes.map(({ path, element }) => (
+                    <Route key={path} path={path} element={element} />
+                  ))}
                   <Route path="/quizzes" element={<QuizzesPlaceholder />} />
                   <Route path="/forums" element={<ForumsPlaceholder />} />
                   <Route path="/completion" element={<CompletionPlaceholder />} />

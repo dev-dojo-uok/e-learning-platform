@@ -2,21 +2,29 @@ import React, { useState, useEffect } from 'react';
 import { Loader2, AlertCircle } from 'lucide-react';
 
 /**
- * CourseForm – Reusable form for creating and editing a course.
+ * ModuleForm – Reusable form for creating and editing a course module.
  *
  * Props:
- *  - initialData {Object|null} Existing course data. If null → create mode.
- *  - onSubmit    {Function}    Called with a plain { title, description } object on submit.
+ *  - initialData {Object|null} Existing module data. If null → create mode.
+ *  - onSubmit    {Function}    Called with { title, description, order } on submit.
+ *  - onCancel    {Function}    Called when user cancels form.
  *  - loading     {boolean}     True while the submit is in flight.
  *  - error       {string|null} External error message from the parent / store.
  */
-const CourseForm = ({ initialData = null, onSubmit, loading = false, error = null }) => {
+const ModuleForm = ({
+  initialData = null,
+  onSubmit,
+  onCancel,
+  loading = false,
+  error = null,
+}) => {
   const isEditMode = Boolean(initialData);
 
   // ── Form state ───────────────────────────────────────────────────────────────
   const [fields, setFields] = useState({
     title: '',
     description: '',
+    order: '',
   });
 
   const [validationErrors, setValidationErrors] = useState({});
@@ -27,6 +35,13 @@ const CourseForm = ({ initialData = null, onSubmit, loading = false, error = nul
       setFields({
         title: initialData.title || '',
         description: initialData.description || '',
+        order: initialData.order !== undefined ? String(initialData.order) : '',
+      });
+    } else {
+      setFields({
+        title: '',
+        description: '',
+        order: '',
       });
     }
   }, [initialData]);
@@ -50,8 +65,20 @@ const CourseForm = ({ initialData = null, onSubmit, loading = false, error = nul
 
   const validate = () => {
     const errors = {};
-    if (!fields.title.trim()) errors.title = 'Title is required';
-    if (!fields.description.trim()) errors.description = 'Description is required';
+    if (!fields.title.trim()) {
+      errors.title = 'Title is required';
+    }
+    
+    if (!fields.order.trim()) {
+      errors.order = 'Order number is required';
+    } else {
+      const parsedOrder = Number(fields.order);
+      if (isNaN(parsedOrder) || !Number.isInteger(parsedOrder)) {
+        errors.order = 'Order must be an integer';
+      } else if (parsedOrder <= 0) {
+        errors.order = 'Order must be a positive number';
+      }
+    }
     return errors;
   };
 
@@ -66,10 +93,10 @@ const CourseForm = ({ initialData = null, onSubmit, loading = false, error = nul
       return;
     }
 
-    // Pass plain object — the page component adds teacherId before calling the store
     onSubmit?.({
       title: fields.title.trim(),
       description: fields.description.trim(),
+      order: parseInt(fields.order, 10),
     });
   };
 
@@ -78,7 +105,7 @@ const CourseForm = ({ initialData = null, onSubmit, loading = false, error = nul
     <form
       onSubmit={handleSubmit}
       noValidate
-      className="flex flex-col gap-6"
+      className="flex flex-col gap-5"
     >
       {/* ── External API error banner ── */}
       {error && (
@@ -93,18 +120,18 @@ const CourseForm = ({ initialData = null, onSubmit, loading = false, error = nul
 
       {/* ── Title ── */}
       <FormField
-        id="course-title"
-        label="Title"
+        id="module-title"
+        label="Module Title"
         required
         error={validationErrors.title}
       >
         <input
-          id="course-title"
+          id="module-title"
           name="title"
           type="text"
           value={fields.title}
           onChange={handleChange}
-          placeholder="e.g. React Native Development"
+          placeholder="e.g. Introduction to React Components"
           disabled={loading}
           className={inputClass(validationErrors.title)}
         />
@@ -112,30 +139,60 @@ const CourseForm = ({ initialData = null, onSubmit, loading = false, error = nul
 
       {/* ── Description ── */}
       <FormField
-        id="course-description"
+        id="module-description"
         label="Description"
-        required
         error={validationErrors.description}
       >
         <textarea
-          id="course-description"
+          id="module-description"
           name="description"
-          rows={4}
+          rows={3}
           value={fields.description}
           onChange={handleChange}
-          placeholder="Briefly describe what students will learn…"
+          placeholder="Describe what students will cover in this module…"
           disabled={loading}
           className={`${inputClass(validationErrors.description)} resize-none`}
         />
       </FormField>
 
-      {/* ── Submit button ── */}
-      <div className="pt-2">
+      {/* ── Order Number ── */}
+      <FormField
+        id="module-order"
+        label="Order Number"
+        required
+        error={validationErrors.order}
+      >
+        <input
+          id="module-order"
+          name="order"
+          type="number"
+          min="1"
+          step="1"
+          value={fields.order}
+          onChange={handleChange}
+          placeholder="e.g. 1"
+          disabled={loading}
+          className={inputClass(validationErrors.order)}
+        />
+      </FormField>
+
+      {/* ── Actions ── */}
+      <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+        {onCancel && (
+          <button
+            type="button"
+            onClick={onCancel}
+            disabled={loading}
+            className="px-4 py-2 rounded-xl text-sm font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 disabled:opacity-60 transition-colors duration-150"
+          >
+            Cancel
+          </button>
+        )}
         <button
-          id="course-form-submit"
+          id="module-form-submit"
           type="submit"
           disabled={loading}
-          className="inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 disabled:opacity-60 disabled:cursor-not-allowed transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
+          className="inline-flex items-center justify-center gap-2 px-5 py-2 rounded-xl text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 disabled:opacity-60 disabled:cursor-not-allowed transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
         >
           {loading ? (
             <>
@@ -143,9 +200,9 @@ const CourseForm = ({ initialData = null, onSubmit, loading = false, error = nul
               Saving…
             </>
           ) : isEditMode ? (
-            'Update Course'
+            'Update Module'
           ) : (
-            'Create Course'
+            'Create Module'
           )}
         </button>
       </div>
@@ -155,9 +212,6 @@ const CourseForm = ({ initialData = null, onSubmit, loading = false, error = nul
 
 // ── Private helper components ────────────────────────────────────────────────
 
-/**
- * FormField – Wraps a form control with a label and inline error message.
- */
 const FormField = ({ id, label, required, error, children }) => (
   <div className="flex flex-col gap-1.5">
     <label htmlFor={id} className="text-sm font-semibold text-slate-700">
@@ -174,9 +228,6 @@ const FormField = ({ id, label, required, error, children }) => (
   </div>
 );
 
-/**
- * inputClass – Returns Tailwind classes for input/textarea elements.
- */
 const inputClass = (hasError) =>
   [
     'w-full px-3.5 py-2.5 rounded-xl border text-sm text-slate-800 placeholder-slate-400',
@@ -188,4 +239,4 @@ const inputClass = (hasError) =>
       : 'border-slate-300 focus:ring-indigo-300 focus:border-indigo-400',
   ].join(' ');
 
-export default CourseForm;
+export default ModuleForm;
