@@ -14,9 +14,9 @@ export class QuizService {
   }
 
   /**
-   * Creates a new Quiz and registers it as a Material of type QUIZ.
+   * Creates a new quiz and inserts a corresponding Material entry.
    */
-  static async createQuiz({ sectionId, courseId, title, hasTimeLimit, timeLimitMinutes, minPassMark, reviewPolicy, reviewPublishTime, questionsJson }) {
+  static async createQuiz({ sectionId, courseId, title, hasTimeLimit, timeLimitMinutes, minPassMark, reviewPolicy, reviewPublishTime, attemptLimit, openTime, closeTime, questionsJson }) {
     // 1. Verify parent course section exists
     const section = await prisma.courseSection.findUnique({
       where: { id: sectionId }
@@ -49,6 +49,9 @@ export class QuizService {
         minPassMark: minPassMark ? parseFloat(minPassMark) : 0.0,
         reviewPolicy: reviewPolicy || 'IMMEDIATE',
         reviewPublishTime: reviewPublishTime ? new Date(reviewPublishTime) : null,
+        attemptLimit: attemptLimit !== undefined ? parseInt(attemptLimit, 10) : 2,
+        openTime: openTime ? new Date(openTime) : null,
+        closeTime: closeTime ? new Date(closeTime) : null,
         questionsJson: parsedQuestions
       }
     });
@@ -136,7 +139,7 @@ export class QuizService {
   /**
    * Updates an existing quiz.
    */
-  static async updateQuiz(id, { title, hasTimeLimit, timeLimitMinutes, minPassMark, reviewPolicy, reviewPublishTime, questionsJson }) {
+  static async updateQuiz(id, { title, hasTimeLimit, timeLimitMinutes, minPassMark, reviewPolicy, reviewPublishTime, attemptLimit, openTime, closeTime, questionsJson }) {
     const existing = await prisma.quiz.findUnique({
       where: { id }
     });
@@ -154,6 +157,9 @@ export class QuizService {
     if (minPassMark !== undefined) updateData.minPassMark = parseFloat(minPassMark);
     if (reviewPolicy !== undefined) updateData.reviewPolicy = reviewPolicy;
     if (reviewPublishTime !== undefined) updateData.reviewPublishTime = reviewPublishTime ? new Date(reviewPublishTime) : null;
+    if (attemptLimit !== undefined) updateData.attemptLimit = parseInt(attemptLimit, 10);
+    if (openTime !== undefined) updateData.openTime = openTime ? new Date(openTime) : null;
+    if (closeTime !== undefined) updateData.closeTime = closeTime ? new Date(closeTime) : null;
     if (questionsJson !== undefined) {
       updateData.questionsJson = typeof questionsJson === 'string' ? JSON.parse(questionsJson) : questionsJson;
     }
@@ -213,7 +219,20 @@ export class QuizService {
       throw error;
     }
 
-    // Return current active (unsubmitted) attempt if it exists
+    // 1. Open/Close Time Checks
+    const now = new Date();
+    if (quiz.openTime && now < new Date(quiz.openTime)) {
+      const error = new Error(`This quiz is not open yet. It will open on ${quiz.openTime.toLocaleString()}.`);
+      error.statusCode = 400;
+      throw error;
+    }
+    if (quiz.closeTime && now > new Date(quiz.closeTime)) {
+      const error = new Error(`This quiz is closed. It closed on ${quiz.closeTime.toLocaleString()}.`);
+      error.statusCode = 400;
+      throw error;
+    }
+
+    // 2. Return current active (unsubmitted) attempt if it exists
     const activeAttempt = await prisma.quizAttempt.findFirst({
       where: {
         quizId,
@@ -224,6 +243,34 @@ export class QuizService {
 
     if (activeAttempt) {
       return activeAttempt;
+    }
+
+    // 3. Finalization Checks
+    const finalizedAttempt = await prisma.quizAttempt.findFirst({
+      where: {
+        quizId,
+        studentId,
+        isFinal: true
+      }
+    });
+    if (finalizedAttempt) {
+      const error = new Error('You have finalized your submission for this quiz. No further attempts can be started.');
+      error.statusCode = 400;
+      throw error;
+    }
+
+    // 4. Attempt Limit Checks
+    const attemptsCount = await prisma.quizAttempt.count({
+      where: {
+        quizId,
+        studentId,
+        submittedAt: { not: null }
+      }
+    });
+    if (attemptsCount >= quiz.attemptLimit) {
+      const error = new Error(`You have reached the maximum allowed attempts of ${quiz.attemptLimit} for this quiz.`);
+      error.statusCode = 400;
+      throw error;
     }
 
     return await prisma.quizAttempt.create({
@@ -330,9 +377,31 @@ export class QuizService {
     // Enforce review policy for students
     if (userRole === 'STUDENT' && attempt.quiz) {
       let allowReview = false;
+
+      // Check if student has finalized their attempts for this quiz
+      const finalized = await prisma.quizAttempt.findFirst({
+        where: {
+          quizId: attempt.quizId,
+          studentId: userId,
+          isFinal: true
+        }
+      });
+
       if (attempt.submittedAt) {
-        if (attempt.quiz.reviewPolicy === 'IMMEDIATE') {
+        if (finalized || (attempt.quiz.closeTime && new Date() > new Date(attempt.quiz.closeTime))) {
           allowReview = true;
+        } else if (attempt.quiz.reviewPolicy === 'IMMEDIATE') {
+          // Only show immediately if they finalized or have exhausted all attempts
+          const attemptsCount = await prisma.quizAttempt.count({
+            where: {
+              quizId: attempt.quizId,
+              studentId: userId,
+              submittedAt: { not: null }
+            }
+          });
+          if (attemptsCount >= attempt.quiz.attemptLimit) {
+            allowReview = true;
+          }
         } else if (attempt.quiz.reviewPolicy === 'LATER') {
           if (attempt.quiz.reviewPublishTime && new Date() >= new Date(attempt.quiz.reviewPublishTime)) {
             allowReview = true;
@@ -396,6 +465,84 @@ export class QuizService {
         student: {
           select: { id: true, name: true, email: true }
         }
+      }
+    });
+  }
+
+  /**
+   * Saves a draft of answers for an active attempt without grading or submitting it.
+   */
+  static async saveDraft(attemptId, studentId, { submittedAnswersJson }) {
+    const attempt = await prisma.quizAttempt.findUnique({
+      where: { id: attemptId }
+    });
+
+    if (!attempt) {
+      const error = new Error('Quiz attempt not found.');
+      error.statusCode = 404;
+      throw error;
+    }
+
+    if (attempt.studentId !== studentId) {
+      const error = new Error('Access denied. This is not your quiz attempt.');
+      error.statusCode = 403;
+      throw error;
+    }
+
+    if (attempt.submittedAt) {
+      const error = new Error('Quiz attempt has already been submitted.');
+      error.statusCode = 400;
+      throw error;
+    }
+
+    const answers = typeof submittedAnswersJson === 'string' ? JSON.parse(submittedAnswersJson) : submittedAnswersJson;
+
+    return await prisma.quizAttempt.update({
+      where: { id: attemptId },
+      data: {
+        submittedAnswersJson: answers
+      }
+    });
+  }
+
+  /**
+   * Finalizes quiz attempts for a student, unlocking reviews and locking new attempts.
+   */
+  static async finalizeAttempt(attemptId, studentId) {
+    const attempt = await prisma.quizAttempt.findUnique({
+      where: { id: attemptId },
+      include: { quiz: true }
+    });
+
+    if (!attempt) {
+      const error = new Error('Quiz attempt not found.');
+      error.statusCode = 404;
+      throw error;
+    }
+
+    if (attempt.studentId !== studentId) {
+      const error = new Error('Access denied. This is not your quiz attempt.');
+      error.statusCode = 403;
+      throw error;
+    }
+
+    if (!attempt.submittedAt) {
+      const error = new Error('Cannot finalize an active, unsubmitted attempt.');
+      error.statusCode = 400;
+      throw error;
+    }
+
+    if (attempt.quiz.attemptLimit <= 1) {
+      const error = new Error('Finalization is only applicable for quizzes with multiple attempts.');
+      error.statusCode = 400;
+      throw error;
+    }
+
+    // Set isFinal: true
+    return await prisma.quizAttempt.update({
+      where: { id: attemptId },
+      data: {
+        isFinal: true
       }
     });
   }

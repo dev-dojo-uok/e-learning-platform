@@ -3,6 +3,16 @@ import { useNavigate } from 'react-router-dom';
 import { PlusCircle, BookOpen, AlertCircle, CheckCircle2, XCircle } from 'lucide-react';
 import CourseTable from '../components/CourseTable';
 import useCourses from '../hooks/useCourses';
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogAction,
+  AlertDialogCancel,
+} from '@/components/ui/alert-dialog';
 
 // ── Inline Toast notification component ──────────────────────────────────────
 const Toast = ({ message, type = 'success', onClose }) => {
@@ -49,6 +59,7 @@ export default function CourseList() {
   const navigate = useNavigate();
   const { courses, loading, error, fetchCourses, deleteCourse } = useCourses();
   const [toast, setToast] = useState(null); // { message, type }
+  const [courseToDelete, setCourseToDelete] = useState(null);
 
   // Fetch on mount
   useEffect(() => {
@@ -65,11 +76,14 @@ export default function CourseList() {
     navigate(`/courses/edit/${course._id}`);
   };
 
-  const handleDelete = async (id) => {
-    const confirmed = window.confirm(
-      'Are you sure you want to delete this course? This action cannot be undone.'
-    );
-    if (!confirmed) return;
+  const handleDelete = (id) => {
+    setCourseToDelete(id);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!courseToDelete) return;
+    const id = courseToDelete;
+    setCourseToDelete(null);
 
     try {
       await deleteCourse(id);
@@ -141,6 +155,24 @@ export default function CourseList() {
         onEdit={handleEdit}
         onDelete={handleDelete}
       />
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!courseToDelete} onOpenChange={(open) => !open && setCourseToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Course?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this course? This action cannot be undone and will delete all course modules and materials.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmDelete} className="bg-red-600 hover:bg-red-700">
+              Delete Course
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

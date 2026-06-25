@@ -1,6 +1,5 @@
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 generator client {
@@ -117,6 +116,9 @@ model Quiz {
   minPassMark      Float         @default(0.0) @map("min_pass_mark")
   reviewPolicy     String        @default("IMMEDIATE") @map("review_policy") // "IMMEDIATE" | "LATER" | "NONE"
   reviewPublishTime DateTime?   @map("review_publish_time")
+  attemptLimit      Int           @default(2) @map("attempt_limit")
+  openTime          DateTime?     @map("open_time")
+  closeTime         DateTime?     @map("close_time")
   questionsJson    Json          @map("questions_json")
   createdAt        DateTime      @default(now()) @map("created_at")
   updatedAt        DateTime      @updatedAt @map("updated_at")
@@ -138,6 +140,7 @@ model QuizAttempt {
   teacherFeedback      String?   @db.Text @map("teacher_feedback")
   startedAt            DateTime  @default(now()) @map("started_at")
   submittedAt          DateTime? @map("submitted_at")
+  isFinal              Boolean   @default(false) @map("is_final")
 
   // Relations
   quiz                 Quiz      @relation("QuizAttempts", fields: [quizId], references: [id], onDelete: Cascade)

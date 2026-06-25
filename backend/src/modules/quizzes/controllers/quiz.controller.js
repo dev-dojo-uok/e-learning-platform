@@ -3,7 +3,7 @@ import { QuizService } from '../services/quiz.service.js';
 export class QuizController {
   static async create(req, res, next) {
     try {
-      const { sectionId, courseId, title, hasTimeLimit, timeLimitMinutes, minPassMark, reviewPolicy, reviewPublishTime, questionsJson } = req.body;
+      const { sectionId, courseId, title, hasTimeLimit, timeLimitMinutes, minPassMark, reviewPolicy, reviewPublishTime, attemptLimit, openTime, closeTime, questionsJson } = req.body;
       const quiz = await QuizService.createQuiz({
         sectionId,
         courseId,
@@ -13,6 +13,9 @@ export class QuizController {
         minPassMark,
         reviewPolicy,
         reviewPublishTime,
+        attemptLimit,
+        openTime,
+        closeTime,
         questionsJson
       });
       res.status(201).json(quiz);
@@ -46,7 +49,7 @@ export class QuizController {
   static async update(req, res, next) {
     try {
       const { id } = req.params;
-      const { title, hasTimeLimit, timeLimitMinutes, minPassMark, reviewPolicy, reviewPublishTime, questionsJson } = req.body;
+      const { title, hasTimeLimit, timeLimitMinutes, minPassMark, reviewPolicy, reviewPublishTime, attemptLimit, openTime, closeTime, questionsJson } = req.body;
       const quiz = await QuizService.updateQuiz(id, {
         title,
         hasTimeLimit,
@@ -54,6 +57,9 @@ export class QuizController {
         minPassMark,
         reviewPolicy,
         reviewPublishTime,
+        attemptLimit,
+        openTime,
+        closeTime,
         questionsJson
       });
       res.status(200).json(quiz);
@@ -124,6 +130,29 @@ export class QuizController {
       const { attemptId } = req.params;
       const { score, teacherFeedback } = req.body;
       const attempt = await QuizService.gradeAttempt(attemptId, { score, teacherFeedback });
+      res.status(200).json(attempt);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async saveDraft(req, res, next) {
+    try {
+      const { attemptId } = req.params;
+      const studentId = req.user?.id;
+      const { submittedAnswersJson } = req.body;
+      const attempt = await QuizService.saveDraft(attemptId, studentId, { submittedAnswersJson });
+      res.status(200).json(attempt);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async finalizeAttempt(req, res, next) {
+    try {
+      const { attemptId } = req.params;
+      const studentId = req.user?.id;
+      const attempt = await QuizService.finalizeAttempt(attemptId, studentId);
       res.status(200).json(attempt);
     } catch (error) {
       next(error);

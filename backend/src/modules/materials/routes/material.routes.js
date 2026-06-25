@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { MaterialController } from '../controllers/material.controller.js';
-import { authenticateToken, authorizeRole } from '../../../config/auth.js';
+import { authenticateToken, authorizeRole, verifySectionOwner, verifyMaterialOwner } from '../../../config/auth.js';
 import { handleFileUpload } from '../middleware/upload.middleware.js';
 import {
   validateCreateMaterial,
@@ -21,6 +21,7 @@ router.route('/')
     authorizeRole(['TEACHER', 'ADMIN']),
     handleFileUpload,            // parse optional file upload before validation
     validateCreateMaterial,
+    verifySectionOwner,
     MaterialController.create
   );
 
@@ -29,7 +30,12 @@ router.route('/')
 // Get all materials belonging to a specific module (section)
 // ---------------------------------------------------------------------------
 router.route('/module/:sectionId')
-  .get(validateSectionIdParam, MaterialController.getBySection);
+  .get(
+    authenticateToken,
+    validateSectionIdParam,
+    verifySectionOwner,
+    MaterialController.getBySection
+  );
 
 // ---------------------------------------------------------------------------
 // GET    /api/materials/:id   – Get a single material by ID
@@ -37,18 +43,25 @@ router.route('/module/:sectionId')
 // DELETE /api/materials/:id   – Delete a material (removes file from disk)
 // ---------------------------------------------------------------------------
 router.route('/:id')
-  .get(validateMaterialId, MaterialController.getById)
+  .get(
+    authenticateToken,
+    validateMaterialId,
+    verifyMaterialOwner,
+    MaterialController.getById
+  )
   .put(
     authenticateToken,
     authorizeRole(['TEACHER', 'ADMIN']),
     handleFileUpload,            // parse optional file upload before validation
     validateUpdateMaterial,
+    verifyMaterialOwner,
     MaterialController.update
   )
   .delete(
     authenticateToken,
     authorizeRole(['TEACHER', 'ADMIN']),
     validateMaterialId,
+    verifyMaterialOwner,
     MaterialController.delete
   );
 

@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { QuizController } from './controllers/quiz.controller.js';
-import { authenticateToken, authorizeRole } from '../../config/auth.js';
+import { authenticateToken, authorizeRole, verifyCourseOwner, verifyQuizOwner, verifyAttemptOwner } from '../../config/auth.js';
 import {
   validateCreateQuiz,
   validateUpdateQuiz,
@@ -19,6 +19,7 @@ router.route('/')
     authenticateToken,
     authorizeRole(['TEACHER', 'ADMIN']),
     validateCreateQuiz,
+    verifyCourseOwner,
     QuizController.create
   );
 
@@ -27,6 +28,7 @@ router.route('/course/:courseId')
   .get(
     authenticateToken,
     validateCourseIdParam,
+    verifyCourseOwner,
     QuizController.getByCourse
   );
 
@@ -35,6 +37,7 @@ router.route('/attempts/:attemptId')
   .get(
     authenticateToken,
     validateAttemptIdParam,
+    verifyAttemptOwner,
     QuizController.getAttemptById
   );
 
@@ -46,11 +49,28 @@ router.route('/attempts/:attemptId/submit')
     QuizController.submitAttempt
   );
 
+router.route('/attempts/:attemptId/draft')
+  .put(
+    authenticateToken,
+    authorizeRole(['STUDENT']),
+    validateSubmitAttempt,
+    QuizController.saveDraft
+  );
+
+router.route('/attempts/:attemptId/finalize')
+  .put(
+    authenticateToken,
+    authorizeRole(['STUDENT']),
+    validateAttemptIdParam,
+    QuizController.finalizeAttempt
+  );
+
 router.route('/attempts/:attemptId/grade')
   .put(
     authenticateToken,
     authorizeRole(['TEACHER', 'ADMIN']),
     validateGradeAttempt,
+    verifyAttemptOwner,
     QuizController.gradeAttempt
   );
 
@@ -59,18 +79,21 @@ router.route('/:id')
   .get(
     authenticateToken,
     validateQuizId,
+    verifyQuizOwner,
     QuizController.getById
   )
   .put(
     authenticateToken,
     authorizeRole(['TEACHER', 'ADMIN']),
     validateUpdateQuiz,
+    verifyQuizOwner,
     QuizController.update
   )
   .delete(
     authenticateToken,
     authorizeRole(['TEACHER', 'ADMIN']),
     validateQuizId,
+    verifyQuizOwner,
     QuizController.delete
   );
 
@@ -88,6 +111,7 @@ router.route('/:id/attempts')
   .get(
     authenticateToken,
     validateQuizId,
+    verifyQuizOwner,
     QuizController.getAttemptsByQuiz
   );
 

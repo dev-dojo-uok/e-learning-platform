@@ -40,6 +40,7 @@ const useMaterialStore = create((set) => ({
   fetchMaterials: async (moduleId) => {
     set({ loading: true, error: null });
     try {
+      set({ materials: [] })
       const data = await materialService.getMaterialsByModule(moduleId);
       set({ materials: (data || []).map(normalizeMaterial) });
     } catch (error) {
@@ -64,7 +65,7 @@ const useMaterialStore = create((set) => ({
       formData.append('sectionId', moduleId); // backend validator expects sectionId
       formData.append('title', materialData.title);
       formData.append('type', materialData.type);
-      
+
       if (materialData.description) {
         formData.append('description', materialData.description);
       }

@@ -8,6 +8,7 @@ const BASE_URL = `http://localhost:${PORT}/api`;
 
 let serverProcess;
 let teacherToken;
+let teacher2Token;
 let studentToken;
 let courseId;
 let sectionId;
@@ -43,6 +44,7 @@ before(async () => {
 
   // Clean up any old test users/courses in the database to start fresh
   const testEmailTeacher = 'test_teacher_api@uok.lk';
+  const testEmailTeacher2 = 'test_teacher2_api@uok.lk';
   const testEmailStudent = 'test_student_api@uok.lk';
 
   const oldTeacher = await prisma.user.findUnique({ where: { email: testEmailTeacher } });
@@ -50,9 +52,13 @@ before(async () => {
     // Delete any courses owned by this teacher to satisfy RESTRICT check
     await prisma.course.deleteMany({ where: { teacherId: oldTeacher.id } });
   }
+  const oldTeacher2 = await prisma.user.findUnique({ where: { email: testEmailTeacher2 } });
+  if (oldTeacher2) {
+    await prisma.course.deleteMany({ where: { teacherId: oldTeacher2.id } });
+  }
 
   await prisma.user.deleteMany({
-    where: { email: { in: [testEmailTeacher, testEmailStudent] } }
+    where: { email: { in: [testEmailTeacher, testEmailTeacher2, testEmailStudent] } }
   });
 
   // Register Teacher
@@ -68,6 +74,20 @@ before(async () => {
   });
   const teacherData = await regTeacherRes.json();
   teacherToken = teacherData.token;
+
+  // Register Teacher 2
+  const regTeacher2Res = await fetch(`${BASE_URL}/auth/register`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      name: 'API Test Teacher 2',
+      email: testEmailTeacher2,
+      password: 'password123',
+      role: 'TEACHER'
+    })
+  });
+  const teacher2Data = await regTeacher2Res.json();
+  teacher2Token = teacher2Data.token;
 
   // Register Student
   const regStudentRes = await fetch(`${BASE_URL}/auth/register`, {
@@ -237,6 +257,28 @@ test('POST /api/quizzes/:id/attempt - Start Attempt', async () => {
   assert.strictEqual(data.quizId, quizId);
   assert.strictEqual(data.submittedAt, null);
   attemptId = data.id;
+});
+
+test('PUT /api/quizzes/attempts/:attemptId/draft - Save Draft Answers', async () => {
+  const draftAnswers = {
+    q1: '4'
+  };
+
+  const res = await fetch(`${BASE_URL}/quizzes/attempts/${attemptId}/draft`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${studentToken}`
+    },
+    body: JSON.stringify({
+      submittedAnswersJson: draftAnswers
+    })
+  });
+
+  assert.strictEqual(res.status, 200);
+  const data = await res.json();
+  assert.strictEqual(data.submittedAt, null);
+  assert.deepStrictEqual(data.submittedAnswersJson, draftAnswers);
 });
 
 test('PUT /api/quizzes/attempts/:attemptId/submit - Submit Attempt & Grading', async () => {
@@ -454,6 +496,299 @@ test('PUT /api/quizzes/:id - Update Quiz (Teacher)', async () => {
   assert.strictEqual(res.status, 200);
   const data = await res.json();
   assert.strictEqual(data.title, 'API Test Quiz - Revised');
+});
+
+test('Attempt Limit and Open/Close Schedule enforcement tests', async () => {
+  // Create a Quiz with attemptLimit = 1
+  const limitQuizRes = await fetch(`${BASE_URL}/quizzes`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${teacherToken}`
+    },
+    body: JSON.stringify({
+      sectionId,
+      courseId,
+      title: 'Limit Test Quiz',
+      attemptLimit: 1,
+      questionsJson: [
+        { id: 'q1', type: 'true_false', questionText: 'Testing limits', options: ['True', 'False'], correctAnswer: 'True', points: 5 }
+      ]
+    })
+  });
+  assert.strictEqual(limitQuizRes.status, 201);
+  const limitQuiz = await limitQuizRes.json();
+
+  // Student Starts attempt 1 -> 201
+  const start1Res = await fetch(`${BASE_URL}/quizzes/${limitQuiz.id}/attempt`, {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${studentToken}` }
+  });
+  assert.strictEqual(start1Res.status, 201);
+  const start1 = await start1Res.json();
+
+  // Submit attempt 1 -> 200
+  const submit1Res = await fetch(`${BASE_URL}/quizzes/attempts/${start1.id}/submit`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${studentToken}`
+    },
+    body: JSON.stringify({
+      submittedAnswersJson: { q1: 'True' }
+    })
+  });
+  assert.strictEqual(submit1Res.status, 200);
+
+  // Student tries to finalize attempt 1 of a single-attempt quiz -> 400 Bad Request
+  const finalize1Res = await fetch(`${BASE_URL}/quizzes/attempts/${start1.id}/finalize`, {
+    method: 'PUT',
+    headers: { 'Authorization': `Bearer ${studentToken}` }
+  });
+  assert.strictEqual(finalize1Res.status, 400);
+  const finalize1Data = await finalize1Res.json();
+  assert.ok(finalize1Data.error.includes('only applicable for quizzes with multiple attempts'));
+
+  // Student tries to start attempt 2 -> 400 Bad Request (Limit reached)
+  const start2Res = await fetch(`${BASE_URL}/quizzes/${limitQuiz.id}/attempt`, {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${studentToken}` }
+  });
+  assert.strictEqual(start2Res.status, 400);
+  const start2Data = await start2Res.json();
+  assert.ok(start2Data.error.includes('reached the maximum allowed attempts'));
+
+  // Create a Quiz scheduled in the future (openTime = tomorrow)
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const futureQuizRes = await fetch(`${BASE_URL}/quizzes`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${teacherToken}`
+    },
+    body: JSON.stringify({
+      sectionId,
+      courseId,
+      title: 'Future Quiz',
+      openTime: tomorrow.toISOString(),
+      questionsJson: [
+        { id: 'q1', type: 'true_false', questionText: 'Future', options: ['True', 'False'], correctAnswer: 'True', points: 5 }
+      ]
+    })
+  });
+  assert.strictEqual(futureQuizRes.status, 201);
+  const futureQuiz = await futureQuizRes.json();
+
+  // Start attempt on future quiz -> 400
+  const futureStartRes = await fetch(`${BASE_URL}/quizzes/${futureQuiz.id}/attempt`, {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${studentToken}` }
+  });
+  assert.strictEqual(futureStartRes.status, 400);
+  const futureStartData = await futureStartRes.json();
+  assert.ok(futureStartData.error.includes('not open yet'));
+
+  // Create a Quiz closed in the past (closeTime = yesterday)
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  const pastQuizRes = await fetch(`${BASE_URL}/quizzes`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${teacherToken}`
+    },
+    body: JSON.stringify({
+      sectionId,
+      courseId,
+      title: 'Past Quiz',
+      closeTime: yesterday.toISOString(),
+      questionsJson: [
+        { id: 'q1', type: 'true_false', questionText: 'Past', options: ['True', 'False'], correctAnswer: 'True', points: 5 }
+      ]
+    })
+  });
+  assert.strictEqual(pastQuizRes.status, 201);
+  const pastQuiz = await pastQuizRes.json();
+
+  // Start attempt on closed quiz -> 400
+  const pastStartRes = await fetch(`${BASE_URL}/quizzes/${pastQuiz.id}/attempt`, {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${studentToken}` }
+  });
+  assert.strictEqual(pastStartRes.status, 400);
+  const pastStartData = await pastStartRes.json();
+  assert.ok(pastStartData.error.includes('is closed'));
+
+  // Clean up test quizzes
+  await prisma.quiz.deleteMany({
+    where: { id: { in: [limitQuiz.id, futureQuiz.id, pastQuiz.id] } }
+  });
+});
+
+test('Quiz Attempts Finalization and Review Unlock (Student)', async () => {
+  // 1. Create a quiz with attemptLimit = 2, reviewPolicy = IMMEDIATE
+  const testQuizRes = await fetch(`${BASE_URL}/quizzes`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${teacherToken}`
+    },
+    body: JSON.stringify({
+      courseId,
+      sectionId,
+      title: 'Finalize Integration Test Quiz',
+      hasTimeLimit: false,
+      timeLimitMinutes: 0,
+      minPassMark: 50,
+      reviewPolicy: 'IMMEDIATE',
+      attemptLimit: 2,
+      questionsJson: [
+        { id: 't1', type: 'true_false', questionText: 'Q1', options: ['True', 'False'], correctAnswer: 'True', points: 10 }
+      ]
+    })
+  });
+  assert.strictEqual(testQuizRes.status, 201);
+  const testQuiz = await testQuizRes.json();
+
+  // 2. Start attempt 1
+  const startRes = await fetch(`${BASE_URL}/quizzes/${testQuiz.id}/attempt`, {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${studentToken}` }
+  });
+  assert.strictEqual(startRes.status, 201);
+  const attempt1 = await startRes.json();
+
+  // 3. Submit attempt 1
+  const submitRes = await fetch(`${BASE_URL}/quizzes/attempts/${attempt1.id}/submit`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${studentToken}`
+    },
+    body: JSON.stringify({
+      submittedAnswersJson: { t1: 'True' }
+    })
+  });
+  assert.strictEqual(submitRes.status, 200);
+
+  // 4. Retrieve attempt 1 -> answers should be stripped
+  const getRes = await fetch(`${BASE_URL}/quizzes/attempts/${attempt1.id}`, {
+    method: 'GET',
+    headers: { 'Authorization': `Bearer ${studentToken}` }
+  });
+  assert.strictEqual(getRes.status, 200);
+  const getAttemptBefore = await getRes.json();
+  const qBefore = getAttemptBefore.quiz.questionsJson[0];
+  assert.strictEqual(qBefore.correctAnswer, undefined);
+
+  // 5. Finalize attempt 1
+  const finalizeRes = await fetch(`${BASE_URL}/quizzes/attempts/${attempt1.id}/finalize`, {
+    method: 'PUT',
+    headers: { 'Authorization': `Bearer ${studentToken}` }
+  });
+  assert.strictEqual(finalizeRes.status, 200);
+  const finalizedData = await finalizeRes.json();
+  assert.strictEqual(finalizedData.isFinal, true);
+
+  // 6. Retrieve attempt 1 again -> answers should be visible now!
+  const getRes2 = await fetch(`${BASE_URL}/quizzes/attempts/${attempt1.id}`, {
+    method: 'GET',
+    headers: { 'Authorization': `Bearer ${studentToken}` }
+  });
+  assert.strictEqual(getRes2.status, 200);
+  const getAttemptAfter = await getRes2.json();
+  const qAfter = getAttemptAfter.quiz.questionsJson[0];
+  assert.strictEqual(qAfter.correctAnswer, 'True');
+
+  // 7. Try starting attempt 2 -> should be blocked (400) because it was finalized
+  const startRes2 = await fetch(`${BASE_URL}/quizzes/${testQuiz.id}/attempt`, {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${studentToken}` }
+  });
+  assert.strictEqual(startRes2.status, 400);
+
+  // Clean up
+  await prisma.quiz.delete({ where: { id: testQuiz.id } });
+});
+
+test('Teacher isolation and access control tests for Quizzes, Modules, Materials, and Attempts', async () => {
+  // 1. teacher2 tries to create a quiz for teacher1's course -> 403 Forbidden
+  const createQuizRes = await fetch(`${BASE_URL}/quizzes`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${teacher2Token}`
+    },
+    body: JSON.stringify({
+      courseId,
+      sectionId,
+      title: 'Teacher 2 Hijacked Quiz',
+      questionsJson: []
+    })
+  });
+  assert.strictEqual(createQuizRes.status, 403);
+  const createQuizData = await createQuizRes.json();
+  assert.ok(createQuizData.error.includes('Access denied. You do not own this course'));
+
+  // 2. teacher2 tries to get quizzes for teacher1's course -> 403 Forbidden
+  const getQuizzesRes = await fetch(`${BASE_URL}/quizzes/course/${courseId}`, {
+    headers: { 'Authorization': `Bearer ${teacher2Token}` }
+  });
+  assert.strictEqual(getQuizzesRes.status, 403);
+
+  // 3. teacher2 tries to get teacher1's single quiz -> 403 Forbidden
+  const getQuizRes = await fetch(`${BASE_URL}/quizzes/${quizId}`, {
+    headers: { 'Authorization': `Bearer ${teacher2Token}` }
+  });
+  assert.strictEqual(getQuizRes.status, 403);
+
+  // 4. teacher2 tries to update teacher1's quiz -> 403 Forbidden
+  const updateQuizRes = await fetch(`${BASE_URL}/quizzes/${quizId}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${teacher2Token}`
+    },
+    body: JSON.stringify({ title: 'Hijacked Title' })
+  });
+  assert.strictEqual(updateQuizRes.status, 403);
+
+  // 5. teacher2 tries to delete teacher1's quiz -> 403 Forbidden
+  const deleteQuizRes = await fetch(`${BASE_URL}/quizzes/${quizId}`, {
+    method: 'DELETE',
+    headers: { 'Authorization': `Bearer ${teacher2Token}` }
+  });
+  assert.strictEqual(deleteQuizRes.status, 403);
+
+  // 6. teacher2 tries to create module section for teacher1's course -> 403 Forbidden
+  const createModuleRes = await fetch(`${BASE_URL}/modules`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${teacher2Token}`
+    },
+    body: JSON.stringify({ courseId, title: 'Hijacked Module', sortOrder: 5 })
+  });
+  assert.strictEqual(createModuleRes.status, 403);
+
+  // 7. teacher2 tries to update teacher1's module section -> 403 Forbidden
+  const updateModuleRes = await fetch(`${BASE_URL}/modules/${sectionId}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${teacher2Token}`
+    },
+    body: JSON.stringify({ title: 'Hijacked Module' })
+  });
+  assert.strictEqual(updateModuleRes.status, 403);
+
+  // 8. teacher2 tries to delete teacher1's module section -> 403 Forbidden
+  const deleteModuleRes = await fetch(`${BASE_URL}/modules/${sectionId}`, {
+    method: 'DELETE',
+    headers: { 'Authorization': `Bearer ${teacher2Token}` }
+  });
+  assert.strictEqual(deleteModuleRes.status, 403);
 });
 
 test('DELETE /api/quizzes/:id - Delete Quiz (Teacher)', async () => {

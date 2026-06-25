@@ -68,6 +68,24 @@ export const validateCreateQuiz = [
     .withMessage('reviewPublishTime must be a valid ISO8601 date string')
     .toDate(),
 
+  body('attemptLimit')
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage('attemptLimit must be an integer greater than or equal to 1')
+    .toInt(),
+
+  body('openTime')
+    .optional({ nullable: true, checkFalsy: true })
+    .isISO8601()
+    .withMessage('openTime must be a valid ISO8601 date string')
+    .toDate(),
+
+  body('closeTime')
+    .optional({ nullable: true, checkFalsy: true })
+    .isISO8601()
+    .withMessage('closeTime must be a valid ISO8601 date string')
+    .toDate(),
+
   body('questionsJson')
     .notEmpty()
     .withMessage('questionsJson is required')
@@ -139,6 +157,24 @@ export const validateUpdateQuiz = [
     .optional({ nullable: true, checkFalsy: true })
     .isISO8601()
     .withMessage('reviewPublishTime must be a valid ISO8601 date string')
+    .toDate(),
+
+  body('attemptLimit')
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage('attemptLimit must be an integer greater than or equal to 1')
+    .toInt(),
+
+  body('openTime')
+    .optional({ nullable: true, checkFalsy: true })
+    .isISO8601()
+    .withMessage('openTime must be a valid ISO8601 date string')
+    .toDate(),
+
+  body('closeTime')
+    .optional({ nullable: true, checkFalsy: true })
+    .isISO8601()
+    .withMessage('closeTime must be a valid ISO8601 date string')
     .toDate(),
 
   body('questionsJson')

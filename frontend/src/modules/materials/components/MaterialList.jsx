@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Loader2, Eye, Download, Trash2, FileText, Video, Image, FileArchive, Inbox } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Loader2, Eye, Download, Trash2, FileText, Video, Image, FileArchive, Inbox, HelpCircle } from 'lucide-react';
 import useMaterials from '../hooks/useMaterials';
 import useAuthStore from '../../../store/useAuthStore';
 import MaterialViewer from './MaterialViewer';
@@ -26,10 +27,23 @@ const MaterialList = ({ moduleId, onDeleteSuccess }) => {
   const { materials, loading, error, fetchMaterials, removeMaterial } = useMaterials();
   const { user } = useAuthStore();
   const isTeacherOrAdmin = user?.role === 'TEACHER' || user?.role === 'ADMIN';
+  const navigate = useNavigate();
 
   const [selectedMaterial, setSelectedMaterial] = useState(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
   const [deleting, setDeleting] = useState(false);
+
+  const handleMaterialClick = (mat) => {
+    if (mat.type === 'QUIZ') {
+      if (isTeacherOrAdmin) {
+        navigate(`/quizzes/${mat.itemId}/manage`);
+      } else {
+        navigate(`/quizzes/${mat.itemId}/take`);
+      }
+    } else {
+      setSelectedMaterial(mat);
+    }
+  };
 
   useEffect(() => {
     if (moduleId) {
@@ -51,6 +65,9 @@ const MaterialList = ({ moduleId, onDeleteSuccess }) => {
   };
 
   const getIconAndColor = (type, contentUrl) => {
+    if (type === 'QUIZ') {
+      return { icon: <HelpCircle className="h-5 w-5" />, color: 'text-amber-500 bg-amber-50 border-amber-100' };
+    }
     if (type === 'PDF') {
       return { icon: <FileText className="h-5 w-5" />, color: 'text-red-500 bg-red-50 border-red-100' };
     }
@@ -140,7 +157,7 @@ const MaterialList = ({ moduleId, onDeleteSuccess }) => {
                 <button
                   type="button"
                   id={`mat-preview-btn-${mat._id}`}
-                  onClick={() => setSelectedMaterial(mat)}
+                  onClick={() => handleMaterialClick(mat)}
                   title="Preview"
                   className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
                 >

@@ -11,10 +11,12 @@
     "prisma:push": "prisma db push",
     "prisma:studio": "prisma studio",
     "prisma:seed": "node prisma/seed.js",
+    "add-sample-data": "node prisma/seed-sample.js",
     "test": "node --test"
   },
   "dependencies": {
-    "@prisma/client": "^6.4.1",
+    "@prisma/adapter-pg": "^7.8.0",
+    "@prisma/client": "^7.8.0",
     "bcryptjs": "^2.4.3",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
@@ -22,10 +24,11 @@
     "express": "^4.19.2",
     "express-validator": "^7.3.2",
     "jsonwebtoken": "^9.0.2",
-    "multer": "^2.2.0"
+    "multer": "^2.2.0",
+    "pg": "^8.22.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.0",
-    "prisma": "^6.4.1"
+    "prisma": "^7.8.0"
   }
 }
