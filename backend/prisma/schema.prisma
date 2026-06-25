@@ -18,6 +18,7 @@ enum MaterialType {
   FILE
   VIDEO_SRC
   VIDEO_EMBED
+  QUIZ
 }
 
 model User {
@@ -30,8 +31,9 @@ model User {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   // Relations
-  courses     Course[]             @relation("UserCourses")
-  completions MaterialCompletion[] @relation("UserCompletions")
+  courses      Course[]             @relation("UserCourses")
+  completions  MaterialCompletion[] @relation("UserCompletions")
+  quizAttempts QuizAttempt[]        @relation("UserQuizAttempts")
 
   @@map("users")
 }
@@ -47,6 +49,7 @@ model Course {
   // Relations
   teacher  User            @relation("UserCourses", fields: [teacherId], references: [id], onDelete: Restrict)
   sections CourseSection[] @relation("CourseSections")
+  quizzes  Quiz[]          @relation("CourseQuizzes")
 
   @@index([teacherId])
   @@map("courses")
@@ -103,4 +106,44 @@ model MaterialCompletion {
   @@unique([studentId, materialId])
   @@index([materialId])
   @@map("material_completions")
+}
+
+model Quiz {
+  id               String        @id @default(uuid())
+  courseId         String        @map("course_id")
+  title            String
+  hasTimeLimit     Boolean       @default(false) @map("has_time_limit")
+  timeLimitMinutes Int           @default(0) @map("time_limit_minutes")
+  minPassMark      Float         @default(0.0) @map("min_pass_mark")
+  reviewPolicy     String        @default("IMMEDIATE") @map("review_policy") // "IMMEDIATE" | "LATER" | "NONE"
+  reviewPublishTime DateTime?   @map("review_publish_time")
+  questionsJson    Json          @map("questions_json")
+  createdAt        DateTime      @default(now()) @map("created_at")
+  updatedAt        DateTime      @updatedAt @map("updated_at")
+
+  // Relations
+  course           Course        @relation("CourseQuizzes", fields: [courseId], references: [id], onDelete: Cascade)
+  attempts         QuizAttempt[] @relation("QuizAttempts")
+
+  @@index([courseId])
+  @@map("quizzes")
+}
+
+model QuizAttempt {
+  id                   String    @id @default(uuid())
+  quizId               String    @map("quiz_id")
+  studentId            String    @map("student_id")
+  submittedAnswersJson Json?     @map("submitted_answers_json")
+  score                Float?
+  teacherFeedback      String?   @db.Text @map("teacher_feedback")
+  startedAt            DateTime  @default(now()) @map("started_at")
+  submittedAt          DateTime? @map("submitted_at")
+
+  // Relations
+  quiz                 Quiz      @relation("QuizAttempts", fields: [quizId], references: [id], onDelete: Cascade)
+  student              User      @relation("UserQuizAttempts", fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@index([quizId])
+  @@index([studentId])
+  @@map("quiz_attempts")
 }
