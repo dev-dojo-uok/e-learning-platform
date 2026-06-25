@@ -29,8 +29,8 @@ async function waitForServer(url, retries = 10, delay = 500) {
 }
 
 before(async () => {
-  console.log('Starting backend test server...');
-  
+  console.log('Starting quizzes test server...');
+
   // Start server process on test port
   serverProcess = fork('src/index.js', [], {
     env: { ...process.env, PORT: String(PORT), NODE_ENV: 'test' },
@@ -44,7 +44,7 @@ before(async () => {
   // Clean up any old test users/courses in the database to start fresh
   const testEmailTeacher = 'test_teacher_api@uok.lk';
   const testEmailStudent = 'test_student_api@uok.lk';
-  
+
   const oldTeacher = await prisma.user.findUnique({ where: { email: testEmailTeacher } });
   if (oldTeacher) {
     // Delete any courses owned by this teacher to satisfy RESTRICT check
@@ -114,11 +114,11 @@ before(async () => {
 });
 
 after(async () => {
-  console.log('Stopping test server...');
+  console.log('Stopping quizzes test server...');
   if (serverProcess) {
     serverProcess.kill();
   }
-  
+
   // Clean up DB records
   if (quizId) {
     await prisma.quiz.deleteMany({ where: { id: quizId } });
@@ -217,7 +217,7 @@ test('GET /api/quizzes/:id - Retrieve quiz as Student before attempt (Answers St
   assert.strictEqual(res.status, 200);
   const data = await res.json();
   assert.ok(Array.isArray(data.questionsJson));
-  
+
   // Verify correct answers are stripped out
   const firstQuestion = data.questionsJson[0];
   assert.strictEqual(firstQuestion.correctAnswer, undefined);
@@ -273,7 +273,7 @@ test('GET /api/quizzes/:id - Retrieve quiz as Student after attempt (Answers Vis
   assert.strictEqual(res.status, 200);
   const data = await res.json();
   assert.ok(Array.isArray(data.questionsJson));
-  
+
   // Verify correct answers are now visible
   const firstQuestion = data.questionsJson[0];
   assert.strictEqual(firstQuestion.correctAnswer, '4');
