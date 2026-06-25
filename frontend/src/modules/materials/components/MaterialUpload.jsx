@@ -133,7 +133,7 @@ const MaterialUpload = ({ moduleId, onSuccess }) => {
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col flex-shrink-0">
       <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/70">
         <h3 className="text-base font-bold text-slate-800">Add Learning Material</h3>
       </div>
