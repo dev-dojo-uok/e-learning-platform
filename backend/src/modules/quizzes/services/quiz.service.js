@@ -16,7 +16,7 @@ export class QuizService {
   /**
    * Creates a new Quiz and registers it as a Material of type QUIZ.
    */
-  static async createQuiz({ sectionId, courseId, title, hasTimeLimit, timeLimitMinutes, minPassMark, questionsJson }) {
+  static async createQuiz({ sectionId, courseId, title, hasTimeLimit, timeLimitMinutes, minPassMark, reviewPolicy, reviewPublishTime, questionsJson }) {
     // 1. Verify parent course section exists
     const section = await prisma.courseSection.findUnique({
       where: { id: sectionId }
@@ -47,6 +47,8 @@ export class QuizService {
         hasTimeLimit: Boolean(hasTimeLimit),
         timeLimitMinutes: timeLimitMinutes ? parseInt(timeLimitMinutes, 10) : 0,
         minPassMark: minPassMark ? parseFloat(minPassMark) : 0.0,
+        reviewPolicy: reviewPolicy || 'IMMEDIATE',
+        reviewPublishTime: reviewPublishTime ? new Date(reviewPublishTime) : null,
         questionsJson: parsedQuestions
       }
     });
@@ -89,7 +91,7 @@ export class QuizService {
   /**
    * Retrieves a single quiz by ID.
    * If the role is STUDENT, filters out correct answers from questionsJson
-   * unless the student has already submitted a completed attempt.
+   * unless the student has already submitted a completed attempt and the review policy allows it.
    */
   static async getQuizById(id, userRole, userId) {
     const quiz = await prisma.quiz.findUnique({
@@ -102,7 +104,7 @@ export class QuizService {
       throw error;
     }
 
-    // Security: Student role gets stripped questions unless they completed an attempt
+    // Security: Student role gets stripped questions unless they completed an attempt and policy allows
     if (userRole === 'STUDENT') {
       const completedAttempt = await prisma.quizAttempt.findFirst({
         where: {
@@ -112,7 +114,18 @@ export class QuizService {
         }
       });
 
-      if (!completedAttempt) {
+      let allowReview = false;
+      if (completedAttempt) {
+        if (quiz.reviewPolicy === 'IMMEDIATE') {
+          allowReview = true;
+        } else if (quiz.reviewPolicy === 'LATER') {
+          if (quiz.reviewPublishTime && new Date() >= new Date(quiz.reviewPublishTime)) {
+            allowReview = true;
+          }
+        }
+      }
+
+      if (!allowReview) {
         quiz.questionsJson = QuizService._stripCorrectAnswers(quiz.questionsJson);
       }
     }
@@ -123,7 +136,7 @@ export class QuizService {
   /**
    * Updates an existing quiz.
    */
-  static async updateQuiz(id, { title, hasTimeLimit, timeLimitMinutes, minPassMark, questionsJson }) {
+  static async updateQuiz(id, { title, hasTimeLimit, timeLimitMinutes, minPassMark, reviewPolicy, reviewPublishTime, questionsJson }) {
     const existing = await prisma.quiz.findUnique({
       where: { id }
     });
@@ -139,6 +152,8 @@ export class QuizService {
     if (hasTimeLimit !== undefined) updateData.hasTimeLimit = Boolean(hasTimeLimit);
     if (timeLimitMinutes !== undefined) updateData.timeLimitMinutes = parseInt(timeLimitMinutes, 10);
     if (minPassMark !== undefined) updateData.minPassMark = parseFloat(minPassMark);
+    if (reviewPolicy !== undefined) updateData.reviewPolicy = reviewPolicy;
+    if (reviewPublishTime !== undefined) updateData.reviewPublishTime = reviewPublishTime ? new Date(reviewPublishTime) : null;
     if (questionsJson !== undefined) {
       updateData.questionsJson = typeof questionsJson === 'string' ? JSON.parse(questionsJson) : questionsJson;
     }
@@ -310,6 +325,24 @@ export class QuizService {
       const error = new Error('Access denied. Cannot view other student\'s attempt.');
       error.statusCode = 403;
       throw error;
+    }
+
+    // Enforce review policy for students
+    if (userRole === 'STUDENT' && attempt.quiz) {
+      let allowReview = false;
+      if (attempt.submittedAt) {
+        if (attempt.quiz.reviewPolicy === 'IMMEDIATE') {
+          allowReview = true;
+        } else if (attempt.quiz.reviewPolicy === 'LATER') {
+          if (attempt.quiz.reviewPublishTime && new Date() >= new Date(attempt.quiz.reviewPublishTime)) {
+            allowReview = true;
+          }
+        }
+      }
+
+      if (!allowReview) {
+        attempt.quiz.questionsJson = QuizService._stripCorrectAnswers(attempt.quiz.questionsJson);
+      }
     }
 
     return attempt;

@@ -115,6 +115,8 @@ model Quiz {
   hasTimeLimit     Boolean       @default(false) @map("has_time_limit")
   timeLimitMinutes Int           @default(0) @map("time_limit_minutes")
   minPassMark      Float         @default(0.0) @map("min_pass_mark")
+  reviewPolicy     String        @default("IMMEDIATE") @map("review_policy") // "IMMEDIATE" | "LATER" | "NONE"
+  reviewPublishTime DateTime?   @map("review_publish_time")
   questionsJson    Json          @map("questions_json")
   createdAt        DateTime      @default(now()) @map("created_at")
   updatedAt        DateTime      @updatedAt @map("updated_at")

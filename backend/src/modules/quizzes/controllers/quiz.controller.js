@@ -3,7 +3,7 @@ import { QuizService } from '../services/quiz.service.js';
 export class QuizController {
   static async create(req, res, next) {
     try {
-      const { sectionId, courseId, title, hasTimeLimit, timeLimitMinutes, minPassMark, questionsJson } = req.body;
+      const { sectionId, courseId, title, hasTimeLimit, timeLimitMinutes, minPassMark, reviewPolicy, reviewPublishTime, questionsJson } = req.body;
       const quiz = await QuizService.createQuiz({
         sectionId,
         courseId,
@@ -11,6 +11,8 @@ export class QuizController {
         hasTimeLimit,
         timeLimitMinutes,
         minPassMark,
+        reviewPolicy,
+        reviewPublishTime,
         questionsJson
       });
       res.status(201).json(quiz);
@@ -44,12 +46,14 @@ export class QuizController {
   static async update(req, res, next) {
     try {
       const { id } = req.params;
-      const { title, hasTimeLimit, timeLimitMinutes, minPassMark, questionsJson } = req.body;
+      const { title, hasTimeLimit, timeLimitMinutes, minPassMark, reviewPolicy, reviewPublishTime, questionsJson } = req.body;
       const quiz = await QuizService.updateQuiz(id, {
         title,
         hasTimeLimit,
         timeLimitMinutes,
         minPassMark,
+        reviewPolicy,
+        reviewPublishTime,
         questionsJson
       });
       res.status(200).json(quiz);

@@ -56,6 +56,18 @@ export const validateCreateQuiz = [
     .withMessage('minPassMark must be a float between 0 and 100')
     .toFloat(),
 
+  body('reviewPolicy')
+    .optional()
+    .trim()
+    .isIn(['IMMEDIATE', 'LATER', 'NONE'])
+    .withMessage('reviewPolicy must be one of: IMMEDIATE, LATER, NONE'),
+
+  body('reviewPublishTime')
+    .optional({ nullable: true, checkFalsy: true })
+    .isISO8601()
+    .withMessage('reviewPublishTime must be a valid ISO8601 date string')
+    .toDate(),
+
   body('questionsJson')
     .notEmpty()
     .withMessage('questionsJson is required')
@@ -116,6 +128,18 @@ export const validateUpdateQuiz = [
     .isFloat({ min: 0, max: 100 })
     .withMessage('minPassMark must be a float between 0 and 100')
     .toFloat(),
+
+  body('reviewPolicy')
+    .optional()
+    .trim()
+    .isIn(['IMMEDIATE', 'LATER', 'NONE'])
+    .withMessage('reviewPolicy must be one of: IMMEDIATE, LATER, NONE'),
+
+  body('reviewPublishTime')
+    .optional({ nullable: true, checkFalsy: true })
+    .isISO8601()
+    .withMessage('reviewPublishTime must be a valid ISO8601 date string')
+    .toDate(),
 
   body('questionsJson')
     .optional()
