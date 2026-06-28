@@ -4,9 +4,8 @@ import { useEffect } from "react"
 import { TrendingUp, BookOpen, FileText } from "lucide-react"
 import {
   Label,
-  PolarRadiusAxis,
-  RadialBar,
-  RadialBarChart,
+  Pie,
+  PieChart,
 } from "recharts"
 
 import {
@@ -22,6 +21,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart"
+import { Progress } from "@/components/ui/progress"
 
 // Import your Zustand store (Adjust path if necessary)
 import useCompletionStore from "../store/useCompletionStore"
@@ -43,69 +43,57 @@ export function CourseProgressCard({ courseId }) {
   // Fallback data if store is empty
   const totalQuizzes = progressData?.totalQuizzes || 0
   const completedQuizzes = progressData?.completedQuizzes || 0
-  
-  // NOTE: Your backend currently doesn't send assignment data. 
-  // We are mocking it here so the UI matches your request.
-  const totalAssignments = progressData?.totalAssignments || 4 
-  const completedAssignments = progressData?.completedAssignments || 1
 
-  const totalTasks = totalQuizzes + totalAssignments
-  const completedTasks = completedQuizzes + completedAssignments
+  const totalTasks = totalQuizzes
+  const completedTasks = completedQuizzes
   const remainingTasks = totalTasks - completedTasks
   const overallPercentage = totalTasks === 0 ? 0 : Math.round((completedTasks / totalTasks) * 100)
 
   // Chart configuration mapped to your learning data
-  const chartData = [{ name: "Progress", completed: completedTasks, remaining: remainingTasks }]
+  const chartData = [
+    { name: "completed", value: completedTasks, fill: "#5C29C2" },
+    { name: "remaining", value: totalTasks === 0 ? 1 : remainingTasks, fill: "#DAD9DB" }
+  ]
+
   const chartConfig = {
     completed: {
       label: "Completed",
-      color: "hsl(var(--primary))", // Uses your theme's main color
+      color: "#5C29C2", // Custom purple color requested
     },
     remaining: {
       label: "Remaining",
-      color: "hsl(var(--muted))", // Uses a muted color for incomplete
+      color: "#DAD9DB", // Uses a muted color for incomplete
     },
   }
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-4xl">
-      
-      {/* LEFT SIDE: Radial Chart */}
+
       <Card className="flex flex-col">
         <CardHeader className="items-center pb-0">
-          <CardTitle>Overall Progress</CardTitle>
-          <CardDescription>All course materials</CardDescription>
+          <CardTitle className="text-lg font-bold text-slate-800">Overall Progress</CardTitle>
+          <CardDescription className="text-sm text-slate-500">All course materials</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-1 items-center pb-0">
           <ChartContainer
             config={chartConfig}
             className="mx-auto aspect-square w-full max-w-[250px]"
           >
-            <RadialBarChart
-              data={chartData}
-              endAngle={180}
-              innerRadius={80}
-              outerRadius={110}
-            >
-              <RadialBar
-                dataKey="remaining"
-                fill="var(--color-remaining)"
-                stackId="a"
-                cornerRadius={5}
-                className="stroke-transparent stroke-2"
-              />
-              <RadialBar
-                dataKey="completed"
-                fill="var(--color-completed)"
-                stackId="a"
-                cornerRadius={5}
-                className="stroke-transparent stroke-2"
-              />
+            <PieChart>
               <ChartTooltip
                 cursor={false}
                 content={<ChartTooltipContent hideLabel />}
               />
-              <PolarRadiusAxis tick={false} tickLine={false} axisLine={false}>
+              <Pie
+                data={chartData}
+                dataKey="value"
+                nameKey="name"
+                innerRadius={80}
+                outerRadius={110}
+                startAngle={180}
+                endAngle={0}
+                strokeWidth={0}
+              >
                 <Label
                   content={({ viewBox }) => {
                     if (viewBox && "cx" in viewBox && "cy" in viewBox) {
@@ -114,14 +102,14 @@ export function CourseProgressCard({ courseId }) {
                           <tspan
                             x={viewBox.cx}
                             y={(viewBox.cy || 0) - 16}
-                            className="fill-foreground text-3xl font-bold"
+                            className="fill-slate-900 text-3xl font-bold"
                           >
                             {overallPercentage}%
                           </tspan>
                           <tspan
                             x={viewBox.cx}
-                            y={(viewBox.cy || 0) + 4}
-                            className="fill-muted-foreground"
+                            y={(viewBox.cy || 0) + 8}
+                            className="fill-slate-500 text-sm font-medium"
                           >
                             Completed
                           </tspan>
@@ -130,71 +118,38 @@ export function CourseProgressCard({ courseId }) {
                     }
                   }}
                 />
-              </PolarRadiusAxis>
-            </RadialBarChart>
+              </Pie>
+            </PieChart>
           </ChartContainer>
         </CardContent>
-        <CardFooter className="flex-col gap-2 text-sm">
-          <div className="flex items-center gap-2 leading-none font-medium">
-            You are on track! <TrendingUp className="h-4 w-4 text-green-500" />
-          </div>
-          <div className="leading-none text-muted-foreground">
-            {completedTasks} out of {totalTasks} total tasks finished.
-          </div>
-        </CardFooter>
       </Card>
 
       {/* RIGHT SIDE: Breakdown Targets */}
-      <Card className="flex flex-col justify-center border-none shadow-none bg-transparent">
+      <Card className="flex flex-col border-none shadow-none bg-transparent">
         <CardHeader className="px-0">
-          <CardTitle>Module Breakdown</CardTitle>
-          <CardDescription>Monitor your progress across different task types.</CardDescription>
+          <CardTitle className="text-lg font-bold text-slate-800">Module Breakdown</CardTitle>
+          <CardDescription className="text-sm text-slate-500">Monitor your progress across different task types.</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6 px-0">
-          
+        <CardContent className="space-y-8 px-0">
+
           {/* Quizzes Breakdown */}
-          <div className="space-y-2 p-4 rounded-xl bg-card border">
+          <div className="space-y-2 p-4 rounded-xl bg-card border border-slate-200">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground uppercase tracking-wider">
+              <div className="flex items-center gap-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">
                 <BookOpen className="w-4 h-4" /> Quizzes
               </div>
             </div>
-            <div className="text-3xl font-bold">
-              {completedQuizzes} <span className="text-lg font-normal text-muted-foreground">/ {totalQuizzes}</span>
+            <div className="text-3xl font-bold text-slate-900">
+              {completedQuizzes} <span className="text-lg font-medium text-slate-400">/ {totalQuizzes}</span>
             </div>
-            {/* Custom Progress Bar */}
-            <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
-              <div 
-                className="h-full bg-primary transition-all duration-500" 
-                style={{ width: `${totalQuizzes === 0 ? 0 : (completedQuizzes / totalQuizzes) * 100}%` }}
-              />
-            </div>
-            <div className="text-xs text-muted-foreground flex justify-between">
+            <Progress
+              value={totalQuizzes === 0 ? 0 : Math.round((completedQuizzes / totalQuizzes) * 100)}
+              className="h-2 w-full bg-secondary"
+              indicatorClassName="bg-[#5C29C2]"
+            />
+            <div className="text-xs font-medium text-slate-500 flex justify-between">
               <span>{totalQuizzes === 0 ? 0 : Math.round((completedQuizzes / totalQuizzes) * 100)}% achieved</span>
               <span>{totalQuizzes - completedQuizzes} remaining</span>
-            </div>
-          </div>
-
-          {/* Assignments Breakdown */}
-          <div className="space-y-2 p-4 rounded-xl bg-card border">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground uppercase tracking-wider">
-                <FileText className="w-4 h-4" /> Assignments
-              </div>
-            </div>
-            <div className="text-3xl font-bold">
-              {completedAssignments} <span className="text-lg font-normal text-muted-foreground">/ {totalAssignments}</span>
-            </div>
-            {/* Custom Progress Bar */}
-            <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
-              <div 
-                className="h-full bg-blue-500 transition-all duration-500" 
-                style={{ width: `${totalAssignments === 0 ? 0 : (completedAssignments / totalAssignments) * 100}%` }}
-              />
-            </div>
-            <div className="text-xs text-muted-foreground flex justify-between">
-              <span>{totalAssignments === 0 ? 0 : Math.round((completedAssignments / totalAssignments) * 100)}% achieved</span>
-              <span>{totalAssignments - completedAssignments} remaining</span>
             </div>
           </div>
 

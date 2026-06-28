@@ -15,6 +15,7 @@ import {
 import useCourses from '../hooks/useCourses';
 import { ModuleList, ModuleForm, useModules } from '../../modules';
 import { MaterialUpload, MaterialList } from '../../materials';
+import { CourseProgressCard } from '../../completion/components/CourseProgressCard';
 import useAuthStore from '../../../store/useAuthStore';
 import {
   AlertDialog,
@@ -269,6 +270,13 @@ export default function CourseDetails() {
           </div>
         </div>
       </section>
+
+      {/* ── Course Progress ── */}
+      {!isTeacherOrAdmin && (
+        <section aria-labelledby="course-progress-heading">
+          <CourseProgressCard courseId={id} />
+        </section>
+      )}
 
       {/* ── Module Management ── */}
       <section aria-labelledby="module-mgmt-heading">
