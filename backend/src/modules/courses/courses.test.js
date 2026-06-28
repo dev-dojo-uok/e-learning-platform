@@ -170,8 +170,10 @@ test('POST /api/courses - Forbidden for Student role', async () => {
   assert.strictEqual(data.error, 'Unauthorized role permissions.');
 });
 
-test('GET /api/courses - Get all courses', async () => {
-  const res = await fetch(`${BASE_URL}/courses`);
+test('GET /api/courses - Get all courses (Student)', async () => {
+  const res = await fetch(`${BASE_URL}/courses`, {
+    headers: { 'Authorization': `Bearer ${studentToken}` }
+  });
   assert.strictEqual(res.status, 200);
   const data = await res.json();
   assert.ok(Array.isArray(data));
@@ -180,12 +182,34 @@ test('GET /api/courses - Get all courses', async () => {
   assert.strictEqual(testCourse.title, 'Introduction to Node Testing');
 });
 
-test('GET /api/courses/:id - Get course by ID', async () => {
-  const res = await fetch(`${BASE_URL}/courses/${courseId}`);
+test('GET /api/courses - Get courses as Teacher (Filtered to owned only)', async () => {
+  const res = await fetch(`${BASE_URL}/courses`, {
+    headers: { 'Authorization': `Bearer ${teacher2Token}` }
+  });
+  assert.strictEqual(res.status, 200);
+  const data = await res.json();
+  assert.ok(Array.isArray(data));
+  const testCourse = data.find(c => c.id === courseId);
+  assert.strictEqual(testCourse, undefined); // teacher2 should NOT see teacher1's course
+});
+
+test('GET /api/courses/:id - Get course by ID (Student)', async () => {
+  const res = await fetch(`${BASE_URL}/courses/${courseId}`, {
+    headers: { 'Authorization': `Bearer ${studentToken}` }
+  });
   assert.strictEqual(res.status, 200);
   const data = await res.json();
   assert.strictEqual(data.id, courseId);
   assert.strictEqual(data.title, 'Introduction to Node Testing');
+});
+
+test('GET /api/courses/:id - Get course by ID (Teacher Non-Owner Forbidden)', async () => {
+  const res = await fetch(`${BASE_URL}/courses/${courseId}`, {
+    headers: { 'Authorization': `Bearer ${teacher2Token}` }
+  });
+  assert.strictEqual(res.status, 403);
+  const data = await res.json();
+  assert.ok(data.error.includes('Access denied. You do not own this course'));
 });
 
 test('PUT /api/courses/:id - Update course (Teacher Owner Success)', async () => {
@@ -220,7 +244,7 @@ test('PUT /api/courses/:id - Update course (Teacher Non-Owner Forbidden)', async
 
   assert.strictEqual(res.status, 403);
   const data = await res.json();
-  assert.strictEqual(data.error, 'You are not allowed to update this course.');
+  assert.ok(data.error.includes('Access denied. You do not own this course'));
 });
 
 test('DELETE /api/courses/:id - Delete course (Student Forbidden)', async () => {
@@ -249,6 +273,8 @@ test('DELETE /api/courses/:id - Delete course (Teacher Owner Success)', async ()
   assert.strictEqual(data.message, 'Course deleted successfully.');
 
   // Verify deletion
-  const getRes = await fetch(`${BASE_URL}/courses/${courseId}`);
+  const getRes = await fetch(`${BASE_URL}/courses/${courseId}`, {
+    headers: { 'Authorization': `Bearer ${studentToken}` }
+  });
   assert.strictEqual(getRes.status, 404);
 });

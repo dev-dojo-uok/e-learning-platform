@@ -1,6 +1,6 @@
 import * as React from "react"
+import { Link } from "react-router-dom"
 
-import { Calendars } from "@/components/calendars"
 import { DatePicker } from "@/components/date-picker"
 import { NavUser } from "@/components/nav-user"
 import { NavMain } from "@/components/nav-main"
@@ -34,24 +34,21 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible"
 import useAuthStore from "@/store/useAuthStore"
+import useCourses from "@/modules/courses/hooks/useCourses"
 
-const data = {
-  calendars: [
-    // {
-    //   name: "Deadlines & Events",
-    //   items: ["Assignment 1 Due", "Quiz 2 Open", "Midterm Exam"],
-    // },
-    {
-      name: "My Courses",
-      items: ["SWST 32043 - Rapid App Dev", "SWST 32013 - Software Quality", "COSC 31023 - Data Science"],
-    },
-  ],
-}
+
 
 export function AppSidebar({
   ...props
 }) {
   const { user } = useAuthStore()
+  const { courses, fetchCourses } = useCourses()
+
+  React.useEffect(() => {
+    if (user) {
+      fetchCourses()
+    }
+  }, [user, fetchCourses])
 
   const displayUser = {
     name: user?.name || "E-Learner",
@@ -110,7 +107,41 @@ export function AppSidebar({
         </SidebarGroup>
         <SidebarSeparator className="mx-0" />
         
-        <Calendars calendars={data.calendars} />
+        {/* Collapsible Courses list */}
+        <SidebarGroup>
+          <Collapsible defaultOpen={true} className="group/collapsible">
+            <SidebarGroupLabel
+              asChild
+              className="group/label w-full text-sm text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
+              <CollapsibleTrigger>
+                My Courses{" "}
+                <ChevronRightIcon
+                  className="ml-auto transition-transform group-data-[state=open]/collapsible:rotate-90" />
+              </CollapsibleTrigger>
+            </SidebarGroupLabel>
+            <CollapsibleContent>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {courses && courses.length > 0 ? (
+                    courses.map((course) => (
+                      <SidebarMenuItem key={course._id}>
+                        <SidebarMenuButton asChild>
+                          <Link to={`/courses/${course._id}`}>
+                            <span>{course.title}</span>
+                          </Link>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    ))
+                  ) : (
+                    <div className="px-4 py-2 text-xs text-slate-400 font-semibold italic">
+                      No courses enrolled
+                    </div>
+                  )}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </CollapsibleContent>
+          </Collapsible>
+        </SidebarGroup>
       </SidebarContent>
       <SidebarFooter>
         <div className="px-4 py-2 text-[10px] text-center text-slate-400 font-bold">

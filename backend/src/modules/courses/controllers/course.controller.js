@@ -19,7 +19,12 @@ export class CourseController {
    */
   static async getAll(req, res, next) {
     try {
-      const courses = await CourseService.getAllCourses();
+      let courses;
+      if (req.user?.role === 'TEACHER') {
+        courses = await CourseService.getCoursesByTeacher(req.user.id);
+      } else {
+        courses = await CourseService.getAllCourses();
+      }
       return res.status(200).json(courses);
     } catch (error) {
       next(error);

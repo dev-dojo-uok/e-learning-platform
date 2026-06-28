@@ -5,6 +5,7 @@ import Layout from './components/Layout';
 import Login from './modules/auth/Login';
 import Register from './modules/auth/Register';
 import courseRoutes from './modules/courses/routes/courseRoutes';
+import quizRoutes from './modules/quizzes/routes/quizRoutes';
 import QuizzesPlaceholder from './modules/quizzes';
 import ForumsPlaceholder from './modules/forums';
 import CompletionPlaceholder from './modules/completion';
@@ -65,8 +66,12 @@ function App() {
                 <Routes>
                   <Route path="/" element={user?.role === 'TEACHER' || user?.role === 'ADMIN' ? <TeacherDashboard /> : <Navigate to="/courses" replace />} />
                   {/* Course routes */}
-                  {courseRoutes.map(({ path, element }) => (
-                    <Route key={path} path={path} element={element} />
+                  {courseRoutes.map((route) => (
+                    <Route key={route.path} path={route.path} element={route.element} />
+                  ))}
+                  {/* Quiz routes */}
+                  {quizRoutes.map((route) => (
+                    <Route key={route.path} path={route.path} element={route.element} />
                   ))}
                   <Route path="/quizzes" element={<QuizzesPlaceholder />} />
                   <Route path="/forums" element={<ForumsPlaceholder />} />

@@ -16,6 +16,16 @@ import useCourses from '../hooks/useCourses';
 import { ModuleList, ModuleForm, useModules } from '../../modules';
 import { MaterialUpload, MaterialList } from '../../materials';
 import useAuthStore from '../../../store/useAuthStore';
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogAction,
+  AlertDialogCancel,
+} from '@/components/ui/alert-dialog';
 
 // ── Small detail row ─────────────────────────────────────────────────────────
 const DetailRow = ({ icon: Icon, label, value }) => (
@@ -67,6 +77,7 @@ export default function CourseDetails() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentModule, setCurrentModule] = useState(null); // Null for create, object for edit
   const [selectedModule, setSelectedModule] = useState(null); // Selected module for viewing materials
+  const [moduleToDelete, setModuleToDelete] = useState(null);
 
   useEffect(() => {
     if (id) fetchCourseById(id);
@@ -99,13 +110,21 @@ export default function CourseDetails() {
     }
   };
 
-  const handleDeleteModule = async (moduleId) => {
-    const confirmed = window.confirm('Are you sure you want to delete this module?');
-    if (!confirmed) return;
+  const handleDeleteModule = (moduleId) => {
+    setModuleToDelete(moduleId);
+  };
+
+  const handleConfirmDeleteModule = async () => {
+    if (!moduleToDelete) return;
+    const moduleId = moduleToDelete;
+    setModuleToDelete(null);
 
     try {
       await deleteModule(moduleId);
       setToast({ message: 'Module deleted successfully.', type: 'success' });
+      if (selectedModule?._id === moduleId) {
+        setSelectedModule(null);
+      }
     } catch (err) {
       setToast({ message: err.message || 'Failed to delete module.', type: 'error' });
     }
@@ -307,6 +326,7 @@ export default function CourseDetails() {
             {isTeacherOrAdmin && (
               <MaterialUpload
                 moduleId={selectedModule._id}
+                courseId={id}
                 onSuccess={(msg) => setToast({ message: msg, type: 'success' })}
               />
             )}
@@ -322,6 +342,24 @@ export default function CourseDetails() {
           </div>
         )}
       </Modal>
+
+      {/* Delete Module Confirmation Dialog */}
+      <AlertDialog open={!!moduleToDelete} onOpenChange={(open) => !open && setModuleToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Module?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this module? This action cannot be undone and will delete all associated study materials and quizzes inside it.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmDeleteModule} className="bg-red-600 hover:bg-red-700">
+              Delete Module
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
