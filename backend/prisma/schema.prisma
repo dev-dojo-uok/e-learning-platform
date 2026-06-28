@@ -34,6 +34,7 @@ model User {
   courses      Course[]             @relation("UserCourses")
   completions  MaterialCompletion[] @relation("UserCompletions")
   quizAttempts QuizAttempt[]        @relation("UserQuizAttempts")
+  enrollments  Enrollment[]         @relation("UserEnrollments")
 
   @@map("users")
 }
@@ -47,9 +48,10 @@ model Course {
   updatedAt   DateTime @updatedAt @map("updated_at")
 
   // Relations
-  teacher  User            @relation("UserCourses", fields: [teacherId], references: [id], onDelete: Restrict)
-  sections CourseSection[] @relation("CourseSections")
-  quizzes  Quiz[]          @relation("CourseQuizzes")
+  teacher     User            @relation("UserCourses", fields: [teacherId], references: [id], onDelete: Restrict)
+  sections    CourseSection[] @relation("CourseSections")
+  quizzes     Quiz[]          @relation("CourseQuizzes")
+  enrollments Enrollment[]    @relation("CourseEnrollments")
 
   @@index([teacherId])
   @@map("courses")
@@ -146,4 +148,20 @@ model QuizAttempt {
   @@index([quizId])
   @@index([studentId])
   @@map("quiz_attempts")
+}
+
+model Enrollment {
+  id         String   @id @default(uuid())
+  studentId  String   @map("student_id")
+  courseId   String   @map("course_id")
+  enrolledAt DateTime @default(now()) @map("enrolled_at")
+
+  // Relations
+  student User   @relation("UserEnrollments", fields: [studentId], references: [id], onDelete: Cascade)
+  course  Course @relation("CourseEnrollments", fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, courseId])
+  @@index([studentId])
+  @@index([courseId])
+  @@map("enrollments")
 }
