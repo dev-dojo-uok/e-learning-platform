@@ -14,6 +14,7 @@ import quizRoutes from './modules/quizzes/quizzes.routes.js';
 import forumRoutes from './modules/forums/forums.routes.js';
 import completionRoutes from './modules/completion/completion.routes.js';
 import assignmentRoutes from './modules/assignments/assignments.routes.js';
+import enrollmentRoutes from './modules/enrollments/index.js';
 
 dotenv.config();
 
@@ -59,6 +60,7 @@ app.use('/api/quizzes', quizRoutes);
 app.use('/api/forums', forumRoutes);
 app.use('/api/completion', completionRoutes);
 app.use('/api/assignments', assignmentRoutes);
+app.use('/api', enrollmentRoutes);
 
 // Error Handling middleware
 app.use((err, req, res, next) => {
