@@ -13,7 +13,7 @@ import materialRoutes from './modules/materials/index.js';
 import quizRoutes from './modules/quizzes/quizzes.routes.js';
 import forumRoutes from './modules/forums/forums.routes.js';
 import completionRoutes from './modules/completion/completion.routes.js';
-import assignmentRoutes from './modules/assignments/assignments.routes.js';
+import assignmentRoutes from './modules/assignments/index.js';
 
 dotenv.config();
 
