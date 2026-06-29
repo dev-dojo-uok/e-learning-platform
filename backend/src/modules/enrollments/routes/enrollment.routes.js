@@ -8,38 +8,40 @@ import {
   validateCourseIdParam
 } from '../validations/enrollment.validation.js';
 
-const router = Router();
+const enrollmentRoutes = Router();
+const studentEnrollmentRoutes = Router();
+const courseEnrollmentRoutes = Router();
 
 // POST: /api/enrollments
-router.post(
-  '/enrollments',
+enrollmentRoutes.post(
+  '/',
   authenticateToken,
   validateEnroll,
   EnrollmentController.enroll
 );
 
 // DELETE: /api/enrollments/:id
-router.delete(
-  '/enrollments/:id',
+enrollmentRoutes.delete(
+  '/:id',
   authenticateToken,
   validateIdParam,
   EnrollmentController.remove
 );
 
 // GET: /api/students/:studentId/courses
-router.get(
-  '/students/:studentId/courses',
+studentEnrollmentRoutes.get(
+  '/:studentId/courses',
   authenticateToken,
   validateStudentIdParam,
   EnrollmentController.getStudentCourses
 );
 
 // GET: /api/courses/:courseId/students
-router.get(
-  '/courses/:courseId/students',
+courseEnrollmentRoutes.get(
+  '/:courseId/students',
   authenticateToken,
   validateCourseIdParam,
   EnrollmentController.getCourseStudents
 );
 
-export default router;
+export { enrollmentRoutes, studentEnrollmentRoutes, courseEnrollmentRoutes };
