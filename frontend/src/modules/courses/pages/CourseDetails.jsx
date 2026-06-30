@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, Link } from 'react-router-dom';
 import {
   ArrowLeft,
   Pencil,
@@ -11,7 +11,9 @@ import {
   Layers,
   CheckCircle2,
   XCircle,
+  MessageSquare,
 } from 'lucide-react';
+
 import useCourses from '../hooks/useCourses';
 import { ModuleList, ModuleForm, useModules } from '../../modules';
 import { MaterialUpload, MaterialList } from '../../materials';
@@ -197,6 +199,14 @@ export default function CourseDetails() {
 
         {/* Action buttons */}
         <div className="flex items-center gap-2 flex-shrink-0">
+          <Link
+            to={`/courses/${id}/forums`}
+            id="view-course-forums-btn"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 active:bg-indigo-200 transition-colors duration-150 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2"
+          >
+            <MessageSquare className="h-4 w-4" />
+            Forums
+          </Link>
           <button
             type="button"
             id="edit-course-btn"
