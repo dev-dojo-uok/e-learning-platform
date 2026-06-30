@@ -1,0 +1,312 @@
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  STUDENT
+  TEACHER
+  ADMIN
+}
+
+enum MaterialType {
+  PDF
+  FILE
+  VIDEO_SRC
+  VIDEO_EMBED
+  QUIZ
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      Role     @default(STUDENT)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  courses      Course[]             @relation("UserCourses")
+  completions  MaterialCompletion[] @relation("UserCompletions")
+  quizAttempts QuizAttempt[]        @relation("UserQuizAttempts")
+  enrollments  Enrollment[]         @relation("UserEnrollments")
+
+  @@map("users")
+}
+
+model Course {
+  id          String   @id @default(uuid())
+  title       String
+  description String?  @db.Text
+  teacherId   String   @map("teacher_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  teacher     User            @relation("UserCourses", fields: [teacherId], references: [id], onDelete: Restrict)
+  sections    CourseSection[] @relation("CourseSections")
+  quizzes     Quiz[]          @relation("CourseQuizzes")
+  enrollments Enrollment[]    @relation("CourseEnrollments")
+
+  @@index([teacherId])
+  @@map("courses")
+}
+
+model CourseSection {
+  id        String   @id @default(uuid())
+  courseId  String   @map("course_id")
+  title     String
+  sortOrder Int      @map("sort_order")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  course    Course     @relation("CourseSections", fields: [courseId], references: [id], onDelete: Cascade)
+  materials Material[] @relation("SectionMaterials")
+
+  @@index([courseId, sortOrder])
+  @@map("course_sections")
+}
+
+model Material {
+  id            String       @id @default(uuid())
+  sectionId     String       @map("section_id")
+  title         String
+  description   String?      @db.Text
+  type          MaterialType
+  contentUrl    String?      @map("content_url")
+  embedCode     String?      @db.Text @map("embed_code")
+  itemId        String?      @map("item_id")
+  isGraded      Boolean      @default(false) @map("is_graded")
+  gradingWeight Float        @default(0.0) @map("grading_weight")
+  createdAt     DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime     @updatedAt @map("updated_at")
+
+  // Relations
+  section     CourseSection        @relation("SectionMaterials", fields: [sectionId], references: [id], onDelete: Cascade)
+  completions MaterialCompletion[] @relation("MaterialCompletions")
+
+  @@index([sectionId])
+  @@map("materials")
+}
+
+model MaterialCompletion {
+  id          String   @id @default(uuid())
+  studentId   String   @map("student_id")
+  materialId  String   @map("material_id")
+  completedAt DateTime @default(now()) @map("completed_at")
+
+  // Relations
+  student  User     @relation("UserCompletions", fields: [studentId], references: [id], onDelete: Cascade)
+  material Material @relation("MaterialCompletions", fields: [materialId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, materialId])
+  @@index([materialId])
+  @@map("material_completions")
+}
+
+model Quiz {
+  id               String        @id @default(uuid())
+  courseId         String        @map("course_id")
+  title            String
+  hasTimeLimit     Boolean       @default(false) @map("has_time_limit")
+  timeLimitMinutes Int           @default(0) @map("time_limit_minutes")
+  minPassMark      Float         @default(0.0) @map("min_pass_mark")
+  reviewPolicy     String        @default("IMMEDIATE") @map("review_policy") // "IMMEDIATE" | "LATER" | "NONE"
+  reviewPublishTime DateTime?   @map("review_publish_time")
+  attemptLimit      Int           @default(2) @map("attempt_limit")
+  openTime          DateTime?     @map("open_time")
+  closeTime         DateTime?     @map("close_time")
+  questionsJson    Json          @map("questions_json")
+  createdAt        DateTime      @default(now()) @map("created_at")
+  updatedAt        DateTime      @updatedAt @map("updated_at")
+
+  // Relations
+  course           Course        @relation("CourseQuizzes", fields: [courseId], references: [id], onDelete: Cascade)
+  attempts         QuizAttempt[] @relation("QuizAttempts")
+
+  @@index([courseId])
+  @@map("quizzes")
+}
+
+model QuizAttempt {
+  id                   String    @id @default(uuid())
+  quizId               String    @map("quiz_id")
+  studentId            String    @map("student_id")
+  submittedAnswersJson Json?     @map("submitted_answers_json")
+  score                Float?
+  teacherFeedback      String?   @db.Text @map("teacher_feedback")
+  startedAt            DateTime  @default(now()) @map("started_at")
+  submittedAt          DateTime? @map("submitted_at")
+  isFinal              Boolean   @default(false) @map("is_final")
+
+  // Relations
+  quiz                 Quiz      @relation("QuizAttempts", fields: [quizId], references: [id], onDelete: Cascade)
+  student              User      @relation("UserQuizAttempts", fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@index([quizId])
+  @@index([studentId])
+  @@map("quiz_attempts")
+}
+
+model Enrollment {
+  id         String   @id @default(uuid())
+  studentId  String   @map("student_id")
+  courseId   String   @map("course_id")
+  enrolledAt DateTime @default(now()) @map("enrolled_at")
+
+  // Relations
+  student User   @relation("UserEnrollments", fields: [studentId], references: [id], onDelete: Cascade)
+  course  Course @relation("CourseEnrollments", fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, courseId])
+  @@index([studentId])
+  @@index([courseId])
+  @@map("enrollments")
+}
+
+enum ReportStatus {
+  PENDING
+  RESOLVED
+}
+
+model Forum {
+  id          String   @id @default(uuid())
+  courseId    String   @map("course_id")
+  moduleId    String?  @map("module_id")
+  name        String
+  description String?
+  createdBy   String   @map("created_by")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  course  Course         @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  module  CourseSection? @relation(fields: [moduleId], references: [id], onDelete: SetNull)
+  creator User           @relation(fields: [createdBy], references: [id], onDelete: Restrict)
+  threads ForumThread[]
+
+  @@index([courseId])
+  @@index([moduleId])
+  @@index([createdBy])
+  @@map("forums")
+}
+
+model ForumThread {
+  id        String   @id @default(uuid())
+  forumId   String   @map("forum_id")
+  title     String
+  createdBy String   @map("created_by")
+  isPinned  Boolean  @default(false) @map("is_pinned")
+  isLocked  Boolean  @default(false) @map("is_locked")
+  views     Int      @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  forum       Forum        @relation(fields: [forumId], references: [id], onDelete: Cascade)
+  creator     User         @relation(fields: [createdBy], references: [id], onDelete: SetNull)
+  posts       ForumPost[]
+  threadLikes ThreadLike[]
+  reports     Report[]
+
+  @@index([forumId])
+  @@index([createdBy])
+  @@map("forum_threads")
+}
+
+model ForumPost {
+  id           String   @id @default(uuid())
+  threadId     String   @map("thread_id")
+  parentPostId String?  @map("parent_post_id")
+  content      String   @db.Text
+  createdBy    String   @map("created_by")
+  isEdited     Boolean  @default(false) @map("is_edited")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  thread          ForumThread      @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  parentPost      ForumPost?       @relation("PostReplies", fields: [parentPostId], references: [id], onDelete: Cascade)
+  replies         ForumPost[]      @relation("PostReplies")
+  creator         User             @relation(fields: [createdBy], references: [id], onDelete: SetNull)
+  postLikes       PostLike[]
+  postAttachments PostAttachment[]
+  reports         Report[]
+
+  @@index([threadId])
+  @@index([parentPostId])
+  @@index([createdBy])
+  @@map("forum_posts")
+}
+
+model PostLike {
+  id        String   @id @default(uuid())
+  postId    String   @map("post_id")
+  userId    String   @map("user_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  post ForumPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId])
+  @@index([postId])
+  @@index([userId])
+  @@map("post_likes")
+}
+
+model ThreadLike {
+  id        String   @id @default(uuid())
+  threadId  String   @map("thread_id")
+  userId    String   @map("user_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  thread ForumThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  user   User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([threadId, userId])
+  @@index([threadId])
+  @@index([userId])
+  @@map("thread_likes")
+}
+
+model PostAttachment {
+  id         String   @id @default(uuid())
+  postId     String   @map("post_id")
+  fileName   String   @map("file_name")
+  fileUrl    String   @map("file_url")
+  uploadedAt DateTime @default(now()) @map("uploaded_at")
+
+  // Relations
+  post ForumPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([postId])
+  @@map("post_attachments")
+}
+
+model Report {
+  id        String       @id @default(uuid())
+  postId    String?      @map("post_id")
+  threadId  String?      @map("thread_id")
+  userId    String       @map("user_id")
+  reason    String       @db.Text
+  status    ReportStatus @default(PENDING)
+  createdAt DateTime     @default(now()) @map("created_at")
+
+  // Relations
+  post   ForumPost?   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  thread ForumThread? @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  user   User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([postId])
+  @@index([threadId])
+  @@index([userId])
+  @@map("reports")
+}
+
