@@ -34,6 +34,12 @@ model User {
   completions  MaterialCompletion[] @relation("UserCompletions")
   quizAttempts QuizAttempt[]        @relation("UserQuizAttempts")
   enrollments  Enrollment[]         @relation("UserEnrollments")
+  forums       Forum[]
+  threads      ForumThread[]
+  posts        ForumPost[]
+  postLikes    PostLike[]
+  threadLikes  ThreadLike[]
+  reports      Report[]
 
   @@map("users")
 }
@@ -51,6 +57,7 @@ model Course {
   sections    CourseSection[] @relation("CourseSections")
   quizzes     Quiz[]          @relation("CourseQuizzes")
   enrollments Enrollment[]    @relation("CourseEnrollments")
+  forums      Forum[]
 
   @@index([teacherId])
   @@map("courses")
@@ -67,6 +74,7 @@ model CourseSection {
   // Relations
   course    Course     @relation("CourseSections", fields: [courseId], references: [id], onDelete: Cascade)
   materials Material[] @relation("SectionMaterials")
+  forums    Forum[]
 
   @@index([courseId, sortOrder])
   @@map("course_sections")
