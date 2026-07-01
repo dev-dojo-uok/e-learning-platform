@@ -15,7 +15,7 @@ import forumRoutes from './modules/forums/forums.routes.js';
 import threadRoutes from './modules/forums/routes/thread.routes.js';
 import postRoutes from './modules/forums/routes/post.routes.js';
 import completionRoutes from './modules/completion/completion.routes.js';
-import assignmentRoutes from './modules/assignments/assignments.routes.js';
+import assignmentRoutes from './modules/assignments/index.js';
 import { enrollmentRoutes, studentEnrollmentRoutes, courseEnrollmentRoutes } from './modules/enrollments/index.js';
 
 dotenv.config();

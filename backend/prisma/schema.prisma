@@ -167,6 +167,8 @@ model Submission {
   @@index([assignmentId])
   @@index([studentId])
   @@map("submissions")
+}
+
 model Quiz {
   id               String        @id @default(uuid())
   courseId         String        @map("course_id")
