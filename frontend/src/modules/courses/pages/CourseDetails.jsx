@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 
 import useCourses from '../hooks/useCourses';
-import { ModuleList, ModuleForm, useModules } from '../../modules';
+import { ModuleList, ModuleForm, useModules } from '../../courseModule';
 import useAuthStore from '../../../store/useAuthStore';
 import { Button } from '@/components/ui/button';
 import { getForumsByCourse } from '../../forums/services/forumService';
