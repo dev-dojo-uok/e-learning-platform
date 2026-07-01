@@ -38,8 +38,8 @@ export default function ThreadList({ threads = [], loading, error }) {
   if (!threads.length) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center">
-        <div className="w-16 h-16 bg-indigo-50 rounded-2xl flex items-center justify-center mb-4">
-          <MessageSquare className="w-8 h-8 text-indigo-300" />
+        <div className="w-16 h-16 bg-muted rounded-2xl flex items-center justify-center mb-4">
+          <MessageSquare className="w-8 h-8 text-muted-foreground/60" />
         </div>
         <h3 className="text-sm font-semibold text-slate-600 mb-1">No threads yet</h3>
         <p className="text-xs text-slate-400 max-w-xs">

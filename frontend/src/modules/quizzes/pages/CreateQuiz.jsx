@@ -3,9 +3,12 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { 
   ArrowLeft, Save, Plus, Trash2, HelpCircle, 
-  Clock, Award, Settings, Check, ChevronDown, RefreshCw
+  Clock, Award, Settings, RefreshCw
 } from 'lucide-react';
 import useAuthStore from '../../../store/useAuthStore';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 export default function CreateQuiz() {
   const navigate = useNavigate();
@@ -34,147 +37,165 @@ export default function CreateQuiz() {
   const [openTime, setOpenTime] = useState('');
   const [closeTime, setCloseTime] = useState('');
 
+  const paramCloseTime = searchParams.get('closeTime');
+  useEffect(() => {
+    if (paramCloseTime) {
+      const dateObj = new Date(paramCloseTime);
+      const tzoffset = dateObj.getTimezoneOffset() * 60000;
+      const localISOTime = (new Date(dateObj.getTime() - tzoffset)).toISOString().slice(0, 16);
+      setCloseTime(localISOTime);
+    }
+  }, [paramCloseTime]);
+
   // Questions state
   const [questions, setQuestions] = useState([
     {
       id: 'q_' + Math.random().toString(36).substring(2, 9),
       type: 'multiple_choice',
       questionText: '',
+      points: 1,
       options: ['', '', '', ''],
-      correctAnswer: '',
-      points: 5
+      correctAnswer: ''
     }
   ]);
 
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(null);
 
-  // Add a new question template
-  const addQuestion = (type = 'multiple_choice') => {
+  // Handlers
+  const addQuestion = (type) => {
     setQuestions([
       ...questions,
       {
         id: 'q_' + Math.random().toString(36).substring(2, 9),
         type,
         questionText: '',
+        points: 1,
         options: type === 'multiple_choice' ? ['', '', '', ''] : ['True', 'False'],
-        correctAnswer: type === 'multiple_choice' ? '' : 'True',
-        points: 5
+        correctAnswer: ''
       }
     ]);
   };
 
-  // Remove a question
-  const removeQuestion = (index) => {
+  const removeQuestion = (idx) => {
     if (questions.length <= 1) return;
-    setQuestions(questions.filter((_, idx) => idx !== index));
+    setQuestions(questions.filter((_, i) => i !== idx));
   };
 
-  // Update question title or points
-  const updateQuestionField = (index, field, value) => {
-    const updated = [...questions];
-    updated[index][field] = value;
-    setQuestions(updated);
+  const updateQuestionField = (qIdx, field, value) => {
+    setQuestions(
+      questions.map((q, idx) => (idx === qIdx ? { ...q, [field]: value } : q))
+    );
   };
 
-  // Update question option
   const updateQuestionOption = (qIdx, optIdx, value) => {
-    const updated = [...questions];
-    updated[qIdx].options[optIdx] = value;
-    setQuestions(updated);
+    setQuestions(
+      questions.map((q, idx) => {
+        if (idx !== qIdx) return q;
+        const newOptions = [...q.options];
+        newOptions[optIdx] = value;
+        return { ...q, options: newOptions };
+      })
+    );
   };
 
-  // Submit Form
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
+    setError(null);
 
-    // Validations
+    // Basic Validations
     if (!title.trim()) {
       setError('Quiz Title is required.');
       return;
     }
-    if (!moduleId || !courseId) {
-      setError('Missing course context. Please return to Course Details and launch again.');
-      return;
-    }
 
-    // Questions validations
     for (let i = 0; i < questions.length; i++) {
       const q = questions[i];
       if (!q.questionText.trim()) {
-        setError(`Question ${i + 1} text is empty.`);
+        setError(`Question ${i + 1} statement cannot be empty.`);
+        return;
+      }
+      if (!q.correctAnswer) {
+        setError(`Question ${i + 1} must have a marked correct answer.`);
         return;
       }
       if (q.type === 'multiple_choice') {
-        if (q.options.some(opt => !opt.trim())) {
-          setError(`Question ${i + 1} has empty options.`);
-          return;
-        }
-        if (!q.correctAnswer.trim()) {
-          setError(`Please select the correct answer for Question ${i + 1}.`);
-          return;
+        for (let j = 0; j < q.options.length; j++) {
+          if (!q.options[j].trim()) {
+            setError(`Question ${i + 1} option ${String.fromCharCode(65 + j)} cannot be empty.`);
+            return;
+          }
         }
       }
     }
 
     setSaving(true);
     try {
-      const payload = {
-        sectionId: moduleId,
-        courseId,
-        title: title.trim(),
-        hasTimeLimit,
-        timeLimitMinutes: hasTimeLimit ? Number(timeLimitMinutes) : 0,
-        minPassMark: Number(minPassMark),
-        reviewPolicy,
-        reviewPublishTime: reviewPolicy === 'LATER' && reviewPublishTime ? new Date(reviewPublishTime).toISOString() : null,
-        attemptLimit: Number(attemptLimit),
-        openTime: openTime ? new Date(openTime).toISOString() : null,
-        closeTime: closeTime ? new Date(closeTime).toISOString() : null,
-        questionsJson: questions
-      };
+      const token = localStorage.getItem('token');
+      const backendUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
-      await axios.post('/quizzes', payload);
+      await axios.post(
+        `${backendUrl}/quizzes`,
+        {
+          moduleId,
+          courseId,
+          title: title.trim(),
+          timeLimit: hasTimeLimit ? Number(timeLimitMinutes) : null,
+          minPassMark: Number(minPassMark),
+          reviewPolicy,
+          reviewPublishTime: reviewPolicy === 'LATER' && reviewPublishTime ? new Date(reviewPublishTime).toISOString() : null,
+          attemptLimit: attemptLimit ? Number(attemptLimit) : null,
+          openTime: openTime ? new Date(openTime).toISOString() : null,
+          closeTime: closeTime ? new Date(closeTime).toISOString() : null,
+          questions: questions.map((q) => ({
+            type: q.type,
+            questionText: q.questionText.trim(),
+            points: Number(q.points),
+            options: q.options.map((o) => o.trim()),
+            correctAnswer: q.correctAnswer.trim()
+          }))
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      );
+
       navigate(`/courses/${courseId}`);
     } catch (err) {
-      console.error(err);
-      setError(err.response?.data?.error || 'Failed to create quiz.');
+      setError(err.response?.data?.error || err.message || 'Failed to create quiz.');
     } finally {
       setSaving(false);
     }
   };
 
-  if (!isTeacherOrAdmin) return null;
-
   return (
-    <div className="flex flex-col gap-6 max-w-4xl mx-auto pb-12 font-sans text-black animate-in fade-in duration-200">
+    <div className="flex flex-col gap-6 max-w-4xl mx-auto pb-12 font-sans text-foreground animate-in fade-in duration-200">
       
       {/* Back button & Title */}
       <div className="flex flex-col gap-3">
         <button
           type="button"
           onClick={() => navigate(`/courses/${courseId}`)}
-          className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-indigo-600 transition-colors self-start group"
+          className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-primary transition-colors self-start group"
         >
           <ArrowLeft className="h-4 w-4 group-hover:-translate-x-0.5 transition-transform" />
           Back to Course Details
         </button>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center">
+            <div className="w-12 h-12 rounded-xl bg-muted text-primary flex items-center justify-center">
               <HelpCircle className="h-6 w-6" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-slate-900 leading-tight">Create Interactive Quiz</h1>
-              <p className="text-xs text-slate-500 mt-0.5">Author a new quiz activity for your module</p>
+              <h1 className="text-2xl font-bold text-foreground leading-tight">Create Interactive Quiz</h1>
+              <p className="text-xs text-muted-foreground mt-0.5">Author a new quiz activity for your module</p>
             </div>
           </div>
         </div>
       </div>
 
       {error && (
-        <div className="p-4 bg-red-50 border border-red-200 text-red-700 text-sm font-semibold rounded-xl flex items-start gap-2">
+        <div className="p-4 bg-destructive/10 border border-destructive/20 text-destructive text-sm font-semibold rounded-xl flex items-start gap-2">
           <span className="flex-1">{error}</span>
         </div>
       )}
@@ -182,126 +203,126 @@ export default function CreateQuiz() {
       <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-8">
         
         {/* SECTION 1: QUIZ SETTINGS CARD */}
-        <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm flex flex-col gap-6">
-          <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
-            <Settings className="h-5 w-5 text-indigo-500" />
-            <h2 className="text-base font-bold text-slate-800">Quiz Settings</h2>
+        <div className="bg-card rounded-xl border border-border p-6 shadow-sm flex flex-col gap-6">
+          <div className="flex items-center gap-2 pb-3 border-b border-border">
+            <Settings className="h-5 w-5 text-primary" />
+            <h2 className="text-base font-bold text-foreground">Quiz Settings</h2>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Title */}
             <div className="flex flex-col gap-1.5 md:col-span-2">
-              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Quiz Title</label>
-              <input
+              <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Quiz Title</Label>
+              <Input
                 type="text"
                 required
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="e.g., Midterm Assessment on Software Architecture"
-                className="w-full px-4 py-2.5 rounded-xl border border-slate-300 bg-white text-sm text-slate-800 focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 outline-none transition-colors"
+                className="w-full"
               />
             </div>
 
             {/* Time Limit toggle */}
-            <div className="flex flex-col gap-3 p-4 bg-slate-50/70 rounded-2xl border border-slate-200">
+            <div className="flex flex-col gap-3 p-4 bg-muted/30 rounded-xl border border-border">
               <div className="flex items-center justify-between">
                 <div className="flex flex-col">
-                  <span className="text-sm font-bold text-slate-700">Enforce Time Limit</span>
-                  <span className="text-[10px] text-slate-400 mt-0.5">Auto-submits when time expires</span>
+                  <span className="text-sm font-bold text-foreground">Enforce Time Limit</span>
+                  <span className="text-[10px] text-muted-foreground mt-0.5">Auto-submits when time expires</span>
                 </div>
                 <input
                   type="checkbox"
                   checked={hasTimeLimit}
                   onChange={(e) => setHasTimeLimit(e.target.checked)}
-                  className="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500 border-slate-300"
+                  className="w-4 h-4 text-primary rounded focus:ring-ring border-border"
                 />
               </div>
               {hasTimeLimit && (
                 <div className="flex items-center gap-2 mt-1 animate-in slide-in-from-top-2 duration-150">
-                  <Clock className="h-4 w-4 text-slate-400" />
-                  <input
+                  <Clock className="h-4 w-4 text-muted-foreground" />
+                  <Input
                     type="number"
                     min="1"
                     value={timeLimitMinutes}
                     onChange={(e) => setTimeLimitMinutes(e.target.value)}
-                    className="w-20 px-2 py-1 rounded-lg border border-slate-300 text-sm text-center focus:ring-2 focus:ring-indigo-300"
+                    className="w-20 text-center"
                   />
-                  <span className="text-xs font-semibold text-slate-600">Minutes</span>
+                  <span className="text-xs font-semibold text-muted-foreground">Minutes</span>
                 </div>
               )}
             </div>
 
             {/* Passing mark */}
-            <div className="flex flex-col gap-2 p-4 bg-slate-50/70 rounded-2xl border border-slate-200">
+            <div className="flex flex-col gap-2 p-4 bg-muted/30 rounded-xl border border-border">
               <div className="flex flex-col">
-                <span className="text-sm font-bold text-slate-700">Minimum Passing Score</span>
-                <span className="text-[10px] text-slate-400 mt-0.5">Passing threshold in percentage</span>
+                <span className="text-sm font-bold text-foreground">Minimum Passing Score</span>
+                <span className="text-[10px] text-muted-foreground mt-0.5">Passing threshold in percentage</span>
               </div>
               <div className="flex items-center gap-2 mt-2">
-                <Award className="h-4 w-4 text-slate-400" />
-                <input
+                <Award className="h-4 w-4 text-muted-foreground" />
+                <Input
                   type="number"
                   min="0"
                   max="100"
                   value={minPassMark}
                   onChange={(e) => setMinPassMark(e.target.value)}
-                  className="w-20 px-2 py-1 rounded-lg border border-slate-300 text-sm text-center focus:ring-2 focus:ring-indigo-300"
+                  className="w-20 text-center"
                 />
-                <span className="text-xs font-semibold text-slate-600">%</span>
+                <span className="text-xs font-semibold text-muted-foreground">%</span>
               </div>
             </div>
 
             {/* Allowed Attempts Limit */}
-            <div className="flex flex-col gap-2 p-4 bg-slate-50/70 rounded-2xl border border-slate-200">
+            <div className="flex flex-col gap-2 p-4 bg-muted/30 rounded-xl border border-border">
               <div className="flex flex-col">
-                <span className="text-sm font-bold text-slate-700">Allowed Attempts Limit</span>
-                <span className="text-[10px] text-slate-400 mt-0.5">Maximum times a student can take this quiz</span>
+                <span className="text-sm font-bold text-foreground">Allowed Attempts Limit</span>
+                <span className="text-[10px] text-muted-foreground mt-0.5">Maximum times a student can take this quiz</span>
               </div>
-              <input
+              <Input
                 type="number"
                 min="1"
                 required
                 value={attemptLimit}
                 onChange={(e) => setAttemptLimit(e.target.value)}
-                className="w-full mt-2 px-3 py-2 rounded-xl border border-slate-300 bg-white text-sm text-slate-800 focus:ring-2 focus:ring-indigo-300"
+                className="w-full mt-2"
               />
             </div>
 
             {/* Open Date & Time */}
-            <div className="flex flex-col gap-1.5 p-4 bg-slate-50/70 rounded-2xl border border-slate-200">
+            <div className="flex flex-col gap-1.5 p-4 bg-muted/30 rounded-xl border border-border">
               <div className="flex flex-col mb-1">
-                <span className="text-sm font-bold text-slate-700">Scheduled Open Date & Time</span>
-                <span className="text-[10px] text-slate-400 mt-0.5">Optional. Students can start the quiz only after this time</span>
+                <span className="text-sm font-bold text-foreground">Scheduled Open Date & Time</span>
+                <span className="text-[10px] text-muted-foreground mt-0.5">Optional. Students can start the quiz only after this time</span>
               </div>
-              <input
+              <Input
                 type="datetime-local"
                 value={openTime}
                 onChange={(e) => setOpenTime(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white text-sm text-slate-800 focus:ring-2 focus:ring-indigo-300"
+                className="w-full"
               />
             </div>
 
             {/* Close Date & Time */}
-            <div className="flex flex-col gap-1.5 p-4 bg-slate-50/70 rounded-2xl border border-slate-200">
+            <div className="flex flex-col gap-1.5 p-4 bg-muted/30 rounded-xl border border-border">
               <div className="flex flex-col mb-1">
-                <span className="text-sm font-bold text-slate-700">Scheduled Closing Date & Time</span>
-                <span className="text-[10px] text-slate-400 mt-0.5">Optional. Students can start the quiz only before this time</span>
+                <span className="text-sm font-bold text-foreground">Scheduled Closing Date & Time</span>
+                <span className="text-[10px] text-muted-foreground mt-0.5">Optional. Students can start the quiz only before this time</span>
               </div>
-              <input
+              <Input
                 type="datetime-local"
                 value={closeTime}
                 onChange={(e) => setCloseTime(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white text-sm text-slate-800 focus:ring-2 focus:ring-indigo-300"
+                className="w-full"
               />
             </div>
 
             {/* Review Policy */}
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Student Review Policy</label>
+              <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Student Review Policy</Label>
               <select
                 value={reviewPolicy}
                 onChange={(e) => setReviewPolicy(e.target.value)}
-                className="w-full px-3 py-2.5 rounded-xl border border-slate-300 bg-white text-sm text-slate-800 focus:ring-2 focus:ring-indigo-300"
+                className="w-full px-3 py-2 border border-input bg-background rounded-md text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
               >
                 <option value="IMMEDIATE">Immediately after submission</option>
                 <option value="LATER">After a specific date & time</option>
@@ -312,13 +333,13 @@ export default function CreateQuiz() {
             {/* Review Publish Date */}
             {reviewPolicy === 'LATER' && (
               <div className="flex flex-col gap-1.5 animate-in slide-in-from-top-2 duration-150">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Publish Review Answers At</label>
-                <input
+                <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Publish Review Answers At</Label>
+                <Input
                   type="datetime-local"
                   required
                   value={reviewPublishTime}
                   onChange={(e) => setReviewPublishTime(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white text-sm text-slate-800 focus:ring-2 focus:ring-indigo-300"
+                  className="w-full"
                 />
               </div>
             )}
@@ -328,25 +349,29 @@ export default function CreateQuiz() {
         {/* SECTION 2: QUESTIONS CARD */}
         <div className="flex flex-col gap-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-bold text-slate-900">Quiz Questions ({questions.length})</h2>
+            <h2 className="text-lg font-bold text-foreground">Quiz Questions ({questions.length})</h2>
             
             <div className="flex items-center gap-2">
-              <button
+              <Button
                 type="button"
+                variant="outline"
+                size="sm"
                 onClick={() => addQuestion('multiple_choice')}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-indigo-600 bg-indigo-50 border border-indigo-200 hover:bg-indigo-100 transition-colors"
+                className="gap-1.5"
               >
                 <Plus className="h-3.5 w-3.5" />
                 Add Multiple Choice
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
+                variant="outline"
+                size="sm"
                 onClick={() => addQuestion('true_false')}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-amber-600 bg-amber-50 border border-amber-200 hover:bg-amber-100 transition-colors"
+                className="gap-1.5 text-amber-600 hover:text-amber-700"
               >
                 <Plus className="h-3.5 w-3.5" />
                 Add True/False
-              </button>
+              </Button>
             </div>
           </div>
 
@@ -354,45 +379,47 @@ export default function CreateQuiz() {
             {questions.map((q, qIdx) => (
               <div 
                 key={q.id}
-                className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm flex flex-col gap-4 relative animate-in fade-in"
+                className="bg-card rounded-xl border border-border p-6 shadow-sm flex flex-col gap-4 relative animate-in fade-in"
               >
                 {/* Question Header */}
-                <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                  <span className="text-sm font-bold text-slate-700">Question {qIdx + 1}</span>
+                <div className="flex items-center justify-between pb-3 border-b border-border">
+                  <span className="text-sm font-bold text-foreground">Question {qIdx + 1}</span>
                   <div className="flex items-center gap-3">
                     {/* Points */}
                     <div className="flex items-center gap-1">
-                      <span className="text-xs text-slate-400 font-semibold uppercase">Points</span>
-                      <input
+                      <span className="text-xs text-muted-foreground font-semibold uppercase">Points</span>
+                      <Input
                         type="number"
                         min="1"
                         value={q.points}
                         onChange={(e) => updateQuestionField(qIdx, 'points', Number(e.target.value))}
-                        className="w-12 px-1 py-0.5 rounded border border-slate-300 text-xs text-center font-bold"
+                        className="w-16 h-8 text-center font-bold"
                       />
                     </div>
                     {/* Delete Question Button */}
-                    <button
+                    <Button
                       type="button"
+                      variant="ghost"
+                      size="icon-sm"
                       onClick={() => removeQuestion(qIdx)}
                       disabled={questions.length <= 1}
-                      className="p-1 rounded text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors disabled:opacity-40"
+                      className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                     >
                       <Trash2 className="h-4 w-4" />
-                    </button>
+                    </Button>
                   </div>
                 </div>
 
                 {/* Question text */}
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Question Statement</label>
-                  <input
+                  <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Question Statement</Label>
+                  <Input
                     type="text"
                     required
                     value={q.questionText}
                     onChange={(e) => updateQuestionField(qIdx, 'questionText', e.target.value)}
                     placeholder="e.g., Which protocol runs on top of TCP?"
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm text-slate-800 focus:ring-2 focus:ring-indigo-300"
+                    className="w-full"
                   />
                 </div>
 
@@ -400,7 +427,7 @@ export default function CreateQuiz() {
                 {q.type === 'multiple_choice' ? (
                   /* MULTIPLE CHOICE BUILDER */
                   <div className="flex flex-col gap-3 mt-2">
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Options & Correct Answer</label>
+                    <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Options & Correct Answer</Label>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {q.options.map((opt, optIdx) => (
                         <div key={optIdx} className="flex items-center gap-2">
@@ -411,10 +438,10 @@ export default function CreateQuiz() {
                             checked={q.correctAnswer === opt && opt.trim() !== ''}
                             onChange={() => updateQuestionField(qIdx, 'correctAnswer', opt)}
                             disabled={!opt.trim()}
-                            className="w-4 h-4 text-indigo-600 border-slate-300 focus:ring-indigo-500 cursor-pointer"
+                            className="w-4 h-4 text-primary border-border focus:ring-ring cursor-pointer"
                             title="Set as correct answer"
                           />
-                          <input
+                          <Input
                             type="text"
                             required
                             value={opt}
@@ -427,28 +454,28 @@ export default function CreateQuiz() {
                               }
                             }}
                             placeholder={`Option ${String.fromCharCode(65 + optIdx)}`}
-                            className="flex-1 px-3 py-2 rounded-xl border border-slate-300 text-xs text-slate-800 focus:ring-2 focus:ring-indigo-300"
+                            className="flex-1"
                           />
                         </div>
                       ))}
                     </div>
-                    <span className="text-[10px] text-slate-400 mt-1">
+                    <span className="text-[10px] text-muted-foreground mt-1">
                       * Mark the radio button next to the option that represents the correct answer.
                     </span>
                   </div>
                 ) : (
                   /* TRUE/FALSE BUILDER */
                   <div className="flex flex-col gap-3 mt-2">
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Correct Option</label>
+                    <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Correct Option</Label>
                     <div className="flex items-center gap-4">
                       {['True', 'False'].map((val) => (
-                        <label key={val} className="flex items-center gap-2 text-xs font-semibold text-slate-700 cursor-pointer">
+                        <label key={val} className="flex items-center gap-2 text-xs font-semibold text-foreground cursor-pointer">
                           <input
                             type="radio"
                             name={`correct_${q.id}`}
                             checked={q.correctAnswer === val}
                             onChange={() => updateQuestionField(qIdx, 'correctAnswer', val)}
-                            className="w-4 h-4 text-indigo-600 focus:ring-indigo-500"
+                            className="w-4 h-4 text-primary focus:ring-ring"
                           />
                           {val}
                         </label>
@@ -462,18 +489,19 @@ export default function CreateQuiz() {
         </div>
 
         {/* SUBMIT BUTTONS */}
-        <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-200">
-          <button
+        <div className="flex items-center justify-end gap-3 pt-4 border-t border-border">
+          <Button
             type="button"
+            variant="secondary"
             onClick={() => navigate(`/courses/${courseId}`)}
-            className="px-6 py-2.5 rounded-xl text-sm font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors"
+            className="px-6 py-2.5"
           >
             Cancel
-          </button>
-          <button
+          </Button>
+          <Button
             type="submit"
             disabled={saving}
-            className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 disabled:opacity-60 transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+            className="inline-flex items-center gap-2 px-6 py-2.5 text-white"
           >
             {saving ? (
               <>
@@ -486,7 +514,7 @@ export default function CreateQuiz() {
                 Save Quiz
               </>
             )}
-          </button>
+          </Button>
         </div>
       </form>
     </div>

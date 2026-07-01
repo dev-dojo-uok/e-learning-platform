@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Loader2, AlertCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 /**
  * ModuleForm – Reusable form for creating and editing a course module.
@@ -179,20 +180,19 @@ const ModuleForm = ({
       {/* ── Actions ── */}
       <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
         {onCancel && (
-          <button
+          <Button
             type="button"
+            variant="secondary"
             onClick={onCancel}
             disabled={loading}
-            className="px-4 py-2 rounded-xl text-sm font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 disabled:opacity-60 transition-colors duration-150"
           >
             Cancel
-          </button>
+          </Button>
         )}
-        <button
+        <Button
           id="module-form-submit"
           type="submit"
           disabled={loading}
-          className="inline-flex items-center justify-center gap-2 px-5 py-2 rounded-xl text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 disabled:opacity-60 disabled:cursor-not-allowed transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
         >
           {loading ? (
             <>
@@ -204,7 +204,7 @@ const ModuleForm = ({
           ) : (
             'Create Module'
           )}
-        </button>
+        </Button>
       </div>
     </form>
   );

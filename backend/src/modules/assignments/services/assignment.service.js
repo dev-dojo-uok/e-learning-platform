@@ -5,7 +5,7 @@ export class AssignmentService {
   /**
    * Creates a new assignment for a course.
    */
-  static async createAssignment({ courseId, teacherId, title, description, dueDate, totalMarks }) {
+  static async createAssignment({ courseId, teacherId, title, description, dueDate, totalMarks, sectionId }) {
     const course = await prisma.course.findUnique({ where: { id: courseId } });
     if (!course) {
       const error = new Error('Course not found.');
@@ -13,7 +13,21 @@ export class AssignmentService {
       throw error;
     }
 
-    return await prisma.assignment.create({
+    if (sectionId) {
+      const section = await prisma.courseSection.findUnique({ where: { id: sectionId } });
+      if (!section) {
+        const error = new Error('Course section not found.');
+        error.statusCode = 404;
+        throw error;
+      }
+      if (section.courseId !== courseId) {
+        const error = new Error('Course section does not belong to the specified course.');
+        error.statusCode = 400;
+        throw error;
+      }
+    }
+
+    const assignment = await prisma.assignment.create({
       data: {
         courseId,
         teacherId,
@@ -27,6 +41,21 @@ export class AssignmentService {
         teacher: { select: { id: true, name: true, email: true } }
       }
     });
+
+    if (sectionId) {
+      await prisma.material.create({
+        data: {
+          sectionId,
+          title,
+          type: 'ASSIGNMENT',
+          itemId: assignment.id,
+          isGraded: true,
+          gradingWeight: 0.0
+        }
+      });
+    }
+
+    return assignment;
   }
 
   /**
@@ -95,7 +124,7 @@ export class AssignmentService {
       throw error;
     }
 
-    return await prisma.assignment.update({
+    const updatedAssignment = await prisma.assignment.update({
       where: { id },
       data: updateData,
       include: {
@@ -103,6 +132,15 @@ export class AssignmentService {
         teacher: { select: { id: true, name: true } }
       }
     });
+
+    if (title !== undefined) {
+      await prisma.material.updateMany({
+        where: { itemId: id, type: 'ASSIGNMENT' },
+        data: { title }
+      });
+    }
+
+    return updatedAssignment;
   }
 
   /**
@@ -116,7 +154,13 @@ export class AssignmentService {
       throw error;
     }
 
-    return await prisma.assignment.delete({ where: { id } });
+    await prisma.assignment.delete({ where: { id } });
+
+    await prisma.material.deleteMany({
+      where: { itemId: id, type: 'ASSIGNMENT' }
+    });
+
+    return assignment;
   }
 
   // ─── SUBMISSION SERVICES ────────────────────────────────────────────────────
