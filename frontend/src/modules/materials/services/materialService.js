@@ -25,7 +25,7 @@ export async function uploadMaterial(formData, onUploadProgress) {
   try {
     const response = await api.post('/materials', formData, {
       headers: {
-        'Content-Type': 'multipart/form-data',
+        'Content-Type': undefined,
       },
       onUploadProgress,
     });

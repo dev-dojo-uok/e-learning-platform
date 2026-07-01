@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Loader2, Upload, Link as LinkIcon, AlertCircle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Loader2, Upload, Link as LinkIcon, AlertCircle, HelpCircle } from 'lucide-react';
 import useMaterials from '../hooks/useMaterials';
 
 const MAX_FILE_SIZE_MB = 20;
@@ -21,10 +22,11 @@ const ALLOWED_MIME_MAP = {
   ZIP: ['application/zip', 'application/x-zip-compressed']
 };
 
-const MaterialUpload = ({ moduleId, onSuccess }) => {
+const MaterialUpload = ({ moduleId, courseId, onSuccess }) => {
   const { uploadMaterial, uploading, uploadProgress, error: storeError, clearError } = useMaterials();
+  const navigate = useNavigate();
 
-  // Tabs: 'file' | 'link'
+  // Tabs: 'file' | 'link' | 'quiz'
   const [activeTab, setActiveTab] = useState('file');
 
   const [title, setTitle] = useState('');
@@ -44,7 +46,7 @@ const MaterialUpload = ({ moduleId, onSuccess }) => {
       setType('PDF');
       setContentUrl('');
       setEmbedCode('');
-    } else {
+    } else if (activeTab === 'link') {
       setType('VIDEO');
       setFile(null);
     }
@@ -133,7 +135,7 @@ const MaterialUpload = ({ moduleId, onSuccess }) => {
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col flex-shrink-0">
       <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/70">
         <h3 className="text-base font-bold text-slate-800">Add Learning Material</h3>
       </div>
@@ -165,9 +167,46 @@ const MaterialUpload = ({ moduleId, onSuccess }) => {
             <LinkIcon className="h-3.5 w-3.5" />
             Link URL / Embed
           </button>
+          <button
+            type="button"
+            id="quiz-tab-toggle"
+            onClick={() => setActiveTab('quiz')}
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 ${
+              activeTab === 'quiz'
+                ? 'bg-white text-slate-800 shadow-sm'
+                : 'text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            <HelpCircle className="h-3.5 w-3.5 text-amber-500 animate-pulse" />
+            Quiz
+          </button>
         </div>
 
-        <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
+        {activeTab === 'quiz' ? (
+          <div className="flex flex-col gap-4 border border-slate-200 p-6 rounded-2xl bg-slate-50/50 animate-in fade-in duration-200">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center flex-shrink-0">
+                <HelpCircle className="h-5 w-5" />
+              </div>
+              <div className="flex-1">
+                <h4 className="font-bold text-slate-800 text-sm">Interactive Quiz Builder</h4>
+                <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                  Design multiple-choice and true-false quizzes with time limits, passing marks, and customizable student review policies.
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              id="launch-quiz-builder"
+              onClick={() => navigate(`/quizzes/create?moduleId=${moduleId}&courseId=${courseId}`)}
+              className="w-full inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+            >
+              <HelpCircle className="h-4 w-4" />
+              Launch Quiz Builder
+            </button>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
           
           {/* Validation/API error display */}
           {(validationError || storeError) && (
@@ -340,6 +379,7 @@ const MaterialUpload = ({ moduleId, onSuccess }) => {
             )}
           </button>
         </form>
+        )}
       </div>
     </div>
   );

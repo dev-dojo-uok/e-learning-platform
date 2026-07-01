@@ -64,6 +64,27 @@ export class CourseService {
   }
 
   /**
+   * Retrieves all courses belonging to a specific teacher.
+   */
+  static async getCoursesByTeacher(teacherId) {
+    return await prisma.course.findMany({
+      where: { teacherId },
+      include: {
+        teacher: {
+          select: {
+            id: true,
+            name: true,
+            role: true
+          }
+        }
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
+  }
+
+  /**
    * Retrieves a course by ID. Throws 404 if course is not found.
    */
   static async getCourseById(id) {

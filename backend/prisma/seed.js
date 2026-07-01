@@ -157,6 +157,30 @@ async function main() {
   }
   }
 
+  // 4. Create Enrollments
+  const students = await prisma.user.findMany({
+    where: { role: 'STUDENT' }
+  });
+  const allCourses = await prisma.course.findMany({});
+
+  if (students.length > 0 && allCourses.length > 0) {
+    const enrollmentData = [];
+    for (const s of students) {
+      for (const c of allCourses) {
+        enrollmentData.push({
+          studentId: s.id,
+          courseId: c.id,
+        });
+      }
+    }
+
+    const createdEnrollments = await prisma.enrollment.createMany({
+      data: enrollmentData,
+      skipDuplicates: true,
+    });
+    console.log(`Created ${createdEnrollments.count} enrollment records.`);
+  }
+
   console.log('Seeding finished successfully.');
 }
 
