@@ -12,12 +12,16 @@ import {
   CheckCircle2,
   XCircle,
   MessageSquare,
+  Lock,
 } from 'lucide-react';
 
 import useCourses from '../hooks/useCourses';
 import { ModuleList, ModuleForm, useModules } from '../../modules';
-import { MaterialUpload, MaterialList } from '../../materials';
 import useAuthStore from '../../../store/useAuthStore';
+import { Button } from '@/components/ui/button';
+import { getForumsByCourse } from '../../forums/services/forumService';
+import Modal from '@/components/Modal';
+import api from '../../../lib/axios';
 import {
   AlertDialog,
   AlertDialogContent,
@@ -33,7 +37,7 @@ import {
 const DetailRow = ({ icon: Icon, label, value }) => (
   <div className="flex items-start gap-3 py-3 border-b border-slate-100 last:border-0">
     <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-slate-50 flex-shrink-0 mt-0.5">
-      <Icon className="h-4 w-4 text-indigo-500" />
+      <Icon className="h-4 w-4 text-primary" />
     </div>
     <div className="flex flex-col gap-0.5 min-w-0">
       <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
@@ -78,13 +82,64 @@ export default function CourseDetails() {
   const [toast, setToast] = useState(null); // { message, type }
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentModule, setCurrentModule] = useState(null); // Null for create, object for edit
-  const [selectedModule, setSelectedModule] = useState(null); // Selected module for viewing materials
   const [moduleToDelete, setModuleToDelete] = useState(null);
 
+  // Forums inline listing state
+  const [forums, setForums] = useState([]);
+  const [forumsLoading, setForumsLoading] = useState(true);
+
+  // Enrollment State
+  const [enrolledCourses, setEnrolledCourses] = useState([]);
+  const [checkingEnrollment, setCheckingEnrollment] = useState(false);
+  const [enrolling, setEnrolling] = useState(false);
+
+  const isEnrolled = isTeacherOrAdmin || enrolledCourses.some(e => (e.courseId === id || e.course?.id === id));
+
+  const fetchForums = () => {
+    setForumsLoading(true);
+    getForumsByCourse(id)
+      .then((data) => {
+        const list = Array.isArray(data) ? data : data?.forums ?? [];
+        setForums(list);
+      })
+      .catch((err) => console.error('Failed to load forums:', err))
+      .finally(() => setForumsLoading(false));
+  };
+
   useEffect(() => {
-    if (id) fetchCourseById(id);
+    if (id) {
+      fetchCourseById(id);
+      fetchForums();
+
+      if (user && user.role === 'STUDENT') {
+        setCheckingEnrollment(true);
+        api.get(`/students/${user.id}/courses`)
+          .then((res) => {
+            setEnrolledCourses(res.data || []);
+          })
+          .catch((err) => console.error('Failed to check enrollment:', err))
+          .finally(() => setCheckingEnrollment(false));
+      }
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
+  }, [id, user]);
+
+  const handleEnroll = async () => {
+    setEnrolling(true);
+    try {
+      await api.post('/enrollments', {
+        studentId: user.id,
+        courseId: id
+      });
+      setToast({ message: 'Successfully enrolled in the course!', type: 'success' });
+      const res = await api.get(`/students/${user.id}/courses`);
+      setEnrolledCourses(res.data || []);
+    } catch (err) {
+      setToast({ message: err.response?.data?.message || 'Failed to enroll in the course.', type: 'error' });
+    } finally {
+      setEnrolling(false);
+    }
+  };
 
   // ── Module Handlers ──
   const handleOpenAddModal = () => {
@@ -124,9 +179,6 @@ export default function CourseDetails() {
     try {
       await deleteModule(moduleId);
       setToast({ message: 'Module deleted successfully.', type: 'success' });
-      if (selectedModule?._id === moduleId) {
-        setSelectedModule(null);
-      }
     } catch (err) {
       setToast({ message: err.message || 'Failed to delete module.', type: 'error' });
     }
@@ -138,7 +190,7 @@ export default function CourseDetails() {
   if (loading && !course) {
     return (
       <div className="flex flex-col items-center justify-center py-24 gap-3 text-slate-500">
-        <Loader2 className="h-9 w-9 animate-spin text-indigo-500" />
+        <Loader2 className="h-9 w-9 animate-spin text-primary" />
         <p className="text-sm font-medium">Loading course…</p>
       </div>
     );
@@ -151,7 +203,7 @@ export default function CourseDetails() {
         <button
           type="button"
           onClick={() => navigate('/courses')}
-          className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-indigo-600 transition-colors self-start group"
+          className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-primary transition-colors self-start group"
         >
           <ArrowLeft className="h-4 w-4 group-hover:-translate-x-0.5 transition-transform" />
           Back to Courses
@@ -171,126 +223,165 @@ export default function CourseDetails() {
   }
 
   return (
-    <div className="flex flex-col gap-6 max-w-3xl mx-auto">
+    <div className="flex flex-col gap-6  mx-auto">
       {/* ── Back navigation ── */}
       <button
         type="button"
         id="back-to-courses-list-btn"
         onClick={() => navigate('/courses')}
-        className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-indigo-600 transition-colors duration-150 self-start group"
+        className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-primary transition-colors duration-150 self-start group"
       >
         <ArrowLeft className="h-4 w-4 group-hover:-translate-x-0.5 transition-transform" />
         Back to Courses
       </button>
 
 
-      {/* ── Page header ── */}
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-        <div className="flex items-start gap-3">
-          <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-indigo-100 flex-shrink-0">
-            <BookOpen className="h-6 w-6 text-indigo-600" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900 leading-tight">
-              {course?.title || 'Course Details'}
-            </h1>
+      {/* ── Plain Page Header & Course Info ── */}
+      <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6 pb-6 border-b border-border">
+        <div className="space-y-3 flex-1 min-w-0">
+          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight leading-tight">
+            {course?.title || 'Course Details'}
+          </h1>
+          {course?.description ? (
+            <p className="text-slate-600 text-sm leading-relaxed whitespace-pre-wrap">
+              {course.description}
+            </p>
+          ) : (
+            <p className="text-slate-400 text-sm italic">No description provided for this course.</p>
+          )}
+          <div className="flex items-center gap-2 text-xs font-semibold text-slate-500">
+            <span>Teacher: <span className="text-slate-800 font-bold">{course?.teacher?.name || 'Unknown'}</span></span>
+            <span>•</span>
+            <span>Created: {new Date(course?.createdAt).toLocaleDateString()}</span>
           </div>
         </div>
 
         {/* Action buttons */}
-        <div className="flex items-center gap-2 flex-shrink-0">
-          <Link
-            to={`/courses/${id}/forums`}
-            id="view-course-forums-btn"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 active:bg-indigo-200 transition-colors duration-150 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2"
-          >
-            <MessageSquare className="h-4 w-4" />
-            Forums
-          </Link>
-          <button
-            type="button"
-            id="edit-course-btn"
-            onClick={() => navigate(`/courses/edit/${id}`)}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 transition-colors duration-150 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
-          >
-            <Pencil className="h-4 w-4" />
-            Edit Course
-          </button>
-          <button
-            type="button"
+        <div className="flex items-center gap-2 flex-shrink-0 self-start">
+          {user?.role === 'STUDENT' && !isEnrolled && (
+            <Button
+              id="enroll-course-btn"
+              onClick={handleEnroll}
+              disabled={enrolling || checkingEnrollment}
+              
+            >
+              {enrolling ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Enrolling...
+                </>
+              ) : (
+                'Enroll in Course'
+              )}
+            </Button>
+          )}
+          {isTeacherOrAdmin && <Button variant="outline" asChild>
+            <Link
+              to={`/courses/${id}/forums`}
+              id="view-course-forums-btn"
+              className="flex items-center gap-2"
+            >
+              <MessageSquare className="h-4 w-4" />
+              Manage Forums
+            </Link>
+          </Button>}
+          {isTeacherOrAdmin && (
+            <Button
+              id="edit-course-btn"
+              onClick={() => navigate(`/courses/edit/${id}`)}
+            >
+              <Pencil className="h-4 w-4" />
+              Edit Course
+            </Button>
+          )}
+          <Button
+            variant="secondary"
             id="back-to-courses-btn"
             onClick={() => navigate('/courses')}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2"
           >
             <ArrowLeft className="h-4 w-4" />
             Courses
-          </button>
+          </Button>
         </div>
       </div>
 
-      {/* ── Course Information card ── */}
-      <section aria-labelledby="course-info-heading">
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-          {/* Card header */}
-          <div className="flex items-center gap-2 px-6 py-4 border-b border-slate-100 bg-slate-50/70">
-            <BookOpen className="h-4 w-4 text-indigo-500" />
-            <h2
-              id="course-info-heading"
-              className="text-sm font-semibold text-slate-700 uppercase tracking-wider"
-            >
-              Course Information
-            </h2>
-          </div>
-
-          {/* Detail rows */}
-          <div className="px-6 py-2">
-            <DetailRow
-              icon={BookOpen}
-              label="Title"
-              value={course?.title}
-            />
-
-            {/* Description gets its own treatment for multi-line */}
-            <div className="flex items-start gap-3 py-3 border-b border-slate-100">
-              <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-slate-50 flex-shrink-0 mt-0.5">
-                <BookOpen className="h-4 w-4 text-indigo-500" />
-              </div>
-              <div className="flex flex-col gap-0.5 min-w-0">
-                <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                  Description
-                </span>
-                <p className="text-sm text-slate-800 leading-relaxed whitespace-pre-wrap">
-                  {course?.description || (
-                    <span className="text-slate-400 italic">No description provided.</span>
-                  )}
-                </p>
-              </div>
-            </div>
-            <DetailRow
-              icon={CalendarDays}
-              label="Created"
-              value={formatDate(course?.createdAt)}
-            />
-            <DetailRow
-              icon={RefreshCw}
-              label="Last Updated"
-              value={formatDate(course?.updatedAt)}
-            />
-          </div>
+      {/* ── Discussion Forums inline list ── */}
+      <section className="space-y-3">
+        <div className="flex items-center justify-between gap-4">
+          <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+            <MessageSquare className="h-5 w-5 text-primary" />
+            Discussion Forums
+          </h2>
         </div>
+
+        {forumsLoading ? (
+          <div className="space-y-2">
+            <div className="h-12 bg-slate-50 border border-slate-100 rounded-xl animate-pulse" />
+            <div className="h-12 bg-slate-50 border border-slate-100 rounded-xl animate-pulse" />
+          </div>
+        ) : forums.length === 0 ? (
+          <div className="p-4 text-center border rounded-xl bg-slate-50/50 text-slate-400 text-sm">
+            No forums created yet.
+          </div>
+        ) : (
+          <div className="flex flex-col gap-2">
+            {forums.map((forum) => {
+              const content = (
+                <>
+                  <div>
+                    <p className="text-sm font-semibold text-slate-800">{forum.name || forum.title}</p>
+                    {forum.description && (
+                      <p className="text-xs text-slate-500 mt-1 leading-relaxed">{forum.description}</p>
+                    )}
+                  </div>
+                  {isEnrolled ? (
+                    <MessageSquare className="h-4 w-4 text-slate-400" />
+                  ) : (
+                    <div className="flex items-center gap-1.5 text-slate-400">
+                      <Lock className="h-4 w-4" />
+                      <span className="text-xs font-semibold">Locked</span>
+                    </div>
+                  )}
+                </>
+              );
+
+              if (!isEnrolled) {
+                return (
+                  <div
+                    key={forum.id}
+                    title="Enroll in the course to unlock discussion forums"
+                    className="flex items-center justify-between p-4 bg-card border border-border rounded-xl opacity-75 shadow-sm"
+                  >
+                    {content}
+                  </div>
+                );
+              }
+
+              return (
+                <Link
+                  key={forum.id}
+                  to={`/courses/${id}/forums`}
+                  className="flex items-center justify-between p-4 bg-card border border-border rounded-xl hover:bg-muted/30 transition-colors shadow-sm"
+                >
+                  {content}
+                </Link>
+              );
+            })}
+          </div>
+        )}
       </section>
 
       {/* ── Module Management ── */}
       <section aria-labelledby="module-mgmt-heading">
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden p-6">
+        {/* <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden p-6"> */}
           <ModuleList
             courseId={id}
+            isEnrolled={isEnrolled}
             onAdd={handleOpenAddModal}
             onEdit={handleOpenEditModal}
             onDelete={handleDeleteModule}
-            onView={(module) => setSelectedModule(module)}
           />
-        </div>
+        {/* </div> */}
       </section>
 
       {/* Toast Notification */}
@@ -317,41 +408,7 @@ export default function CourseDetails() {
         />
       </Modal>
 
-      {/* Module Details Modal (materials view/upload) */}
-      <Modal
-        isOpen={Boolean(selectedModule)}
-        onClose={() => setSelectedModule(null)}
-        title={selectedModule ? `Module: ${selectedModule.title}` : ''}
-        size="lg"
-      >
-        {selectedModule && (
-          <div className="flex flex-col gap-6 max-h-[70vh] overflow-y-auto pr-1">
-            {selectedModule.description && (
-              <div className="p-4 bg-slate-50 border border-slate-100 rounded-xl text-sm text-slate-600 leading-relaxed whitespace-pre-wrap flex-shrink-0">
-                {selectedModule.description}
-              </div>
-            )}
-            
-            {/* Upload form for teachers */}
-            {isTeacherOrAdmin && (
-              <MaterialUpload
-                moduleId={selectedModule._id}
-                courseId={id}
-                onSuccess={(msg) => setToast({ message: msg, type: 'success' })}
-              />
-            )}
-            
-            {/* List of materials */}
-            <div className="flex flex-col gap-2 flex-shrink-0">
-              <h4 className="text-sm font-bold text-slate-700 uppercase tracking-wider">Learning Resources</h4>
-              <MaterialList
-                moduleId={selectedModule._id}
-                onDeleteSuccess={(msg) => setToast({ message: msg, type: 'success' })}
-              />
-            </div>
-          </div>
-        )}
-      </Modal>
+
 
       {/* Delete Module Confirmation Dialog */}
       <AlertDialog open={!!moduleToDelete} onOpenChange={(open) => !open && setModuleToDelete(null)}>
@@ -414,33 +471,4 @@ const Toast = ({ message, type = 'success', onClose }) => {
   );
 };
 
-// ── Modal Dialog overlay ───────────────────────────────────────────────────
-const Modal = ({ isOpen, onClose, title, size = 'md', children }) => {
-  if (!isOpen) return null;
-  const sizeClasses = {
-    sm: 'max-w-md',
-    md: 'max-w-lg',
-    lg: 'max-w-3xl',
-    xl: 'max-w-5xl'
-  };
-  const sizeClass = sizeClasses[size] || sizeClasses.md;
-  
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-      <div className={`bg-white w-full ${sizeClass} rounded-2xl border border-slate-200 shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-200`}>
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50">
-          <h3 className="font-bold text-slate-800 text-base">{title}</h3>
-          <button
-            onClick={onClose}
-            className="text-slate-400 hover:text-slate-600 transition-colors text-xl font-medium leading-none"
-          >
-            &times;
-          </button>
-        </div>
-        <div className="p-6">
-          {children}
-        </div>
-      </div>
-    </div>
-  );
-};
+

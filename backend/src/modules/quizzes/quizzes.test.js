@@ -118,6 +118,14 @@ before(async () => {
   }
   courseId = course.id;
 
+  // Enroll student in the course so they are authorized to access quiz materials
+  await prisma.enrollment.create({
+    data: {
+      studentId: studentData.user.id,
+      courseId: course.id
+    }
+  });
+
   let section = await prisma.courseSection.findFirst({
     where: { courseId: course.id }
   });

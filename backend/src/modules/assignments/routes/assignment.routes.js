@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { AssignmentController } from '../controllers/assignment.controller.js';
-import { authenticateToken, authorizeRole } from '../../../config/auth.js';
+import { authenticateToken, authorizeRole, verifyAssignmentAccess, verifyCourseEnrollment } from '../../../config/auth.js';
 import {
   validateCreateAssignment,
   validateUpdateAssignment,
@@ -22,9 +22,11 @@ router.post(
   AssignmentController.create
 );
 
-// Get all assignments for a course (Public)
+// Get all assignments for a course (Authenticated and enrolled only)
 router.get(
   '/course/:courseId',
+  authenticateToken,
+  verifyCourseEnrollment,
   AssignmentController.getByCourse
 );
 
@@ -36,10 +38,12 @@ router.get(
   AssignmentController.getMyAllSubmissions
 );
 
-// Get single assignment by ID (Public)
+// Get single assignment by ID
 router.get(
   '/:id',
+  authenticateToken,
   validateAssignmentId,
+  verifyAssignmentAccess,
   AssignmentController.getById
 );
 
@@ -49,6 +53,7 @@ router.put(
   authenticateToken,
   authorizeRole(['TEACHER', 'ADMIN']),
   validateUpdateAssignment,
+  verifyAssignmentAccess,
   AssignmentController.update
 );
 
@@ -58,6 +63,7 @@ router.delete(
   authenticateToken,
   authorizeRole(['TEACHER', 'ADMIN']),
   validateAssignmentId,
+  verifyAssignmentAccess,
   AssignmentController.delete
 );
 
@@ -68,6 +74,7 @@ router.post(
   '/:id/submit',
   authenticateToken,
   authorizeRole(['STUDENT']),
+  verifyAssignmentAccess,
   validateSubmission,
   AssignmentController.submit
 );
@@ -78,6 +85,7 @@ router.get(
   authenticateToken,
   authorizeRole(['TEACHER', 'ADMIN']),
   validateAssignmentId,
+  verifyAssignmentAccess,
   AssignmentController.getSubmissions
 );
 
@@ -87,6 +95,7 @@ router.get(
   authenticateToken,
   authorizeRole(['STUDENT']),
   validateAssignmentId,
+  verifyAssignmentAccess,
   AssignmentController.getMySubmission
 );
 

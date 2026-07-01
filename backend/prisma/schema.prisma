@@ -18,6 +18,7 @@ enum MaterialType {
   VIDEO_SRC
   VIDEO_EMBED
   QUIZ
+  ASSIGNMENT
 }
 
 enum SubmissionStatus {

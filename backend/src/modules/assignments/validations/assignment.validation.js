@@ -36,6 +36,10 @@ export const validateCreateAssignment = [
     .optional()
     .isFloat({ min: 1 }).withMessage('Total marks must be a positive number'),
 
+  body('sectionId')
+    .optional({ nullable: true, checkFalsy: true })
+    .isUUID().withMessage('Section ID must be a valid UUID'),
+
   handleValidationErrors
 ];
 

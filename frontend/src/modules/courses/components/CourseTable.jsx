@@ -1,5 +1,9 @@
 import React from 'react';
 import { Eye, Pencil, Trash2, BookOpen, Loader2, InboxIcon } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Link } from 'react-router-dom';
+import useAuthStore from '@/store/useAuthStore';
 
 /**
  * CourseTable – Displays a list of courses in a responsive table.
@@ -12,11 +16,13 @@ import { Eye, Pencil, Trash2, BookOpen, Loader2, InboxIcon } from 'lucide-react'
  *  - onDelete {Function} Called with course._id when Delete is clicked.
  */
 const CourseTable = ({ courses = [], loading, onView, onEdit, onDelete }) => {
+  const { user } = useAuthStore();
+
   // ── Loading state ────────────────────────────────────────────────────────────
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-3 text-slate-500">
-        <Loader2 className="h-8 w-8 animate-spin text-indigo-500" />
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
         <p className="text-sm font-medium tracking-wide">Loading courses…</p>
         {/* Skeleton rows */}
         <div className="w-full mt-4 space-y-3 px-4">
@@ -35,8 +41,8 @@ const CourseTable = ({ courses = [], loading, onView, onEdit, onDelete }) => {
   if (!courses || courses.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-4 text-slate-400">
-        <div className="flex items-center justify-center w-20 h-20 rounded-2xl bg-indigo-50">
-          <InboxIcon className="h-10 w-10 text-indigo-300" strokeWidth={1.5} />
+        <div className="flex items-center justify-center w-20 h-20 rounded-2xl bg-muted">
+          <InboxIcon className="h-10 w-10 text-muted-foreground/60" strokeWidth={1.5} />
         </div>
         <div className="text-center">
           <p className="text-base font-semibold text-slate-600">No courses available</p>
@@ -64,12 +70,9 @@ const CourseTable = ({ courses = [], loading, onView, onEdit, onDelete }) => {
             <th className="hidden md:table-cell px-4 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider max-w-xs">
               Description
             </th>
-            <th className="hidden sm:table-cell px-4 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">
-              Category
-            </th>
-            <th className="px-4 py-3.5 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">
+            {user?.role === 'TEACHER' || user?.role === 'ADMIN' ? <th className="px-4 py-3.5 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">
               Actions
-            </th>
+            </th> : <></>}
           </tr>
         </thead>
 
@@ -93,6 +96,8 @@ const CourseTable = ({ courses = [], loading, onView, onEdit, onDelete }) => {
 // ── Private row sub-component ────────────────────────────────────────────────
 const CourseTableRow = ({ course, onView, onEdit, onDelete }) => {
   const { _id, title, description, category, thumbnail } = course;
+  const { user } = useAuthStore();
+
 
   const truncatedDesc =
     description && description.length > 80
@@ -103,7 +108,7 @@ const CourseTableRow = ({ course, onView, onEdit, onDelete }) => {
     <tr className="hover:bg-slate-50 transition-colors duration-100">
       {/* Thumbnail */}
       <td className="px-4 py-3">
-        <div className="w-12 h-10 rounded-lg overflow-hidden bg-indigo-50 flex items-center justify-center flex-shrink-0">
+        <Link to={`/courses/${_id}`} className="w-12 h-10 rounded-lg overflow-hidden bg-indigo-50 flex items-center justify-center flex-shrink-0">
           {thumbnail ? (
             <img
               src={thumbnail}
@@ -111,16 +116,16 @@ const CourseTableRow = ({ course, onView, onEdit, onDelete }) => {
               className="w-full h-full object-cover"
             />
           ) : (
-            <BookOpen className="h-5 w-5 text-indigo-300" strokeWidth={1.5} />
+            <BookOpen className="h-5 w-5 text-muted-foreground/60" strokeWidth={1.5} />
           )}
-        </div>
+        </Link>
       </td>
 
       {/* Title */}
       <td className="px-4 py-3">
-        <span className="text-sm font-semibold text-slate-800 line-clamp-2">
+        <Link to={`/courses/${_id}`} className="text-sm font-semibold text-slate-800 line-clamp-2">
           {title || '—'}
-        </span>
+        </Link>
       </td>
 
       {/* Description (hidden on mobile) */}
@@ -130,60 +135,49 @@ const CourseTableRow = ({ course, onView, onEdit, onDelete }) => {
         </span>
       </td>
 
-      {/* Category (hidden on xs) */}
-      <td className="hidden sm:table-cell px-4 py-3">
-        {category ? (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100">
-            {category}
-          </span>
-        ) : (
-          <span className="text-slate-400 text-sm">—</span>
-        )}
-      </td>
-
       {/* Actions */}
-      <td className="px-4 py-3">
-        <div className="flex items-center justify-end gap-1.5">
-          {/* View */}
-          <button
-            type="button"
+      {user?.role === 'TEACHER' || user?.role === 'ADMIN' ? (
+        <td className="px-4 py-3">
+          <div className="flex items-center justify-end gap-1.5">
+            {/* View */}
+            {/* <Button
             id={`table-course-view-${_id}`}
             aria-label={`View ${title}`}
             onClick={() => onView?.(course)}
             title="View"
-            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-1"
+            size="sm"
           >
             <Eye className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">View</span>
-          </button>
+          </Button> */}
 
-          {/* Edit */}
-          <button
-            type="button"
-            id={`table-course-edit-${_id}`}
-            aria-label={`Edit ${title}`}
-            onClick={() => onEdit?.(course)}
-            title="Edit"
-            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-1"
-          >
-            <Pencil className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Edit</span>
-          </button>
+            {/* Edit */}
+            <Button
+              id={`table-course-edit-${_id}`}
+              aria-label={`Edit ${title}`}
+              onClick={() => onEdit?.(course)}
+              title="Edit"
+              variant="secondary"
+              size="sm"
+            >
+              <Pencil className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Edit</span>
+            </Button>
 
-          {/* Delete */}
-          <button
-            type="button"
-            id={`table-course-delete-${_id}`}
-            aria-label={`Delete ${title}`}
-            onClick={() => onDelete?.(_id)}
-            title="Delete"
-            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-red-600 bg-red-50 hover:bg-red-100 active:bg-red-200 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-offset-1"
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Delete</span>
-          </button>
-        </div>
-      </td>
+            {/* Delete */}
+            <Button
+              id={`table-course-delete-${_id}`}
+              aria-label={`Delete ${title}`}
+              onClick={() => onDelete?.(_id)}
+              title="Delete"
+              variant="destructive"
+              size="sm"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Delete</span>
+            </Button>
+          </div>
+        </td>) : <></>}
     </tr>
   );
 };

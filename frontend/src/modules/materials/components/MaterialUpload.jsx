@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Loader2, Upload, Link as LinkIcon, AlertCircle, HelpCircle } from 'lucide-react';
+import { Loader2, Upload, Link as LinkIcon, AlertCircle, HelpCircle, ClipboardList } from 'lucide-react';
 import useMaterials from '../hooks/useMaterials';
+import { Button } from '@/components/ui/button';
 
 const MAX_FILE_SIZE_MB = 20;
 
@@ -48,6 +49,9 @@ const MaterialUpload = ({ moduleId, courseId, onSuccess }) => {
       setEmbedCode('');
     } else if (activeTab === 'link') {
       setType('VIDEO');
+      setFile(null);
+    } else if (activeTab === 'assignment') {
+      setType('ASSIGNMENT');
       setFile(null);
     }
     setValidationError('');
@@ -180,6 +184,19 @@ const MaterialUpload = ({ moduleId, courseId, onSuccess }) => {
             <HelpCircle className="h-3.5 w-3.5 text-amber-500 animate-pulse" />
             Quiz
           </button>
+          <button
+            type="button"
+            id="assignment-tab-toggle"
+            onClick={() => setActiveTab('assignment')}
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 ${
+              activeTab === 'assignment'
+                ? 'bg-white text-slate-800 shadow-sm'
+                : 'text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            <ClipboardList className="h-3.5 w-3.5 text-primary animate-pulse" />
+            Assignment
+          </button>
         </div>
 
         {activeTab === 'quiz' ? (
@@ -195,15 +212,36 @@ const MaterialUpload = ({ moduleId, courseId, onSuccess }) => {
                 </p>
               </div>
             </div>
-            <button
-              type="button"
+            <Button
               id="launch-quiz-builder"
               onClick={() => navigate(`/quizzes/create?moduleId=${moduleId}&courseId=${courseId}`)}
-              className="w-full inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+              className="w-full text-white"
             >
               <HelpCircle className="h-4 w-4" />
               Launch Quiz Builder
-            </button>
+            </Button>
+          </div>
+        ) : activeTab === 'assignment' ? (
+          <div className="flex flex-col gap-4 border border-slate-200 p-6 rounded-2xl bg-slate-50/50 animate-in fade-in duration-200">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-xl bg-muted text-primary flex items-center justify-center flex-shrink-0">
+                <ClipboardList className="h-5 w-5" />
+              </div>
+              <div className="flex-1">
+                <h4 className="font-bold text-slate-800 text-sm">Course Assignment Creator</h4>
+                <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                  Create gradable assignments with instructions, total marks, and strict due dates.
+                </p>
+              </div>
+            </div>
+            <Button
+              id="launch-assignment-creator"
+              onClick={() => navigate(`/assignments?courseId=${courseId}&sectionId=${moduleId}`)}
+              className="w-full text-white"
+            >
+              <ClipboardList className="h-4 w-4" />
+              Launch Assignment Creator
+            </Button>
           </div>
         ) : (
           <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
@@ -347,13 +385,13 @@ const MaterialUpload = ({ moduleId, courseId, onSuccess }) => {
           {/* Progress bar */}
           {uploading && (
             <div className="flex flex-col gap-1 pt-2 animate-in fade-in duration-200">
-              <div className="flex justify-between items-center text-xs font-semibold text-indigo-600">
+              <div className="flex justify-between items-center text-xs font-semibold text-primary">
                 <span>Uploading material…</span>
                 <span>{uploadProgress}%</span>
               </div>
               <div className="w-full h-2 rounded-full bg-slate-100 overflow-hidden">
                 <div
-                  className="h-full bg-indigo-600 transition-all duration-300 rounded-full"
+                  className="h-full bg-primary transition-all duration-300 rounded-full"
                   style={{ width: `${uploadProgress}%` }}
                 />
               </div>
@@ -361,10 +399,10 @@ const MaterialUpload = ({ moduleId, courseId, onSuccess }) => {
           )}
 
           {/* Submit Button */}
-          <button
+          <Button
             type="submit"
             disabled={uploading}
-            className="w-full inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 disabled:opacity-60 disabled:cursor-not-allowed transition-colors duration-150 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 mt-2"
+            className="w-full mt-2 text-white"
           >
             {uploading ? (
               <>
@@ -377,7 +415,7 @@ const MaterialUpload = ({ moduleId, courseId, onSuccess }) => {
                 Upload Material
               </>
             )}
-          </button>
+          </Button>
         </form>
         )}
       </div>

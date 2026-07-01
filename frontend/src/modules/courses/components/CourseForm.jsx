@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Loader2, AlertCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 /**
  * CourseForm – Reusable form for creating and editing a course.
@@ -129,13 +130,11 @@ const CourseForm = ({ initialData = null, onSubmit, loading = false, error = nul
         />
       </FormField>
 
-      {/* ── Submit button ── */}
       <div className="pt-2">
-        <button
+        <Button
           id="course-form-submit"
           type="submit"
           disabled={loading}
-          className="inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 disabled:opacity-60 disabled:cursor-not-allowed transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
         >
           {loading ? (
             <>
@@ -147,7 +146,7 @@ const CourseForm = ({ initialData = null, onSubmit, loading = false, error = nul
           ) : (
             'Create Course'
           )}
-        </button>
+        </Button>
       </div>
     </form>
   );

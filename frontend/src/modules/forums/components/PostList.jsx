@@ -32,12 +32,12 @@ function buildPostTree(posts) {
  *   onEdit   – fn(postId, content)
  *   onDelete – fn(postId)
  */
-export default function PostList({ posts = [], loading, error, onReply, onEdit, onDelete }) {
+export default function PostList({ posts = [], loading, error, onReply, onEdit, onDelete, isForumOwner = false }) {
   if (loading) {
     return (
       <div className="space-y-4">
         {[...Array(3)].map((_, i) => (
-          <div key={i} className="h-28 rounded-xl border border-slate-100 bg-slate-50 animate-pulse" />
+          <div key={i} className="h-28 rounded-xl border border-border bg-slate-50/50 animate-pulse" />
         ))}
       </div>
     );
@@ -57,8 +57,8 @@ export default function PostList({ posts = [], loading, error, onReply, onEdit, 
   if (!posts.length) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center">
-        <div className="w-16 h-16 bg-indigo-50 rounded-2xl flex items-center justify-center mb-4">
-          <MessageSquare className="w-8 h-8 text-indigo-300" />
+        <div className="w-16 h-16 bg-muted rounded-2xl flex items-center justify-center mb-4">
+          <MessageSquare className="w-8 h-8 text-muted-foreground/60" />
         </div>
         <h3 className="text-sm font-semibold text-slate-600 mb-1">No replies yet</h3>
         <p className="text-xs text-slate-400 max-w-xs">
@@ -80,6 +80,7 @@ export default function PostList({ posts = [], loading, error, onReply, onEdit, 
           onReply={onReply}
           onEdit={onEdit}
           onDelete={onDelete}
+          isForumOwner={isForumOwner}
         />
       ))}
     </div>

@@ -1,74 +1,121 @@
-import React from 'react';
-import { Pencil, Trash2 } from 'lucide-react';
+import React, { useState } from 'react';
+import { Pencil, Trash2, PlusCircle, BookOpen, ChevronRight } from 'lucide-react';
 import useAuthStore from '../../../store/useAuthStore';
+import { MaterialUpload, MaterialList } from '../../materials';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import Modal from '@/components/Modal';
 
-/**
- * ModuleCard – Displays a single module.
- *
- * Props:
- *  - module   {Object}   The module object (contains _id, title, description, order).
- *  - onEdit   {Function} Callback when edit button is clicked.
- *  - onDelete {Function} Callback when delete button is clicked.
- */
-const ModuleCard = ({ module, onEdit, onDelete, onView }) => {
+const ModuleCard = ({ module, courseId, isEnrolled, onEdit, onDelete }) => {
   const { user } = useAuthStore();
   const isTeacherOrAdmin = user?.role === 'TEACHER' || user?.role === 'ADMIN';
+  const [isModuleOpen, setIsModuleOpen] = useState(true);
+
+  const [showUpload, setShowUpload] = useState(false);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   return (
-    <div 
-      onClick={() => onView?.(module)}
-      className="bg-white p-5 rounded-2xl border border-slate-200 hover:border-indigo-200 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 flex flex-col justify-between gap-4 cursor-pointer"
-    >
-      <div className="flex flex-col gap-1.5">
-        {/* Header containing order badge and actions */}
-        <div className="flex items-center justify-between gap-2">
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100">
-            Order: {module.order}
-          </span>
-          {isTeacherOrAdmin && (
-            <div className="flex items-center gap-1 animate-in fade-in duration-200">
-              <button
-                type="button"
-                id={`module-edit-btn-${module._id}`}
-                aria-label={`Edit module ${module.title}`}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onEdit?.(module);
-                }}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
-                title="Edit Module"
-              >
-                <Pencil className="h-4 w-4" />
-              </button>
-              <button
-                type="button"
-                id={`module-delete-btn-${module._id}`}
-                aria-label={`Delete module ${module.title}`}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDelete?.(module._id);
-                }}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
-                title="Delete Module"
-              >
-                <Trash2 className="h-4 w-4" />
-              </button>
-            </div>
-          )}
+    <div className="bg-card text-card-foreground p-6  rounded-2xl border border-border shadow-sm flex flex-col gap-4">
+      {/* Header containing order badge and actions */}
+      <div className="flex items-center justify-between gap-2 ">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <Button variant='sm' onClick={() => setIsModuleOpen(!isModuleOpen)} >
+            <ChevronRight size={3} style={{
+              rotate: isModuleOpen ? '90deg' : '0deg'
+            }} />
+          </Button>
+          <Badge variant="secondary" className="shrink-0">
+            {module.order}
+          </Badge>
+          <h3 className="font-bold text-slate-800 text-lg leading-tight truncate">
+            {module.title}
+          </h3>
         </div>
-
-        {/* Title */}
-        <h3 className="font-bold text-slate-800 text-lg leading-tight line-clamp-2">
-          {module.title}
-        </h3>
-
-        {/* Description */}
-        <p className="text-sm text-slate-500 leading-relaxed line-clamp-3 whitespace-pre-wrap">
-          {module.description || (
-            <span className="text-slate-400 italic">No description provided.</span>
-          )}
-        </p>
+        {isTeacherOrAdmin && (
+          <div className="flex items-center gap-1 shrink-0">
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={() => onEdit?.(module)}
+              title="Edit Module"
+            >
+              <Pencil className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={() => onDelete?.(module._id)}
+              className="text-slate-400 hover:text-destructive hover:bg-destructive/10"
+              title="Delete Module"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
       </div>
+
+      {isModuleOpen ? <>
+        {/* Description */}
+        {module.description ? (
+          <p className="text-sm text-slate-500 leading-relaxed whitespace-pre-wrap pl-1 ">
+            {module.description} HIloe
+          </p>
+        ) : (
+          <></>
+        )}
+
+        {/* Materials outline header */}
+        <div className=" border-t border-border pt-4">
+          <div className="flex items-center justify-between gap-4 mb-4">
+            <div className="flex items-center gap-1.5 text-slate-700">
+              <BookOpen className="h-4 w-4 text-primary" />
+              <h4 className="text-sm font-bold uppercase tracking-wider">Learning Resources</h4>
+            </div>
+            {isTeacherOrAdmin && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowUpload(true)}
+                className="gap-1"
+              >
+                <PlusCircle className="h-3.5 w-3.5" />
+                Add Material
+              </Button>
+            )}
+          </div>
+
+          {/* Upload Modal box */}
+          {isTeacherOrAdmin && (
+            <Modal
+              isOpen={showUpload}
+              onClose={() => setShowUpload(false)}
+              title={`Upload Material for ${module.title}`}
+              size="md"
+            >
+              <div className="pt-2">
+                <MaterialUpload
+                  moduleId={module._id}
+                  courseId={courseId}
+                  onSuccess={() => {
+                    setRefreshTrigger((prev) => prev + 1);
+                    setShowUpload(false);
+                  }}
+                />
+              </div>
+            </Modal>
+          )}
+
+          {/* Materials List */}
+          <div className="pl-1">
+            <MaterialList
+              moduleId={module._id}
+              courseId={courseId}
+              isEnrolled={isEnrolled}
+              refreshTrigger={refreshTrigger}
+              onDeleteSuccess={() => setRefreshTrigger((prev) => prev + 1)}
+            />
+          </div>
+        </div></> : <></>}
     </div>
   );
 };

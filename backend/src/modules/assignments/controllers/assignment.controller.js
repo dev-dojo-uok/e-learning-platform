@@ -10,14 +10,15 @@ export class AssignmentController {
    */
   static async create(req, res, next) {
     try {
-      const { courseId, title, description, dueDate, totalMarks } = req.body;
+      const { courseId, title, description, dueDate, totalMarks, sectionId } = req.body;
       const assignment = await AssignmentService.createAssignment({
         courseId,
         teacherId: req.user.id,
         title,
         description,
         dueDate,
-        totalMarks
+        totalMarks,
+        sectionId
       });
       return res.status(201).json(assignment);
     } catch (error) {

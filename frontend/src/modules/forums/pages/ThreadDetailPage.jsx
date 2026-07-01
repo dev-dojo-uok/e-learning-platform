@@ -24,6 +24,7 @@ import useAuthStore from '../../../store/useAuthStore';
 export default function ThreadDetailPage() {
   const { threadId } = useParams();
   const { user } = useAuthStore();
+  const isTeacherOrAdmin = user?.role === 'TEACHER' || user?.role === 'ADMIN';
 
   const [thread, setThread] = useState(null);
   const [posts, setPosts] = useState([]);
@@ -126,11 +127,11 @@ export default function ThreadDetailPage() {
     <div className="max-w-3xl mx-auto space-y-6">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-slate-500 flex-wrap">
-        <Link to="/courses" className="hover:text-indigo-600 transition-colors font-medium">Courses</Link>
+        <Link to="/courses" className="hover:text-primary transition-colors font-medium">Courses</Link>
         <ChevronLeft className="w-3.5 h-3.5 rotate-180" />
         {thread?.forum?.courseId && (
           <>
-            <Link to={`/courses/${thread.forum.courseId}/forums`} className="hover:text-indigo-600 transition-colors font-medium">
+            <Link to={`/courses/${thread.forum.courseId}/forums`} className="hover:text-primary transition-colors font-medium">
               Forums
             </Link>
             <ChevronLeft className="w-3.5 h-3.5 rotate-180" />
@@ -138,8 +139,8 @@ export default function ThreadDetailPage() {
         )}
         {thread?.forumId && (
           <>
-            <Link to={`/forums/${thread.forumId}/threads`} className="hover:text-indigo-600 transition-colors font-medium truncate max-w-[120px]">
-              {thread?.forum?.title ?? 'Forum'}
+            <Link to={`/forums/${thread.forumId}/threads`} className="hover:text-primary transition-colors font-medium truncate max-w-[120px]">
+              {thread?.forum?.name || thread?.forum?.title || 'Forum'}
             </Link>
             <ChevronLeft className="w-3.5 h-3.5 rotate-180" />
           </>
@@ -186,7 +187,7 @@ export default function ThreadDetailPage() {
           {/* Meta */}
           <div className="flex flex-wrap items-center gap-4 text-xs text-slate-500">
             <div className="flex items-center gap-1.5">
-              <div className="w-5 h-5 rounded-full bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center text-white text-[9px] font-bold">
+              <div className="w-5 h-5 rounded-full bg-muted flex items-center justify-center text-primary text-[9px] font-bold">
                 {avatarInitial}
               </div>
               <span className="font-medium text-slate-700">{authorName}</span>
@@ -206,8 +207,8 @@ export default function ThreadDetailPage() {
 
           {/* OP Content card */}
           {thread.content && (
-            <div className="p-5 bg-gradient-to-br from-indigo-50 to-violet-50 border border-indigo-100 rounded-2xl">
-              <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">{thread.content}</p>
+            <div className="p-5 bg-muted/40 border border-border rounded-xl">
+              <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{thread.content}</p>
             </div>
           )}
 
@@ -228,6 +229,7 @@ export default function ThreadDetailPage() {
             onReply={handleReply}
             onEdit={handleEdit}
             onDelete={handleDelete}
+            isForumOwner={isTeacherOrAdmin}
           />
 
           {/* Top-level reply box */}
