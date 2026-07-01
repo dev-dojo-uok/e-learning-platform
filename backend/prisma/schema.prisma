@@ -36,8 +36,16 @@ model User {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   // Relations
-  courses             Course[]             @relation("UserCourses")
-  completions         MaterialCompletion[] @relation("UserCompletions")
+  courses      Course[]             @relation("UserCourses")
+  completions  MaterialCompletion[] @relation("UserCompletions")
+  quizAttempts QuizAttempt[]        @relation("UserQuizAttempts")
+  enrollments  Enrollment[]         @relation("UserEnrollments")
+  forums       Forum[]
+  threads      ForumThread[]
+  posts        ForumPost[]
+  postLikes    PostLike[]
+  threadLikes  ThreadLike[]
+  reports      Report[]
   assignmentsGiven    Assignment[]         @relation("TeacherAssignments")
   submissions         Submission[]         @relation("StudentSubmissions")
 
@@ -58,6 +66,7 @@ model Course {
   assignments Assignment[]    @relation("CourseAssignments")
   quizzes     Quiz[]          @relation("CourseQuizzes")
   enrollments Enrollment[]    @relation("CourseEnrollments")
+  forums      Forum[]
 
   @@index([teacherId])
   @@map("courses")
@@ -74,6 +83,7 @@ model CourseSection {
   // Relations
   course    Course     @relation("CourseSections", fields: [courseId], references: [id], onDelete: Cascade)
   materials Material[] @relation("SectionMaterials")
+  forums    Forum[]
 
   @@index([courseId, sortOrder])
   @@map("course_sections")
@@ -216,3 +226,145 @@ model Enrollment {
   @@index([courseId])
   @@map("enrollments")
 }
+
+enum ReportStatus {
+  PENDING
+  RESOLVED
+}
+
+model Forum {
+  id          String   @id @default(uuid())
+  courseId    String   @map("course_id")
+  moduleId    String?  @map("module_id")
+  name        String
+  description String?
+  createdBy   String   @map("created_by")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  course  Course         @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  module  CourseSection? @relation(fields: [moduleId], references: [id], onDelete: SetNull)
+  creator User           @relation(fields: [createdBy], references: [id], onDelete: Restrict)
+  threads ForumThread[]
+
+  @@index([courseId])
+  @@index([moduleId])
+  @@index([createdBy])
+  @@map("forums")
+}
+
+model ForumThread {
+  id        String   @id @default(uuid())
+  forumId   String   @map("forum_id")
+  title     String
+  createdBy String   @map("created_by")
+  isPinned  Boolean  @default(false) @map("is_pinned")
+  isLocked  Boolean  @default(false) @map("is_locked")
+  views     Int      @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  forum       Forum        @relation(fields: [forumId], references: [id], onDelete: Cascade)
+  creator     User         @relation(fields: [createdBy], references: [id], onDelete: SetNull)
+  posts       ForumPost[]
+  threadLikes ThreadLike[]
+  reports     Report[]
+
+  @@index([forumId])
+  @@index([createdBy])
+  @@map("forum_threads")
+}
+
+model ForumPost {
+  id           String   @id @default(uuid())
+  threadId     String   @map("thread_id")
+  parentPostId String?  @map("parent_post_id")
+  content      String   @db.Text
+  createdBy    String   @map("created_by")
+  isEdited     Boolean  @default(false) @map("is_edited")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  thread          ForumThread      @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  parentPost      ForumPost?       @relation("PostReplies", fields: [parentPostId], references: [id], onDelete: Cascade)
+  replies         ForumPost[]      @relation("PostReplies")
+  creator         User             @relation(fields: [createdBy], references: [id], onDelete: SetNull)
+  postLikes       PostLike[]
+  postAttachments PostAttachment[]
+  reports         Report[]
+
+  @@index([threadId])
+  @@index([parentPostId])
+  @@index([createdBy])
+  @@map("forum_posts")
+}
+
+model PostLike {
+  id        String   @id @default(uuid())
+  postId    String   @map("post_id")
+  userId    String   @map("user_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  post ForumPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId])
+  @@index([postId])
+  @@index([userId])
+  @@map("post_likes")
+}
+
+model ThreadLike {
+  id        String   @id @default(uuid())
+  threadId  String   @map("thread_id")
+  userId    String   @map("user_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  thread ForumThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  user   User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([threadId, userId])
+  @@index([threadId])
+  @@index([userId])
+  @@map("thread_likes")
+}
+
+model PostAttachment {
+  id         String   @id @default(uuid())
+  postId     String   @map("post_id")
+  fileName   String   @map("file_name")
+  fileUrl    String   @map("file_url")
+  uploadedAt DateTime @default(now()) @map("uploaded_at")
+
+  // Relations
+  post ForumPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([postId])
+  @@map("post_attachments")
+}
+
+model Report {
+  id        String       @id @default(uuid())
+  postId    String?      @map("post_id")
+  threadId  String?      @map("thread_id")
+  userId    String       @map("user_id")
+  reason    String       @db.Text
+  status    ReportStatus @default(PENDING)
+  createdAt DateTime     @default(now()) @map("created_at")
+
+  // Relations
+  post   ForumPost?   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  thread ForumThread? @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  user   User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([postId])
+  @@index([threadId])
+  @@index([userId])
+  @@map("reports")
+}
+

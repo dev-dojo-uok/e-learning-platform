@@ -6,8 +6,9 @@ import Login from './modules/auth/Login';
 import Register from './modules/auth/Register';
 import courseRoutes from './modules/courses/routes/courseRoutes';
 import quizRoutes from './modules/quizzes/routes/quizRoutes';
+import forumRoutes from './modules/forums/routes/forumRoutes';
 import QuizzesPlaceholder from './modules/quizzes';
-import ForumsPlaceholder from './modules/forums';
+import ForumsIndex from './modules/forums';
 import CompletionPlaceholder from './modules/completion';
 import AssignmentsPlaceholder from './modules/assignments';
 import useAuthStore from './store/useAuthStore';
@@ -73,8 +74,12 @@ function App() {
                   {quizRoutes.map((route) => (
                     <Route key={route.path} path={route.path} element={route.element} />
                   ))}
+                  {/* Forum routes */}
+                  {forumRoutes.map((route) => (
+                    <Route key={route.path} path={route.path} element={route.element} />
+                  ))}
                   <Route path="/quizzes" element={<QuizzesPlaceholder />} />
-                  <Route path="/forums" element={<ForumsPlaceholder />} />
+                  <Route path="/forums" element={<ForumsIndex />} />
                   <Route path="/completion" element={<CompletionPlaceholder />} />
                   <Route path="/assignments" element={<AssignmentsPlaceholder />} />
                   <Route path="*" element={<Navigate to="/" replace />} />
