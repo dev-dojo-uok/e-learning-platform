@@ -24,7 +24,6 @@ import { Button } from '@/components/ui/button';
 import { getForumsByCourse } from '../../forums/services/forumService';
 import Modal from '@/components/Modal';
 import api from '../../../lib/axios';
-import { CourseProgressCard } from '../../completion/components/CourseProgressCard';
 import {
   AlertDialog,
   AlertDialogContent,

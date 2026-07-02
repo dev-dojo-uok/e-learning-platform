@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect } from "react"
-import { TrendingUp, BookOpen, FileText } from "lucide-react"
+import { BookOpen, FileText } from "lucide-react"
 import {
   Label,
   Pie,
@@ -12,7 +12,6 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
@@ -40,14 +39,22 @@ export function CourseProgressCard({ courseId }) {
     return <div className="p-8 text-center animate-pulse">Loading progress...</div>
   }
 
-  // Fallback data if store is empty
+  // Fallback values from your store & Prisma schema variables
   const totalQuizzes = progressData?.totalQuizzes || 0
   const completedQuizzes = progressData?.completedQuizzes || 0
 
-  const totalTasks = totalQuizzes
-  const completedTasks = completedQuizzes
+  const totalAssignments = progressData?.totalAssignments || 0
+  const completedAssignments = progressData?.completedAssignments || 0
+
+  // Combine overall targets for the parent Pie Chart
+  const totalTasks = totalQuizzes + totalAssignments
+  const completedTasks = completedQuizzes + completedAssignments
   const remainingTasks = totalTasks - completedTasks
   const overallPercentage = totalTasks === 0 ? 0 : Math.round((completedTasks / totalTasks) * 100)
+
+  // Individual segment status calculation
+  const quizPercentage = totalQuizzes === 0 ? 0 : Math.round((completedQuizzes / totalQuizzes) * 100)
+  const assignmentPercentage = totalAssignments === 0 ? 0 : Math.round((completedAssignments / totalAssignments) * 100)
 
   // Chart configuration mapped to your learning data
   const chartData = [
@@ -58,17 +65,18 @@ export function CourseProgressCard({ courseId }) {
   const chartConfig = {
     completed: {
       label: "Completed",
-      color: "#5C29C2", // Custom purple color requested
+      color: "#5C29C2",
     },
     remaining: {
       label: "Remaining",
-      color: "#DAD9DB", // Uses a muted color for incomplete
+      color: "#DAD9DB",
     },
   }
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-4xl">
 
+      {/* LEFT SIDE: Pie Chart Display */}
       <Card className="flex flex-col">
         <CardHeader className="items-center pb-0">
           <CardTitle className="text-lg font-bold text-slate-800">Overall Progress</CardTitle>
@@ -130,7 +138,7 @@ export function CourseProgressCard({ courseId }) {
           <CardTitle className="text-lg font-bold text-slate-800">Module Breakdown</CardTitle>
           <CardDescription className="text-sm text-slate-500">Monitor your progress across different task types.</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-8 px-0">
+        <CardContent className="space-y-4 px-0">
 
           {/* Quizzes Breakdown */}
           <div className="space-y-2 p-4 rounded-xl bg-card border border-slate-200">
@@ -143,13 +151,34 @@ export function CourseProgressCard({ courseId }) {
               {completedQuizzes} <span className="text-lg font-medium text-slate-400">/ {totalQuizzes}</span>
             </div>
             <Progress
-              value={totalQuizzes === 0 ? 0 : Math.round((completedQuizzes / totalQuizzes) * 100)}
+              value={quizPercentage}
               className="h-2 w-full bg-secondary"
               indicatorClassName="bg-[#5C29C2]"
             />
             <div className="text-xs font-medium text-slate-500 flex justify-between">
-              <span>{totalQuizzes === 0 ? 0 : Math.round((completedQuizzes / totalQuizzes) * 100)}% achieved</span>
+              <span>{quizPercentage}% achieved</span>
               <span>{totalQuizzes - completedQuizzes} remaining</span>
+            </div>
+          </div>
+
+          {/* Assignments Breakdown Tracker */}
+          <div className="space-y-2 p-4 rounded-xl bg-card border border-slate-200">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                <FileText className="w-4 h-4" /> Assignments
+              </div>
+            </div>
+            <div className="text-3xl font-bold text-slate-900">
+              {completedAssignments} <span className="text-lg font-medium text-slate-400">/ {totalAssignments}</span>
+            </div>
+            <Progress
+              value={assignmentPercentage}
+              className="h-2 w-full bg-secondary"
+              indicatorClassName="bg-[#5C29C2]"
+            />
+            <div className="text-xs font-medium text-slate-500 flex justify-between">
+              <span>{assignmentPercentage}% achieved</span>
+              <span>{totalAssignments - completedAssignments} remaining</span>
             </div>
           </div>
 
