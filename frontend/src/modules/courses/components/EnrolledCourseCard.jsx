@@ -1,5 +1,5 @@
 import React from 'react';
-import { BookOpen, User, Calendar, Award } from 'lucide-react';
+import { BookOpen, User, Calendar, Award, Loader2, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Link } from 'react-router-dom';
@@ -10,7 +10,17 @@ import { Link } from 'react-router-dom';
  * Props:
  *  - enrollment {Object} Enrollment data with course and createdAt fields.
  */
-const EnrolledCourseCard = ({ enrollment }) => {
+/**
+ * EnrolledCourseCard – Displays a course enrolled by the student.
+ *
+ * Props:
+ *  - enrollment  {Object}   Enrollment data with course and enrolledAt fields.
+ *  - onUnenroll  {Function} Optional. Called with the enrollment object when
+ *                           the student clicks the Unenroll button.
+ *  - unenrolling {boolean}  Optional. When true, shows a spinner on the Unenroll
+ *                           button and disables it to prevent duplicate requests.
+ */
+const EnrolledCourseCard = ({ enrollment, onUnenroll, unenrolling = false }) => {
   const { course, enrolledAt } = enrollment || {};
   const { id, _id, title, description, category, thumbnail, teacher } = course || {};
   const courseId = id || _id;
@@ -96,7 +106,7 @@ const EnrolledCourseCard = ({ enrollment }) => {
       </div>
 
       {/* ── Actions ── */}
-      <div className="px-5 pb-5 pt-3 border-t border-slate-100 mt-auto">
+      <div className="px-5 pb-5 pt-3 border-t border-slate-100 mt-auto flex flex-col gap-2">
         <Button
           id={`course-continue-${courseId}`}
           aria-label={`Continue learning ${title}`}
@@ -108,6 +118,31 @@ const EnrolledCourseCard = ({ enrollment }) => {
             Continue Learning
           </Link>
         </Button>
+
+        {/* Unenroll button – rendered only when a handler is provided */}
+        {onUnenroll && (
+          <Button
+            id={`course-unenroll-${courseId}`}
+            aria-label={`Unenroll from ${title}`}
+            variant="destructive"
+            size="sm"
+            className="w-full cursor-pointer"
+            onClick={() => onUnenroll(enrollment)}
+            disabled={unenrolling}
+          >
+            {unenrolling ? (
+              <>
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                Unenrolling…
+              </>
+            ) : (
+              <>
+                <Trash2 className="h-3.5 w-3.5" />
+                Unenroll
+              </>
+            )}
+          </Button>
+        )}
       </div>
     </div>
   );

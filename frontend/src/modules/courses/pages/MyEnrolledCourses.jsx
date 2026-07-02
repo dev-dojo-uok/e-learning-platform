@@ -1,16 +1,73 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BookOpen, AlertCircle, Loader2, Compass } from 'lucide-react';
-import { getMyEnrollments } from '@/modules/enrollment';
+import { BookOpen, AlertCircle, Loader2, Compass, CheckCircle2, XCircle } from 'lucide-react';
+import { getMyEnrollments, removeEnrollment } from '@/modules/enrollment';
 import EnrolledCourseCard from '../components/EnrolledCourseCard';
 import { Button } from '@/components/ui/button';
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogAction,
+  AlertDialogCancel,
+} from '@/components/ui/alert-dialog';
 
+// ── Inline Toast notification component (same pattern as CourseList.jsx) ──────
+const Toast = ({ message, type = 'success', onClose }) => {
+  useEffect(() => {
+    const timer = setTimeout(onClose, 4000);
+    return () => clearTimeout(timer);
+  }, [onClose]);
+
+  const config = {
+    success: {
+      bg: 'bg-emerald-50 border-emerald-200',
+      text: 'text-emerald-800',
+      icon: <CheckCircle2 className="h-4 w-4 text-emerald-500 flex-shrink-0" />,
+    },
+    error: {
+      bg: 'bg-red-50 border-red-200',
+      text: 'text-red-800',
+      icon: <XCircle className="h-4 w-4 text-red-500 flex-shrink-0" />,
+    },
+  };
+
+  const { bg, text, icon } = config[type] || config.success;
+
+  return (
+    <div
+      role="alert"
+      className={`fixed top-5 right-5 z-50 flex items-center gap-2.5 px-4 py-3 rounded-xl border shadow-lg ${bg} ${text} text-sm font-medium animate-in slide-in-from-top-2 duration-300 max-w-sm`}
+    >
+      {icon}
+      <span className="flex-1">{message}</span>
+      <button
+        onClick={onClose}
+        aria-label="Dismiss"
+        className="ml-1 opacity-60 hover:opacity-100 transition-opacity text-lg leading-none"
+      >
+        ×
+      </button>
+    </div>
+  );
+};
+
+// ── MyEnrolledCourses page ────────────────────────────────────────────────────
 export default function MyEnrolledCourses() {
   const navigate = useNavigate();
   const [enrollments, setEnrollments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // ── Unenroll state (mirrors the delete pattern in CourseList.jsx) ──────────
+  const [enrollmentToRemove, setEnrollmentToRemove] = useState(null); // enrollment object
+  const [unenrollingId, setUnenrollingId] = useState(null);           // enrollment id being deleted
+  const [toast, setToast] = useState(null);                            // { message, type }
+
+  // ── Fetch enrolled courses ────────────────────────────────────────────────
   const fetchEnrollments = async () => {
     setLoading(true);
     setError(null);
@@ -33,8 +90,62 @@ export default function MyEnrolledCourses() {
     fetchEnrollments();
   }, []);
 
+  // ── Unenroll handlers ─────────────────────────────────────────────────────
+
+  /**
+   * Opens the confirmation dialog for the given enrollment.
+   * Called when the student clicks the "Unenroll" button on a card.
+   */
+  const handleUnenrollRequest = (enrollment) => {
+    setEnrollmentToRemove(enrollment);
+  };
+
+  /**
+   * Confirmed by the student in the AlertDialog.
+   * Calls the DELETE API, then removes the card from the list optimistically.
+   */
+  const handleConfirmUnenroll = async () => {
+    if (!enrollmentToRemove) return;
+
+    const target = enrollmentToRemove;
+    setEnrollmentToRemove(null);       // close dialog immediately
+    setUnenrollingId(target.id);       // show spinner on the card
+
+    try {
+      await removeEnrollment(target.id);
+      // Remove from local state — no page refresh required
+      setEnrollments((prev) => prev.filter((e) => e.id !== target.id));
+      setToast({
+        message: `Successfully unenrolled from "${target.course?.title || 'the course'}"`,
+        type: 'success',
+      });
+    } catch (err) {
+      console.error('Unenroll failed:', err);
+      setToast({
+        message:
+          err.response?.data?.message ||
+          err.message ||
+          'Failed to unenroll. Please try again.',
+        type: 'error',
+      });
+    } finally {
+      setUnenrollingId(null);
+    }
+  };
+
+  // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div className="flex flex-col gap-6">
+
+      {/* Toast notification */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
+
       {/* ── Page Header ── */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-3">
@@ -126,11 +237,43 @@ export default function MyEnrolledCourses() {
               <EnrolledCourseCard
                 key={enrollment.id}
                 enrollment={enrollment}
+                onUnenroll={handleUnenrollRequest}
+                unenrolling={unenrollingId === enrollment.id}
               />
             ))}
           </div>
         )
       )}
+
+      {/* ── Unenroll Confirmation Dialog (same pattern as CourseList.jsx) ── */}
+      <AlertDialog
+        open={!!enrollmentToRemove}
+        onOpenChange={(open) => !open && setEnrollmentToRemove(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Unenroll from Course?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to unenroll from{' '}
+              <span className="font-semibold text-slate-700">
+                {enrollmentToRemove?.course?.title || 'this course'}
+              </span>
+              ? Your progress will be lost and you will need to re-enroll to regain access.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              id="confirm-unenroll-btn"
+              onClick={handleConfirmUnenroll}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              Unenroll
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
     </div>
   );
 }
