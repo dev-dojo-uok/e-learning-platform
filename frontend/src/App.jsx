@@ -65,7 +65,7 @@ function App() {
             user ? (
               <Layout>
                 <Routes>
-                  <Route path="/" element={user?.role === 'TEACHER' || user?.role === 'ADMIN' ? <TeacherDashboard /> : <Navigate to="/courses" replace />} />
+                  <Route path="/" element={user?.role === 'TEACHER' || user?.role === 'ADMIN' ? <TeacherDashboard /> : <Navigate to="/courses/enrolled" replace />} />
                   {/* Course routes */}
                   {courseRoutes.map((route) => (
                     <Route key={route.path} path={route.path} element={route.element} />

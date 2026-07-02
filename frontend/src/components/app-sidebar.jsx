@@ -147,7 +147,13 @@ export function AppSidebar({
       title: "Dashboard",
       url: "/",
       icon: <LayoutDashboardIcon />,
-    }] : []),
+    }] : [
+      {
+        title: "My Enrolled Courses",
+        url: "/courses/enrolled",
+        icon: <CheckSquareIcon />,
+      }
+    ]),
     {
       title: "Courses",
       url: "/courses",
