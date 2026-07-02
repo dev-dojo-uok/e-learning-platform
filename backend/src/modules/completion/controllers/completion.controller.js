@@ -26,7 +26,7 @@ export class CompletionController {
     return {
       totalQuizzes,
       completedQuizzes,
-      progressPercentage
+      progressPercentage,
     };
   }
 }
