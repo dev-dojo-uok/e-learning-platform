@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { QuizController } from './controllers/quiz.controller.js';
-import { authenticateToken, authorizeRole, verifyCourseOwner, verifyQuizOwner, verifyAttemptOwner } from '../../config/auth.js';
+import { authenticateToken, authorizeRole, verifyCourseOwner, verifyQuizOwner, verifyAttemptOwner, verifyCourseEnrollment } from '../../config/auth.js';
 import {
   validateCreateQuiz,
   validateUpdateQuiz,
@@ -28,7 +28,7 @@ router.route('/course/:courseId')
   .get(
     authenticateToken,
     validateCourseIdParam,
-    verifyCourseOwner,
+    verifyCourseEnrollment,
     QuizController.getByCourse
   );
 
@@ -45,6 +45,7 @@ router.route('/attempts/:attemptId/submit')
   .put(
     authenticateToken,
     authorizeRole(['STUDENT']),
+    verifyAttemptOwner,
     validateSubmitAttempt,
     QuizController.submitAttempt
   );
@@ -53,6 +54,7 @@ router.route('/attempts/:attemptId/draft')
   .put(
     authenticateToken,
     authorizeRole(['STUDENT']),
+    verifyAttemptOwner,
     validateSubmitAttempt,
     QuizController.saveDraft
   );
@@ -62,6 +64,7 @@ router.route('/attempts/:attemptId/finalize')
     authenticateToken,
     authorizeRole(['STUDENT']),
     validateAttemptIdParam,
+    verifyAttemptOwner,
     QuizController.finalizeAttempt
   );
 
@@ -103,6 +106,7 @@ router.route('/:id/attempt')
     authenticateToken,
     authorizeRole(['STUDENT']),
     validateQuizId,
+    verifyQuizOwner,
     QuizController.startAttempt
   );
 

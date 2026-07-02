@@ -118,13 +118,9 @@ export async function verifySectionOwner(req, res, next) {
 }
 
 export async function verifyMaterialOwner(req, res, next) {
-  if (req.user?.role !== 'TEACHER') {
-    return next();
-  }
-
   const materialId = req.params.id;
   if (!materialId) {
-    return res.status(400).json({ error: 'Material ID is required for owner verification.' });
+    return res.status(400).json({ error: 'Material ID is required for verification.' });
   }
 
   try {
@@ -141,8 +137,22 @@ export async function verifyMaterialOwner(req, res, next) {
       return res.status(404).json({ error: 'Material not found.' });
     }
 
-    if (material.section.course.teacherId !== req.user.id) {
-      return res.status(403).json({ error: 'Access denied. You do not own the course this material belongs to.' });
+    if (req.user?.role === 'TEACHER') {
+      if (material.section.course.teacherId !== req.user.id) {
+        return res.status(403).json({ error: 'Access denied. You do not own the course this material belongs to.' });
+      }
+    } else if (req.user?.role === 'STUDENT') {
+      const enrollment = await prisma.enrollment.findUnique({
+        where: {
+          studentId_courseId: {
+            studentId: req.user.id,
+            courseId: material.section.courseId
+          }
+        }
+      });
+      if (!enrollment) {
+        return res.status(403).json({ error: 'Access denied. You must be enrolled in this course to access this material.' });
+      }
     }
 
     next();
@@ -152,13 +162,9 @@ export async function verifyMaterialOwner(req, res, next) {
 }
 
 export async function verifyQuizOwner(req, res, next) {
-  if (req.user?.role !== 'TEACHER') {
-    return next();
-  }
-
-  const quizId = req.params.id;
+  const quizId = req.params.id || req.params.quizId;
   if (!quizId) {
-    return res.status(400).json({ error: 'Quiz ID is required for owner verification.' });
+    return res.status(400).json({ error: 'Quiz ID is required for verification.' });
   }
 
   try {
@@ -171,8 +177,22 @@ export async function verifyQuizOwner(req, res, next) {
       return res.status(404).json({ error: 'Quiz not found.' });
     }
 
-    if (quiz.course.teacherId !== req.user.id) {
-      return res.status(403).json({ error: 'Access denied. You do not own the course this quiz belongs to.' });
+    if (req.user?.role === 'TEACHER') {
+      if (quiz.course.teacherId !== req.user.id) {
+        return res.status(403).json({ error: 'Access denied. You do not own the course this quiz belongs to.' });
+      }
+    } else if (req.user?.role === 'STUDENT') {
+      const enrollment = await prisma.enrollment.findUnique({
+        where: {
+          studentId_courseId: {
+            studentId: req.user.id,
+            courseId: quiz.courseId
+          }
+        }
+      });
+      if (!enrollment) {
+        return res.status(403).json({ error: 'Access denied. You must be enrolled in this course to access this quiz.' });
+      }
     }
 
     next();
@@ -182,13 +202,9 @@ export async function verifyQuizOwner(req, res, next) {
 }
 
 export async function verifyAttemptOwner(req, res, next) {
-  if (req.user?.role !== 'TEACHER') {
-    return next();
-  }
-
   const attemptId = req.params.attemptId;
   if (!attemptId) {
-    return res.status(400).json({ error: 'Attempt ID is required for owner verification.' });
+    return res.status(400).json({ error: 'Attempt ID is required for verification.' });
   }
 
   try {
@@ -205,8 +221,104 @@ export async function verifyAttemptOwner(req, res, next) {
       return res.status(404).json({ error: 'Quiz attempt not found.' });
     }
 
-    if (attempt.quiz.course.teacherId !== req.user.id) {
-      return res.status(403).json({ error: 'Access denied. You do not own the course this quiz attempt belongs to.' });
+    if (req.user?.role === 'TEACHER') {
+      if (attempt.quiz.course.teacherId !== req.user.id) {
+        return res.status(403).json({ error: 'Access denied. You do not own the course this quiz attempt belongs to.' });
+      }
+    } else if (req.user?.role === 'STUDENT') {
+      if (attempt.studentId !== req.user.id) {
+        return res.status(403).json({ error: 'Access denied. You did not create this quiz attempt.' });
+      }
+      const enrollment = await prisma.enrollment.findUnique({
+        where: {
+          studentId_courseId: {
+            studentId: req.user.id,
+            courseId: attempt.quiz.courseId
+          }
+        }
+      });
+      if (!enrollment) {
+        return res.status(403).json({ error: 'Access denied. You must be enrolled in this course to access this quiz attempt.' });
+      }
+    }
+
+    next();
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function verifyAssignmentAccess(req, res, next) {
+  const assignmentId = req.params.id || req.params.assignmentId || req.body.assignmentId;
+  if (!assignmentId) {
+    return res.status(400).json({ error: 'Assignment ID is required for verification.' });
+  }
+
+  try {
+    const assignment = await prisma.assignment.findUnique({
+      where: { id: assignmentId },
+      include: { course: true }
+    });
+
+    if (!assignment) {
+      return res.status(404).json({ error: 'Assignment not found.' });
+    }
+
+    if (req.user?.role === 'TEACHER') {
+      if (assignment.course.teacherId !== req.user.id) {
+        return res.status(403).json({ error: 'Access denied. You do not own the course this assignment belongs to.' });
+      }
+    } else if (req.user?.role === 'STUDENT') {
+      const enrollment = await prisma.enrollment.findUnique({
+        where: {
+          studentId_courseId: {
+            studentId: req.user.id,
+            courseId: assignment.courseId
+          }
+        }
+      });
+      if (!enrollment) {
+        return res.status(403).json({ error: 'Access denied. You must be enrolled in this course to access this assignment.' });
+      }
+    }
+
+    next();
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function verifyCourseEnrollment(req, res, next) {
+  const courseId = req.params.courseId || req.body.courseId;
+  if (!courseId) {
+    return res.status(400).json({ error: 'Course ID is required for verification.' });
+  }
+
+  try {
+    const course = await prisma.course.findUnique({
+      where: { id: courseId }
+    });
+
+    if (!course) {
+      return res.status(404).json({ error: 'Course not found.' });
+    }
+
+    if (req.user?.role === 'TEACHER') {
+      if (course.teacherId !== req.user.id) {
+        return res.status(403).json({ error: 'Access denied. You do not own this course.' });
+      }
+    } else if (req.user?.role === 'STUDENT') {
+      const enrollment = await prisma.enrollment.findUnique({
+        where: {
+          studentId_courseId: {
+            studentId: req.user.id,
+            courseId: courseId
+          }
+        }
+      });
+      if (!enrollment) {
+        return res.status(403).json({ error: 'Access denied. You must be enrolled in this course.' });
+      }
     }
 
     next();

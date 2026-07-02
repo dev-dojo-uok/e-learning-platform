@@ -1,0 +1,409 @@
+{
+  "info": {
+    "_postman_id": "4b6c8a7f-d890-4c12-98ab-1a2b3c4d5e6f",
+    "name": "Forum API",
+    "description": "Postman Collection for testing the Forum module APIs (Forums, Threads, and Posts) in the E-Learning Platform.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Forum",
+      "item": [
+        {
+          "name": "Create Forum",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"courseId\": \"{{COURSE_ID}}\",\n  \"moduleId\": \"{{MODULE_ID}}\",\n  \"name\": \"General Discussion\",\n  \"description\": \"Welcome to the general discussion forum for this course.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/forums",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "forums"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Forums by Course",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/forums/{{COURSE_ID}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "forums",
+                "{{COURSE_ID}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Single Forum",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/forums/{{FORUM_ID}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "forums",
+                "{{FORUM_ID}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Threads",
+      "item": [
+        {
+          "name": "Create Thread",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"forumId\": \"{{FORUM_ID}}\",\n  \"title\": \"How to set up PostgreSQL locally?\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/threads",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "threads"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Threads in Forum",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/threads/forum/{{FORUM_ID}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "threads",
+                "forum",
+                "{{FORUM_ID}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Single Thread with Details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/threads/{{THREAD_ID}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "threads",
+                "{{THREAD_ID}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Pin Thread",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"isPinned\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/threads/{{THREAD_ID}}/pin",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "threads",
+                "{{THREAD_ID}}",
+                "pin"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Lock Thread",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"isLocked\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/threads/{{THREAD_ID}}/lock",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "threads",
+                "{{THREAD_ID}}",
+                "lock"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Increment View Count",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/threads/{{THREAD_ID}}/views",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "threads",
+                "{{THREAD_ID}}",
+                "views"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Posts",
+      "item": [
+        {
+          "name": "Create Post (Reply)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"threadId\": \"{{THREAD_ID}}\",\n  \"content\": \"You can download it from the official PostgreSQL website.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/posts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "posts"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Nested Reply",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"threadId\": \"{{THREAD_ID}}\",\n  \"parentPostId\": \"{{POST_ID}}\",\n  \"content\": \"Thanks! Which version do you recommend?\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/posts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "posts"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Posts in Thread",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/posts/thread/{{THREAD_ID}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "posts",
+                "thread",
+                "{{THREAD_ID}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Edit Post",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"Updated content: You can download PostgreSQL from postgresql.org.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/posts/{{POST_ID}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "posts",
+                "{{POST_ID}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Post",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/posts/{{POST_ID}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "posts",
+                "{{POST_ID}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{JWT_TOKEN}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000",
+      "type": "string"
+    },
+    {
+      "key": "JWT_TOKEN",
+      "value": "your_jwt_token_here",
+      "type": "string"
+    },
+    {
+      "key": "COURSE_ID",
+      "value": "course-uuid-placeholder",
+      "type": "string"
+    },
+    {
+      "key": "MODULE_ID",
+      "value": "module-uuid-placeholder",
+      "type": "string"
+    },
+    {
+      "key": "FORUM_ID",
+      "value": "forum-uuid-placeholder",
+      "type": "string"
+    },
+    {
+      "key": "THREAD_ID",
+      "value": "thread-uuid-placeholder",
+      "type": "string"
+    },
+    {
+      "key": "POST_ID",
+      "value": "post-uuid-placeholder",
+      "type": "string"
+    }
+  ]
+}

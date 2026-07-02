@@ -1,4 +1,5 @@
 import { MaterialService } from '../services/material.service.js';
+import prisma from '../../../config/db.js';
 
 export class MaterialController {
   /**
@@ -42,7 +43,36 @@ export class MaterialController {
   static async getBySection(req, res, next) {
     try {
       const { sectionId } = req.params;
-      const materials = await MaterialService.getMaterialsBySection(sectionId);
+      let materials = await MaterialService.getMaterialsBySection(sectionId);
+
+      if (req.user?.role === 'STUDENT') {
+        const section = await prisma.courseSection.findUnique({
+          where: { id: sectionId },
+          select: { courseId: true }
+        });
+
+        if (section) {
+          const enrollment = await prisma.enrollment.findUnique({
+            where: {
+              studentId_courseId: {
+                studentId: req.user.id,
+                courseId: section.courseId
+              }
+            }
+          });
+
+          if (!enrollment) {
+            materials = materials.map(m => ({
+              ...m,
+              contentUrl: null,
+              embedCode: null,
+              itemId: null,
+              description: null
+            }));
+          }
+        }
+      }
+
       return res.status(200).json(materials);
     } catch (error) {
       next(error);

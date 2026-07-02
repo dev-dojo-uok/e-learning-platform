@@ -35,8 +35,8 @@ import {
 } from "@/components/ui/collapsible"
 import useAuthStore from "@/store/useAuthStore"
 import useCourses from "@/modules/courses/hooks/useCourses"
-
-
+import api from "@/lib/axios"
+import CalendarEventModal from "@/components/CalendarEventModal"
 
 export function AppSidebar({
   ...props
@@ -44,11 +44,97 @@ export function AppSidebar({
   const { user } = useAuthStore()
   const { courses, fetchCourses } = useCourses()
 
+  const [displayCourses, setDisplayCourses] = React.useState([])
+  const [events, setEvents] = React.useState([])
+  const [selectedDate, setSelectedDate] = React.useState(null)
+  const [isModalOpen, setIsModalOpen] = React.useState(false)
+
+  // Fetch courses on mount / user change
   React.useEffect(() => {
-    if (user) {
-      fetchCourses()
+    if (!user) return;
+
+    const loadCourses = async () => {
+      try {
+        if (user.role === 'STUDENT') {
+          const res = await api.get(`/students/${user.id}/courses`);
+          const enrolled = (res.data || []).map(e => ({
+            ...e.course,
+            _id: e.course.id
+          }));
+          setDisplayCourses(enrolled);
+        } else {
+          await fetchCourses();
+        }
+      } catch (err) {
+        console.error("Failed to fetch user courses:", err);
+      }
+    };
+
+    loadCourses();
+  }, [user, fetchCourses]);
+
+  // Keep displayCourses in sync with store courses for teachers
+  React.useEffect(() => {
+    if (user && user.role !== 'STUDENT') {
+      setDisplayCourses(courses);
     }
-  }, [user, fetchCourses])
+  }, [courses, user]);
+
+  // Fetch assignments & quizzes for user courses
+  React.useEffect(() => {
+    if (user && displayCourses.length > 0) {
+      const loadEvents = async () => {
+        try {
+          const allEvents = []
+          await Promise.all(
+            displayCourses.map(async (course) => {
+              const courseId = course._id || course.id
+              
+              // 1. Fetch Assignments
+              try {
+                const asgRes = await api.get(`/assignments/course/${courseId}`)
+                const assignments = asgRes.data || []
+                assignments.forEach(asg => {
+                  allEvents.push({
+                    id: asg.id,
+                    title: asg.title,
+                    type: 'assignment',
+                    date: new Date(asg.dueDate),
+                    courseId: courseId,
+                    courseTitle: course.title,
+                  })
+                })
+              } catch (err) {
+                console.error(`Failed to fetch assignments for course ${courseId}:`, err)
+              }
+
+              // 2. Fetch Quizzes
+              try {
+                const quizRes = await api.get(`/quizzes/course/${courseId}`)
+                const quizzes = quizRes.data || []
+                quizzes.forEach(quiz => {
+                  allEvents.push({
+                    id: quiz.id,
+                    title: quiz.title,
+                    type: 'quiz',
+                    date: quiz.closeTime ? new Date(quiz.closeTime) : new Date(quiz.openTime || quiz.createdAt),
+                    courseId: courseId,
+                    courseTitle: course.title,
+                  })
+                })
+              } catch (err) {
+                console.error(`Failed to fetch quizzes for course ${courseId}:`, err)
+              }
+            })
+          )
+          setEvents(allEvents)
+        } catch (err) {
+          console.error("Error loading events:", err)
+        }
+      }
+      loadEvents()
+    }
+  }, [user, displayCourses])
 
   const displayUser = {
     name: user?.name || "E-Learner",
@@ -100,7 +186,13 @@ export function AppSidebar({
             </SidebarGroupLabel>
             <CollapsibleContent>
               <SidebarGroupContent className="flex justify-center ">
-                <DatePicker  />
+                <DatePicker 
+                  events={events}
+                  onSelectDate={(date) => {
+                    setSelectedDate(date);
+                    setIsModalOpen(true);
+                  }}
+                />
               </SidebarGroupContent>
             </CollapsibleContent>
           </Collapsible>
@@ -122,8 +214,8 @@ export function AppSidebar({
             <CollapsibleContent>
               <SidebarGroupContent>
                 <SidebarMenu>
-                  {courses && courses.length > 0 ? (
-                    courses.map((course) => (
+                  {displayCourses && displayCourses.length > 0 ? (
+                    displayCourses.map((course) => (
                       <SidebarMenuItem key={course._id}>
                         <SidebarMenuButton asChild>
                           <Link to={`/courses/${course._id}`}>
@@ -134,7 +226,7 @@ export function AppSidebar({
                     ))
                   ) : (
                     <div className="px-4 py-2 text-xs text-slate-400 font-semibold italic">
-                      No courses enrolled
+                      {user?.role === 'TEACHER' ? 'No courses created' : 'No courses enrolled'}
                     </div>
                   )}
                 </SidebarMenu>
@@ -148,6 +240,14 @@ export function AppSidebar({
           SWST 32043 Group Project
         </div>
       </SidebarFooter>
+      <CalendarEventModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        date={selectedDate}
+        events={events}
+        courses={displayCourses}
+        isTeacher={user?.role === 'TEACHER' || user?.role === 'ADMIN'}
+      />
       <SidebarRail />
     </Sidebar>
   );

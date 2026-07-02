@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Loader2, Eye, Download, Trash2, FileText, Video, Image, FileArchive, Inbox, HelpCircle } from 'lucide-react';
-import useMaterials from '../hooks/useMaterials';
+import { Loader2, Eye, Download, Trash2, FileText, Video, Image, FileArchive, Inbox, HelpCircle, ClipboardList, Lock } from 'lucide-react';
+import { getMaterialsByModule, deleteMaterial } from '../services/materialService';
 import useAuthStore from '../../../store/useAuthStore';
 import MaterialViewer from './MaterialViewer';
+import { Button } from '@/components/ui/button';
 
 // Date formatter helper
 const formatDate = (dateStr) => {
@@ -23,15 +24,37 @@ const getMaterialUrl = (url) => {
   return `${serverOrigin}/${url}`;
 };
 
-const MaterialList = ({ moduleId, onDeleteSuccess }) => {
-  const { materials, loading, error, fetchMaterials, removeMaterial } = useMaterials();
+const MaterialList = ({ moduleId, courseId, isEnrolled, refreshTrigger, onDeleteSuccess }) => {
   const { user } = useAuthStore();
   const isTeacherOrAdmin = user?.role === 'TEACHER' || user?.role === 'ADMIN';
   const navigate = useNavigate();
 
+  const [materials, setMaterials] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
   const [selectedMaterial, setSelectedMaterial] = useState(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
   const [deleting, setDeleting] = useState(false);
+
+  const loadMaterials = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await getMaterialsByModule(moduleId);
+      setMaterials((data || []).map((m) => ({ ...m, _id: m.id })));
+    } catch (err) {
+      setError(err.response?.data?.error || err.message || 'Failed to load materials.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (moduleId) {
+      loadMaterials();
+    }
+  }, [moduleId, refreshTrigger]);
 
   const handleMaterialClick = (mat) => {
     if (mat.type === 'QUIZ') {
@@ -40,25 +63,22 @@ const MaterialList = ({ moduleId, onDeleteSuccess }) => {
       } else {
         navigate(`/quizzes/${mat.itemId}/take`);
       }
+    } else if (mat.type === 'ASSIGNMENT') {
+      navigate(`/assignments?courseId=${courseId || ''}&assignmentId=${mat.itemId || ''}`);
     } else {
       setSelectedMaterial(mat);
     }
   };
 
-  useEffect(() => {
-    if (moduleId) {
-      fetchMaterials(moduleId);
-    }
-  }, [moduleId, fetchMaterials]);
-
   const handleDelete = async (id) => {
     setDeleting(true);
     try {
-      await removeMaterial(id);
+      await deleteMaterial(id);
+      setMaterials((prev) => prev.filter((m) => m._id !== id));
       setDeleteConfirmId(null);
       onDeleteSuccess?.('Material deleted successfully.');
     } catch (err) {
-      // handled by store error
+      // Handled locally
     } finally {
       setDeleting(false);
     }
@@ -66,21 +86,24 @@ const MaterialList = ({ moduleId, onDeleteSuccess }) => {
 
   const getIconAndColor = (type, contentUrl) => {
     if (type === 'QUIZ') {
-      return { icon: <HelpCircle className="h-5 w-5" />, color: 'text-amber-500 bg-amber-50 border-amber-100' };
+      return { icon: <HelpCircle className="h-5 w-5" />, color: 'text-amber-600 bg-amber-50 border-amber-200' };
+    }
+    if (type === 'ASSIGNMENT') {
+      return { icon: <ClipboardList className="h-5 w-5" />, color: 'text-primary bg-primary/10 border-primary/20' };
     }
     if (type === 'PDF') {
-      return { icon: <FileText className="h-5 w-5" />, color: 'text-red-500 bg-red-50 border-red-100' };
+      return { icon: <FileText className="h-5 w-5" />, color: 'text-destructive bg-destructive/10 border-destructive/20' };
     }
     if (type === 'VIDEO_SRC' || type === 'VIDEO_EMBED' || type === 'VIDEO' || type === 'YOUTUBE') {
-      return { icon: <Video className="h-5 w-5" />, color: 'text-indigo-500 bg-indigo-50 border-indigo-100' };
+      return { icon: <Video className="h-5 w-5" />, color: 'text-foreground bg-muted border-border' };
     }
     if (type === 'IMAGE' || (contentUrl && /\.(jpg|jpeg|png|webp|gif)$/i.test(contentUrl))) {
-      return { icon: <Image className="h-5 w-5" />, color: 'text-emerald-500 bg-emerald-50 border-emerald-100' };
+      return { icon: <Image className="h-5 w-5" />, color: 'text-foreground bg-muted border-border' };
     }
     if (contentUrl && contentUrl.endsWith('.zip')) {
-      return { icon: <FileArchive className="h-5 w-5" />, color: 'text-amber-500 bg-amber-50 border-amber-100' };
+      return { icon: <FileArchive className="h-5 w-5" />, color: 'text-foreground bg-muted border-border' };
     }
-    return { icon: <FileText className="h-5 w-5" />, color: 'text-blue-500 bg-blue-50 border-blue-100' };
+    return { icon: <FileText className="h-5 w-5" />, color: 'text-muted-foreground bg-muted/50 border-border' };
   };
 
   // ── Loading state ────────────────────────────────────────────────────────────
@@ -88,10 +111,10 @@ const MaterialList = ({ moduleId, onDeleteSuccess }) => {
     return (
       <div className="flex flex-col gap-4 animate-in fade-in duration-300">
         <div className="flex items-center gap-2 text-slate-500">
-          <Loader2 className="h-4 w-4 animate-spin text-indigo-500" />
+          <Loader2 className="h-4 w-4 animate-spin text-primary" />
           <span className="text-sm font-medium">Loading materials…</span>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="flex flex-col gap-3">
           {[1, 2].map((i) => (
             <div key={i} className="h-20 rounded-xl bg-slate-100 animate-pulse border border-slate-200" />
           ))}
@@ -122,8 +145,8 @@ const MaterialList = ({ moduleId, onDeleteSuccess }) => {
 
   return (
     <div className="flex flex-col gap-4 animate-in fade-in duration-300">
-      {/* Grid: 1 col on mobile, 2 col on tablet/desktop */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {/* Flex: one below one */}
+      <div className="flex flex-col gap-3">
         {materials.map((mat) => {
           const { icon, color } = getIconAndColor(mat.type, mat.contentUrl);
           const downloadUrl = mat.contentUrl ? getMaterialUrl(mat.contentUrl) : null;
@@ -131,62 +154,76 @@ const MaterialList = ({ moduleId, onDeleteSuccess }) => {
           return (
             <div
               key={mat._id}
-              className="bg-white border border-slate-200 p-4 rounded-xl hover:border-indigo-200 hover:shadow-sm transition-all duration-200 flex items-start gap-4"
+              className="bg-card border border-border p-4 rounded-xl hover:shadow-sm hover:border-primary/50 transition-all duration-200 flex items-start justify-between gap-4"
             >
-              {/* Material Icon Badge */}
-              <div className={`w-10 h-10 rounded-lg flex items-center justify-center border flex-shrink-0 ${color}`}>
-                {icon}
-              </div>
+              <div className="flex items-start gap-3 min-w-0">
+                {/* Material Icon Badge */}
+                <div className={`w-10 h-10 rounded-lg flex items-center justify-center border flex-shrink-0 ${color}`}>
+                  {icon}
+                </div>
 
-              {/* Detail fields */}
-              <div className="flex-1 min-w-0 flex flex-col gap-0.5">
-                <span className="text-sm font-bold text-slate-800 truncate" title={mat.title}>
-                  {mat.title}
-                </span>
-                <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                  {mat.type}
-                </span>
-                <span className="text-[10px] text-slate-400 mt-1">
-                  Uploaded: {formatDate(mat.createdAt)}
-                </span>
+                {/* Detail fields */}
+                <div className="flex-1 min-w-0 flex flex-col gap-0.5">
+                  <span className="text-sm font-bold text-slate-800 truncate" title={mat.title}>
+                    {mat.title}
+                  </span>
+                  <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                    {mat.type}
+                  </span>
+                  <span className="text-[10px] text-slate-400 mt-1">
+                    Uploaded: {formatDate(mat.createdAt)}
+                  </span>
+                </div>
               </div>
 
               {/* Actions row */}
               <div className="flex items-center gap-1 self-center flex-shrink-0">
-                {/* Preview Button */}
-                <button
-                  type="button"
-                  id={`mat-preview-btn-${mat._id}`}
-                  onClick={() => handleMaterialClick(mat)}
-                  title="Preview"
-                  className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
-                >
-                  <Eye className="h-4 w-4" />
-                </button>
+                {!isTeacherOrAdmin && !isEnrolled ? (
+                  <div className="flex items-center gap-1 text-slate-400" title="Enroll in the course to unlock this material">
+                    <Lock className="h-4 w-4 text-slate-400" />
+                    <span className="text-xs font-semibold hidden sm:inline">Locked</span>
+                  </div>
+                ) : (
+                  <>
+                    {/* Preview Button */}
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      onClick={() => handleMaterialClick(mat)}
+                      title="Preview"
+                      className="text-slate-400 hover:text-primary"
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
 
-                {/* Download Button */}
-                {downloadUrl && (
-                  <a
-                    href={downloadUrl}
-                    download
-                    title="Download"
-                    className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
-                  >
-                    <Download className="h-4 w-4" />
-                  </a>
-                )}
+                    {/* Download Button */}
+                    {downloadUrl && (
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        asChild
+                        title="Download"
+                        className="text-slate-400 hover:text-primary"
+                      >
+                        <a href={downloadUrl} download>
+                          <Download className="h-4 w-4" />
+                        </a>
+                      </Button>
+                    )}
 
-                {/* Delete Button (Teacher/Admin only) */}
-                {isTeacherOrAdmin && (
-                  <button
-                    type="button"
-                    id={`mat-delete-btn-${mat._id}`}
-                    onClick={() => setDeleteConfirmId(mat._id)}
-                    title="Delete"
-                    className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
+                    {/* Delete Button (Teacher/Admin only) */}
+                    {isTeacherOrAdmin && (
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        onClick={() => setDeleteConfirmId(mat._id)}
+                        title="Delete"
+                        className="text-slate-400 hover:text-destructive hover:bg-destructive/10"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </>
                 )}
               </div>
             </div>
@@ -206,7 +243,7 @@ const MaterialList = ({ moduleId, onDeleteSuccess }) => {
       {/* Delete Confirmation Modal */}
       {deleteConfirmId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-          <div className="bg-white w-full max-w-sm rounded-2xl border border-slate-200 p-6 shadow-2xl flex flex-col gap-4 animate-in zoom-in-95 duration-200">
+          <div className="bg-card w-full max-w-sm rounded-2xl border border-border p-6 shadow-2xl flex flex-col gap-4 animate-in zoom-in-95 duration-200">
             <div>
               <h3 className="font-bold text-slate-800 text-lg">Delete Material?</h3>
               <p className="text-sm text-slate-500 mt-1">
@@ -214,19 +251,17 @@ const MaterialList = ({ moduleId, onDeleteSuccess }) => {
               </p>
             </div>
             <div className="flex items-center justify-end gap-3 pt-2">
-              <button
-                type="button"
+              <Button
+                variant="outline"
                 onClick={() => setDeleteConfirmId(null)}
                 disabled={deleting}
-                className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors"
               >
                 Cancel
-              </button>
-              <button
-                type="button"
+              </Button>
+              <Button
+                variant="destructive"
                 onClick={() => handleDelete(deleteConfirmId)}
                 disabled={deleting}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold text-white bg-red-600 hover:bg-red-700 active:bg-red-800 disabled:opacity-60 transition-colors"
               >
                 {deleting ? (
                   <>
@@ -236,7 +271,7 @@ const MaterialList = ({ moduleId, onDeleteSuccess }) => {
                 ) : (
                   'Delete'
                 )}
-              </button>
+              </Button>
             </div>
           </div>
         </div>

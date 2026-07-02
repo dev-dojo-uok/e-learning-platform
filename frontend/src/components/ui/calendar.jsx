@@ -144,6 +144,7 @@ function CalendarDayButton({
   day,
   modifiers,
   locale,
+  children,
   ...props
 }) {
   const defaultClassNames = getDefaultClassNames()
@@ -173,7 +174,15 @@ function CalendarDayButton({
         defaultClassNames.day,
         className
       )}
-      {...props} />
+      {...props}
+    >
+      <span className="relative flex flex-col items-center justify-center">
+        {children}
+        {modifiers.hasEvent && (
+          <span className="absolute bottom-[-5px] left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-amber-500 rounded-full " />
+        )}
+      </span>
+    </Button>
   );
 }
 

@@ -3,6 +3,7 @@ import { Loader2, PlusCircle, InboxIcon } from 'lucide-react';
 import ModuleCard from './ModuleCard';
 import useModules from '../hooks/useModules';
 import useAuthStore from '../../../store/useAuthStore';
+import { Button } from '@/components/ui/button';
 
 /**
  * ModuleList – Renders all modules for a course.
@@ -13,7 +14,7 @@ import useAuthStore from '../../../store/useAuthStore';
  *  - onEdit   {Function} Callback when Edit is clicked on a card.
  *  - onDelete {Function} Callback when Delete is clicked on a card.
  */
-const ModuleList = ({ courseId, onAdd, onEdit, onDelete, onView }) => {
+const ModuleList = ({ courseId, isEnrolled, onAdd, onEdit, onDelete }) => {
   const { modules, loading, error, fetchModules } = useModules();
   const { user } = useAuthStore();
   const isTeacherOrAdmin = user?.role === 'TEACHER' || user?.role === 'ADMIN';
@@ -87,27 +88,26 @@ const ModuleList = ({ courseId, onAdd, onEdit, onDelete, onView }) => {
           Course Structure ({modules.length} Module{modules.length !== 1 ? 's' : ''})
         </h3>
         {isTeacherOrAdmin && (
-          <button
-            type="button"
+          <Button
             id="add-module-header-btn"
             onClick={onAdd}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 transition-colors duration-150 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
           >
             <PlusCircle className="h-4 w-4" />
             Add Module
-          </button>
+          </Button>
         )}
       </div>
 
-      {/* Grid: 1 col on mobile, 2 col on tablet/desktop */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {/* Stacked list */}
+      <div className="flex flex-col gap-6">
         {modules.map((module) => (
           <ModuleCard
             key={module._id}
             module={module}
+            courseId={courseId}
+            isEnrolled={isEnrolled}
             onEdit={onEdit}
             onDelete={onDelete}
-            onView={onView}
           />
         ))}
       </div>

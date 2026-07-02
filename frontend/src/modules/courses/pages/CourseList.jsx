@@ -13,6 +13,7 @@ import {
   AlertDialogAction,
   AlertDialogCancel,
 } from '@/components/ui/alert-dialog';
+import { Button } from '@/components/ui/button';
 
 // ── Inline Toast notification component ──────────────────────────────────────
 const Toast = ({ message, type = 'success', onClose }) => {
@@ -108,8 +109,8 @@ export default function CourseList() {
       {/* ── Page header ── */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-indigo-100">
-            <BookOpen className="h-5 w-5 text-indigo-600" />
+          <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-muted">
+            <BookOpen className="h-5 w-5 text-primary" />
           </div>
           <div>
             <h1 className="text-2xl font-bold text-slate-900 leading-tight">Courses</h1>
@@ -122,15 +123,15 @@ export default function CourseList() {
         </div>
 
         {/* Create button */}
-        <button
+        <Button
           id="create-course-btn"
           type="button"
           onClick={() => navigate('/courses/create')}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 transition-colors duration-150 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 self-start sm:self-auto"
+          className="self-start sm:self-auto text-white"
         >
           <PlusCircle className="h-4 w-4" />
           Create Course
-        </button>
+        </Button>
       </div>
 
       {/* ── Error state ── */}
