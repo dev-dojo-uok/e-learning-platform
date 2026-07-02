@@ -10,6 +10,7 @@ import {
   XCircle,
   MessageSquare,
   Lock,
+  Users,
 } from 'lucide-react';
 
 import useCourses from '../hooks/useCourses';
@@ -322,6 +323,18 @@ export default function CourseDetails() {
               Manage Forums
             </Link>
           </Button>}
+          {isTeacherOrAdmin && (
+            <Button variant="outline" asChild>
+              <Link
+                to={`/courses/${id}/enrollments`}
+                id="view-course-enrollments-btn"
+                className="flex items-center gap-2 font-medium cursor-pointer"
+              >
+                <Users className="h-4 w-4 text-primary" />
+                Manage Enrollments
+              </Link>
+            </Button>
+          )}
           {isTeacherOrAdmin && (
             <Button
               id="edit-course-btn"

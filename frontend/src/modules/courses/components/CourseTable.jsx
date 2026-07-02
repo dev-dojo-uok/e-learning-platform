@@ -1,5 +1,5 @@
 import React from 'react';
-import { Eye, Pencil, Trash2, BookOpen, Loader2, InboxIcon } from 'lucide-react';
+import { Eye, Pencil, Trash2, BookOpen, Loader2, InboxIcon, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Link } from 'react-router-dom';
@@ -150,6 +150,21 @@ const CourseTableRow = ({ course, onView, onEdit, onDelete }) => {
             <Eye className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">View</span>
           </Button> */}
+
+            {/* Enrollments */}
+            <Button
+              id={`table-course-enrollments-${_id}`}
+              aria-label={`View enrollments for ${title}`}
+              title="View Enrollments"
+              variant="outline"
+              size="sm"
+              asChild
+            >
+              <Link to={`/courses/${_id}/enrollments`}>
+                <Users className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Enrollments</span>
+              </Link>
+            </Button>
 
             {/* Edit */}
             <Button
