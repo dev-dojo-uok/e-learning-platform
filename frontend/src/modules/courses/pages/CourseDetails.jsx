@@ -257,17 +257,7 @@ export default function CourseDetails() {
                 {course.category}
               </Badge>
             )}
-            {user?.role === 'STUDENT' && (
-              <Badge
-                variant={isEnrolled ? "default" : "outline"}
-                className={isEnrolled ? "bg-emerald-100 text-emerald-800 border-emerald-200 hover:bg-emerald-100" : "bg-slate-50 text-slate-600 border-slate-200"}
-              >
-                {checkingEnrollment ? (
-                  <Loader2 className="h-3 w-3 animate-spin mr-1 inline" />
-                ) : null}
-                {isEnrolled ? 'Enrolled' : 'Not Enrolled'}
-              </Badge>
-            )}
+
           </div>
           {course?.description ? (
             <p className="text-slate-600 text-sm leading-relaxed whitespace-pre-wrap">
