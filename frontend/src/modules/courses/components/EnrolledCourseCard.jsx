@@ -110,13 +110,18 @@ const EnrolledCourseCard = ({ enrollment, onUnenroll, unenrolling = false }) => 
         <Button
           id={`course-continue-${courseId}`}
           aria-label={`Continue learning ${title}`}
-          asChild
+          asChild={!unenrolling}
+          disabled={unenrolling}
           className="w-full text-white cursor-pointer"
           size="sm"
         >
-          <Link to={`/courses/${courseId}`}>
-            Continue Learning
-          </Link>
+          {unenrolling ? (
+            <span>Continue Learning</span>
+          ) : (
+            <Link to={`/courses/${courseId}`}>
+              Continue Learning
+            </Link>
+          )}
         </Button>
 
         {/* Unenroll button – rendered only when a handler is provided */}

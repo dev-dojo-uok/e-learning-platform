@@ -21,6 +21,7 @@ import { getForumsByCourse } from '../../forums/services/forumService';
 import Modal from '@/components/Modal';
 import { Badge } from '@/components/ui/badge';
 import { enrollStudent, getMyEnrollments } from '../../enrollment';
+import { toast } from 'sonner';
 import {
   AlertDialog,
   AlertDialogContent,
@@ -78,7 +79,6 @@ export default function CourseDetails() {
     error: moduleStoreError,
   } = useModules();
 
-  const [toast, setToast] = useState(null); // { message, type }
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentModule, setCurrentModule] = useState(null); // Null for create, object for edit
   const [moduleToDelete, setModuleToDelete] = useState(null);
@@ -127,13 +127,30 @@ export default function CourseDetails() {
     setEnrolling(true);
     try {
       await enrollStudent(id);
-      setToast({ message: 'Successfully enrolled in the course!', type: 'success' });
+      toast.success('Successfully enrolled in the course!');
       const data = await getMyEnrollments();
       setEnrolledCourses(data || []);
     } catch (err) {
-      setToast({ message: err.response?.data?.message || err.message || 'Failed to enroll in the course.', type: 'error' });
+      toast.error(err.response?.data?.message || err.message || 'Failed to enroll in the course.');
     } finally {
       setEnrolling(false);
+    }
+  };
+
+  const handleRetryFetch = () => {
+    if (id) {
+      fetchCourseById(id);
+      fetchForums();
+
+      if (user && user.role === 'STUDENT') {
+        setCheckingEnrollment(true);
+        getMyEnrollments()
+          .then((data) => {
+            setEnrolledCourses(data || []);
+          })
+          .catch((err) => console.error('Failed to check enrollment:', err))
+          .finally(() => setCheckingEnrollment(false));
+      }
     }
   };
 
@@ -152,14 +169,14 @@ export default function CourseDetails() {
     try {
       if (currentModule) {
         await updateModule(currentModule._id, formData);
-        setToast({ message: 'Module updated successfully.', type: 'success' });
+        toast.success('Module updated successfully.');
       } else {
         await createModule({ ...formData, courseId: id });
-        setToast({ message: 'Module created successfully.', type: 'success' });
+        toast.success('Module created successfully.');
       }
       setIsModalOpen(false);
     } catch (err) {
-      setToast({ message: err.message || 'An error occurred.', type: 'error' });
+      toast.error(err.message || 'An error occurred.');
     }
   };
 
@@ -174,9 +191,9 @@ export default function CourseDetails() {
 
     try {
       await deleteModule(moduleId);
-      setToast({ message: 'Module deleted successfully.', type: 'success' });
+      toast.success('Module deleted successfully.');
     } catch (err) {
-      setToast({ message: err.message || 'Failed to delete module.', type: 'error' });
+      toast.error(err.message || 'Failed to delete module.');
     }
   };
 
@@ -206,12 +223,20 @@ export default function CourseDetails() {
         </button>
         <div
           role="alert"
-          className="flex items-start gap-3 p-4 rounded-xl bg-red-50 border border-red-200 text-red-700"
+          className="flex items-start gap-3 p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 animate-in fade-in duration-200"
         >
           <AlertCircle className="h-5 w-5 flex-shrink-0 mt-0.5" />
           <div>
             <p className="text-sm font-semibold">Failed to load course</p>
             <p className="text-xs mt-0.5 text-red-500">{error}</p>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRetryFetch}
+              className="mt-3 bg-white text-red-700 border-red-200 hover:bg-red-50 cursor-pointer"
+            >
+              Try Again
+            </Button>
           </div>
         </div>
       </div>
@@ -288,7 +313,12 @@ export default function CourseDetails() {
               disabled={enrolling || checkingEnrollment || isEnrolled}
               className={isEnrolled ? "bg-emerald-600 hover:bg-emerald-650 text-white cursor-default" : "text-white"}
             >
-              {enrolling ? (
+              {checkingEnrollment ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  Checking Status...
+                </>
+              ) : enrolling ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />
                   Enrolling...
@@ -299,7 +329,7 @@ export default function CourseDetails() {
                   Enrolled
                 </>
               ) : (
-                'Enroll'
+                'Enroll in Course'
               )}
             </Button>
           )}
@@ -424,14 +454,7 @@ export default function CourseDetails() {
         {/* </div> */}
       </section>
 
-      {/* Toast Notification */}
-      {toast && (
-        <Toast
-          message={toast.message}
-          type={toast.type}
-          onClose={() => setToast(null)}
-        />
-      )}
+
 
       {/* Add/Edit Modal */}
       <Modal
@@ -471,44 +494,6 @@ export default function CourseDetails() {
   );
 }
 
-// ── Inline Toast Notification ───────────────────────────────────────────────
-const Toast = ({ message, type = 'success', onClose }) => {
-  useEffect(() => {
-    const timer = setTimeout(onClose, 4000);
-    return () => clearTimeout(timer);
-  }, [onClose]);
 
-  const config = {
-    success: {
-      bg: 'bg-emerald-50 border-emerald-200',
-      text: 'text-emerald-800',
-      icon: <CheckCircle2 className="h-4 w-4 text-emerald-500 flex-shrink-0" />,
-    },
-    error: {
-      bg: 'bg-red-50 border-red-200',
-      text: 'text-red-800',
-      icon: <XCircle className="h-4 w-4 text-red-500 flex-shrink-0" />,
-    },
-  };
-
-  const { bg, text, icon } = config[type] || config.success;
-
-  return (
-    <div
-      role="alert"
-      className={`fixed top-5 right-5 z-50 flex items-center gap-2.5 px-4 py-3 rounded-xl border shadow-lg ${bg} ${text} text-sm font-medium animate-in slide-in-from-top-2 duration-300 max-w-sm`}
-    >
-      {icon}
-      <span className="flex-1">{message}</span>
-      <button
-        onClick={onClose}
-        aria-label="Dismiss"
-        className="ml-1 opacity-60 hover:opacity-100 transition-opacity text-lg leading-none"
-      >
-        ×
-      </button>
-    </div>
-  );
-};
 
 

@@ -15,6 +15,8 @@ import { Button } from '@/components/ui/button';
 import useAuthStore from '../../../store/useAuthStore';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Skeleton } from '@/components/ui/skeleton';
+import { toast } from 'sonner';
 import {
   Select,
   SelectContent,
@@ -83,11 +85,9 @@ export default function TeacherEnrollmentManagement() {
       setEnrollments(data || []);
     } catch (err) {
       console.error('Failed to load course students:', err);
-      setStudentsError(
-        err.response?.data?.message ||
-        err.message ||
-        'Failed to load enrolled students.'
-      );
+      const errMsg = err.response?.data?.message || err.message || 'Failed to load enrolled students.';
+      setStudentsError(errMsg);
+      toast.error(errMsg);
     } finally {
       setStudentsLoading(false);
     }
@@ -215,6 +215,7 @@ export default function TeacherEnrollmentManagement() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search students by name or email..."
+              aria-label="Search students by name or email"
               className="pl-9 pr-4 py-2 border border-slate-200 rounded-xl bg-white shadow-sm"
             />
           </div>
@@ -223,16 +224,48 @@ export default function TeacherEnrollmentManagement() {
 
       {/* Loading indicator */}
       {isPageLoading && (
-        <div className="flex flex-col items-center justify-center py-20 gap-3 text-slate-500 bg-white border border-slate-200 rounded-2xl shadow-sm">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-sm font-medium tracking-wide">Loading enrollment data...</p>
-          <div className="w-full mt-6 space-y-3 px-6">
-            {[1, 2, 3].map((i) => (
-              <div
-                key={i}
-                className="h-14 w-full rounded-xl bg-slate-100 animate-pulse"
-              />
-            ))}
+        <div className="flex flex-col gap-4 bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+          <div className="flex items-center gap-2 text-slate-500 py-1">
+            <Loader2 className="h-5 w-5 animate-spin text-primary" />
+            <span className="text-sm font-medium tracking-wide">Loading enrollment data...</span>
+          </div>
+          <div className="w-full overflow-x-auto rounded-xl border border-slate-200 mt-2">
+            <table className="min-w-full divide-y divide-slate-200 bg-white">
+              <thead>
+                <tr className="bg-slate-50">
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                    Student Name
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                    Email Address
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                    Enrollment Date
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-32">
+                    Status
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <tr key={i}>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <Skeleton className="h-4 w-32" />
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <Skeleton className="h-4 w-48" />
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <Skeleton className="h-4 w-24" />
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <Skeleton className="h-6 w-20 rounded-full" />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       )}
