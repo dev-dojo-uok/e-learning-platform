@@ -4,6 +4,7 @@ import { BookOpen, AlertCircle, Loader2, Compass, CheckCircle2, XCircle } from '
 import { getMyEnrollments, removeEnrollment } from '@/modules/enrollment';
 import EnrolledCourseCard from '../components/EnrolledCourseCard';
 import { Button } from '@/components/ui/button';
+import useAuthStore from '../../../store/useAuthStore';
 import {
   AlertDialog,
   AlertDialogContent,
@@ -58,9 +59,17 @@ const Toast = ({ message, type = 'success', onClose }) => {
 // ── MyEnrolledCourses page ────────────────────────────────────────────────────
 export default function MyEnrolledCourses() {
   const navigate = useNavigate();
+  const { user } = useAuthStore();
   const [enrollments, setEnrollments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Guard: Redirect if not student
+  useEffect(() => {
+    if (user && user.role !== 'STUDENT') {
+      navigate('/');
+    }
+  }, [user, navigate]);
 
   // ── Unenroll state (mirrors the delete pattern in CourseList.jsx) ──────────
   const [enrollmentToRemove, setEnrollmentToRemove] = useState(null); // enrollment object

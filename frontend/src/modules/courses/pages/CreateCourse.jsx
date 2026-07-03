@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, PlusCircle, CheckCircle2 } from 'lucide-react';
 import CourseForm from '../components/CourseForm';
@@ -10,6 +10,15 @@ export default function CreateCourse() {
   const { createCourse, loading, error } = useCourses();
   const { user } = useAuthStore();
   const [successMsg, setSuccessMsg] = useState(null);
+
+  const isTeacherOrAdmin = user?.role === 'TEACHER' || user?.role === 'ADMIN';
+
+  // Guard: Redirect if not teacher/admin
+  useEffect(() => {
+    if (user && !isTeacherOrAdmin) {
+      navigate('/');
+    }
+  }, [user, isTeacherOrAdmin, navigate]);
 
   const handleSubmit = async (formData) => {
     setSuccessMsg(null);

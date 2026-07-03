@@ -26,7 +26,8 @@ import {
   MessageSquareIcon,
   CheckSquareIcon,
   FileTextIcon,
-  ChevronRightIcon
+  ChevronRightIcon,
+  Users
 } from "lucide-react"
 import {
   Collapsible,
@@ -143,11 +144,18 @@ export function AppSidebar({
   }
 
   const navigationLinks = [
-    ...(user?.role === "TEACHER" || user?.role === "ADMIN" ? [{
-      title: "Dashboard",
-      url: "/",
-      icon: <LayoutDashboardIcon />,
-    }] : [
+    ...(user?.role === "TEACHER" || user?.role === "ADMIN" ? [
+      {
+        title: "Dashboard",
+        url: "/",
+        icon: <LayoutDashboardIcon />,
+      },
+      ...(displayCourses && displayCourses.length > 0 ? [{
+        title: "Enrollment Management",
+        url: `/courses/${displayCourses[0]._id}/enrollments`,
+        icon: <Users />,
+      }] : [])
+    ] : [
       {
         title: "My Enrolled Courses",
         url: "/courses/enrolled",

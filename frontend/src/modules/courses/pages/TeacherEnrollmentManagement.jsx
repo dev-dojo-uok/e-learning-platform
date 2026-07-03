@@ -12,6 +12,7 @@ import {
 import { getCourseStudents } from '@/modules/enrollment';
 import useCourses from '../hooks/useCourses';
 import { Button } from '@/components/ui/button';
+import useAuthStore from '../../../store/useAuthStore';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import {
@@ -37,6 +38,15 @@ const formatDate = (iso) => {
 export default function TeacherEnrollmentManagement() {
   const { id: courseId } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuthStore();
+  const isTeacherOrAdmin = user?.role === 'TEACHER' || user?.role === 'ADMIN';
+
+  // Guard: Redirect if not teacher/admin
+  useEffect(() => {
+    if (user && !isTeacherOrAdmin) {
+      navigate('/');
+    }
+  }, [user, isTeacherOrAdmin, navigate]);
 
   // Course store hook to get the teacher's list of courses
   const {
@@ -46,6 +56,16 @@ export default function TeacherEnrollmentManagement() {
     fetchCourses,
     fetchCourseById
   } = useCourses();
+
+  // Guard: Redirect if teacher tries to access another teacher's course enrollments
+  useEffect(() => {
+    if (selectedCourse && !courseDetailsLoading) {
+      const isOwner = selectedCourse.teacherId === user?.id || selectedCourse.teacher?.id === user?.id;
+      if (user?.role === 'TEACHER' && !isOwner) {
+        navigate('/');
+      }
+    }
+  }, [selectedCourse, courseDetailsLoading, user, navigate]);
 
   // Local state for enrolled students
   const [enrollments, setEnrollments] = useState([]);
