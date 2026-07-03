@@ -8,12 +8,6 @@ import { Link } from 'react-router-dom';
  * EnrolledCourseCard – Displays a course enrolled by the student.
  *
  * Props:
- *  - enrollment {Object} Enrollment data with course and createdAt fields.
- */
-/**
- * EnrolledCourseCard – Displays a course enrolled by the student.
- *
- * Props:
  *  - enrollment  {Object}   Enrollment data with course and enrolledAt fields.
  *  - onUnenroll  {Function} Optional. Called with the enrollment object when
  *                           the student clicks the Unenroll button.
@@ -22,7 +16,7 @@ import { Link } from 'react-router-dom';
  */
 const EnrolledCourseCard = ({ enrollment, onUnenroll, unenrolling = false }) => {
   const { course, enrolledAt } = enrollment || {};
-  const { id, _id, title, description, category, thumbnail, teacher } = course || {};
+  const { id, _id, title, category, thumbnail, teacher } = course || {};
   const courseId = id || _id;
   const teacherName = teacher?.name || 'Unknown Teacher';
   const enrollmentDate = enrolledAt
@@ -79,7 +73,7 @@ const EnrolledCourseCard = ({ enrollment, onUnenroll, unenrolling = false }) => 
           </div>
 
           {/* Enrollment Date */}
-          <div className="flex items-center gap-2 text-xs text-slate-450 font-medium">
+          <div className="flex items-center gap-2 text-xs text-slate-500 font-medium">
             <Calendar className="h-3.5 w-3.5 text-slate-400 flex-shrink-0" />
             <span className="text-slate-500">
               Enrolled: <span className="text-slate-700 font-semibold">{enrollmentDate}</span>

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BookOpen, AlertCircle, Loader2, Compass, CheckCircle2, XCircle } from 'lucide-react';
+import { BookOpen, AlertCircle, Loader2, Compass } from 'lucide-react';
 import { getMyEnrollments, removeEnrollment } from '@/modules/enrollment';
 import EnrolledCourseCard from '../components/EnrolledCourseCard';
 import { Button } from '@/components/ui/button';

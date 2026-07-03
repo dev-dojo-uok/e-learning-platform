@@ -11,7 +11,7 @@ export class EnrollmentService {
    * Enrolls a student in a course.
    * Ensures student and course exist, handles duplicate enrollments.
    */
-  static async enrollStudent({ studentId, courseId }) {
+  static async enrollStudent({ studentId, courseId }, user) {
     // 1. Verify student exists
     if (!isValidUuid(studentId)) {
       const error = new Error('Student not found.');
@@ -39,6 +39,13 @@ export class EnrollmentService {
     if (!course) {
       const error = new Error('Course not found.');
       error.statusCode = 404;
+      throw error;
+    }
+
+    // Authorization guard: Students can only enroll themselves
+    if (user && user.role === 'STUDENT' && user.id !== studentId) {
+      const error = new Error('Access denied. Students can only enroll themselves.');
+      error.statusCode = 403;
       throw error;
     }
 
@@ -160,7 +167,7 @@ export class EnrollmentService {
   /**
    * Removes an enrollment by its ID.
    */
-  static async removeEnrollment(id) {
+  static async removeEnrollment(id, user) {
     // 1. Verify enrollment exists
     if (!isValidUuid(id)) {
       const error = new Error('Enrollment not found.');
@@ -168,7 +175,10 @@ export class EnrollmentService {
       throw error;
     }
     const enrollment = await prisma.enrollment.findUnique({
-      where: { id }
+      where: { id },
+      include: {
+        course: true
+      }
     });
     if (!enrollment) {
       const error = new Error('Enrollment not found.');
@@ -176,7 +186,22 @@ export class EnrollmentService {
       throw error;
     }
 
-    // 2. Delete enrollment
+    // 2. Verify authorization rules
+    if (user) {
+      const { id: userId, role } = user;
+      if (role === 'STUDENT' && enrollment.studentId !== userId) {
+        const error = new Error('Access denied. You can only remove your own enrollment.');
+        error.statusCode = 403;
+        throw error;
+      }
+      if (role === 'TEACHER' && enrollment.course.teacherId !== userId) {
+        const error = new Error('Access denied. You do not own this course.');
+        error.statusCode = 403;
+        throw error;
+      }
+    }
+
+    // 3. Delete enrollment
     return await prisma.enrollment.delete({
       where: { id }
     });

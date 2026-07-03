@@ -7,7 +7,6 @@ import {
   AlertCircle,
   BookOpen,
   CheckCircle2,
-  XCircle,
   MessageSquare,
   Lock,
   Users,
@@ -32,35 +31,6 @@ import {
   AlertDialogAction,
   AlertDialogCancel,
 } from '@/components/ui/alert-dialog';
-
-// ── Small detail row ─────────────────────────────────────────────────────────
-const DetailRow = ({ icon: Icon, label, value }) => (
-  <div className="flex items-start gap-3 py-3 border-b border-slate-100 last:border-0">
-    <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-slate-50 flex-shrink-0 mt-0.5">
-      <Icon className="h-4 w-4 text-primary" />
-    </div>
-    <div className="flex flex-col gap-0.5 min-w-0">
-      <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-        {label}
-      </span>
-      <span className="text-sm text-slate-800 break-words">
-        {value || <span className="text-slate-400 italic">Not set</span>}
-      </span>
-    </div>
-  </div>
-);
-
-// ── Format ISO date to locale string ─────────────────────────────────────────
-const formatDate = (iso) => {
-  if (!iso) return null;
-  return new Date(iso).toLocaleDateString(undefined, {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-};
 
 // ── CourseDetails page ────────────────────────────────────────────────────────
 export default function CourseDetails() {
