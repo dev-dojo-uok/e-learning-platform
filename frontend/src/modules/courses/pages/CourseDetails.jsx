@@ -6,22 +6,21 @@ import {
   Loader2,
   AlertCircle,
   BookOpen,
-  CalendarDays,
-  RefreshCw,
-  Layers,
   CheckCircle2,
   XCircle,
   MessageSquare,
   Lock,
+  Users,
 } from 'lucide-react';
 
 import useCourses from '../hooks/useCourses';
-import { ModuleList, ModuleForm, useModules } from '../../modules';
+import { ModuleList, ModuleForm, useModules } from '../../courseModule';
 import useAuthStore from '../../../store/useAuthStore';
 import { Button } from '@/components/ui/button';
 import { getForumsByCourse } from '../../forums/services/forumService';
 import Modal from '@/components/Modal';
-import api from '../../../lib/axios';
+import { Badge } from '@/components/ui/badge';
+import { enrollStudent, getMyEnrollments } from '../../enrollment';
 import {
   AlertDialog,
   AlertDialogContent,
@@ -113,9 +112,9 @@ export default function CourseDetails() {
 
       if (user && user.role === 'STUDENT') {
         setCheckingEnrollment(true);
-        api.get(`/students/${user.id}/courses`)
-          .then((res) => {
-            setEnrolledCourses(res.data || []);
+        getMyEnrollments()
+          .then((data) => {
+            setEnrolledCourses(data || []);
           })
           .catch((err) => console.error('Failed to check enrollment:', err))
           .finally(() => setCheckingEnrollment(false));
@@ -127,15 +126,12 @@ export default function CourseDetails() {
   const handleEnroll = async () => {
     setEnrolling(true);
     try {
-      await api.post('/enrollments', {
-        studentId: user.id,
-        courseId: id
-      });
+      await enrollStudent(id);
       setToast({ message: 'Successfully enrolled in the course!', type: 'success' });
-      const res = await api.get(`/students/${user.id}/courses`);
-      setEnrolledCourses(res.data || []);
+      const data = await getMyEnrollments();
+      setEnrolledCourses(data || []);
     } catch (err) {
-      setToast({ message: err.response?.data?.message || 'Failed to enroll in the course.', type: 'error' });
+      setToast({ message: err.response?.data?.message || err.message || 'Failed to enroll in the course.', type: 'error' });
     } finally {
       setEnrolling(false);
     }
@@ -238,10 +234,31 @@ export default function CourseDetails() {
 
       {/* ── Plain Page Header & Course Info ── */}
       <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6 pb-6 border-b border-border">
+        {/* Course Thumbnail */}
+        <div className="w-full md:w-48 h-32 rounded-xl overflow-hidden bg-slate-100 flex-shrink-0 flex items-center justify-center border border-slate-200 shadow-sm">
+          {course?.thumbnail ? (
+            <img
+              src={course.thumbnail}
+              alt={course.title || 'Course thumbnail'}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <BookOpen className="h-10 w-10 text-slate-400" />
+          )}
+        </div>
+
         <div className="space-y-3 flex-1 min-w-0">
-          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight leading-tight">
-            {course?.title || 'Course Details'}
-          </h1>
+          <div className="flex flex-wrap items-center gap-2">
+            <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight leading-tight">
+              {course?.title || 'Course Details'}
+            </h1>
+            {course?.category && (
+              <Badge variant="secondary" className="bg-slate-100 text-slate-800 border-border">
+                {course.category}
+              </Badge>
+            )}
+
+          </div>
           {course?.description ? (
             <p className="text-slate-600 text-sm leading-relaxed whitespace-pre-wrap">
               {course.description}
@@ -252,26 +269,37 @@ export default function CourseDetails() {
           <div className="flex items-center gap-2 text-xs font-semibold text-slate-500">
             <span>Teacher: <span className="text-slate-800 font-bold">{course?.teacher?.name || 'Unknown'}</span></span>
             <span>•</span>
+            {course?.category && (
+              <>
+                <span>Category: <span className="text-slate-800 font-bold">{course.category}</span></span>
+                <span>•</span>
+              </>
+            )}
             <span>Created: {new Date(course?.createdAt).toLocaleDateString()}</span>
           </div>
         </div>
 
         {/* Action buttons */}
         <div className="flex items-center gap-2 flex-shrink-0 self-start">
-          {user?.role === 'STUDENT' && !isEnrolled && (
+          {user?.role === 'STUDENT' && (
             <Button
               id="enroll-course-btn"
               onClick={handleEnroll}
-              disabled={enrolling || checkingEnrollment}
-              
+              disabled={enrolling || checkingEnrollment || isEnrolled}
+              className={isEnrolled ? "bg-emerald-600 hover:bg-emerald-650 text-white cursor-default" : "text-white"}
             >
               {enrolling ? (
                 <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
                   Enrolling...
                 </>
+              ) : isEnrolled ? (
+                <>
+                  <CheckCircle2 className="h-4 w-4 mr-2" />
+                  Enrolled
+                </>
               ) : (
-                'Enroll in Course'
+                'Enroll'
               )}
             </Button>
           )}
@@ -285,6 +313,18 @@ export default function CourseDetails() {
               Manage Forums
             </Link>
           </Button>}
+          {isTeacherOrAdmin && (
+            <Button variant="outline" asChild>
+              <Link
+                to={`/courses/${id}/enrollments`}
+                id="view-course-enrollments-btn"
+                className="flex items-center gap-2 font-medium cursor-pointer"
+              >
+                <Users className="h-4 w-4 text-primary" />
+                Manage Enrollments
+              </Link>
+            </Button>
+          )}
           {isTeacherOrAdmin && (
             <Button
               id="edit-course-btn"

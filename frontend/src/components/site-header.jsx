@@ -13,6 +13,8 @@ export function SiteHeader() {
         return user?.role === "STUDENT" ? "My Enrolled Courses" : "Dashboard Overview"
       case "/courses":
         return "Course Shell & Materials"
+      case "/courses/enrolled":
+        return "My Enrolled Courses"
       case "/quizzes":
         return "Quiz Definitions & Submissions"
       case "/forums":

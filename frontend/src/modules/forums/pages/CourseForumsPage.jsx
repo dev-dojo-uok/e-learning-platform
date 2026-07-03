@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ChevronLeft, BookOpen, Layers, MessageSquare, X } from 'lucide-react';
 import { getForumsByCourse, createForum } from '../services/forumService';
-import { getModulesByCourse } from '../../modules/services/moduleService';
+import { getModulesByCourse } from '../../courseModule/services/moduleService';
 import useAuthStore from '../../../store/useAuthStore';
 import ForumList from '../components/ForumList';
 import { Button } from '@/components/ui/button';

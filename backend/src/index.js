@@ -25,7 +25,20 @@ const PORT = process.env.PORT || 5000;
 
 // Configure CORS
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  origin: (origin, callback) => {
+    const allowedOrigins = [
+      process.env.FRONTEND_URL || 'http://localhost:5173',
+      'http://localhost:5173',
+      'http://localhost:5174',
+      'http://localhost:5175',
+    ];
+    // Allow requests with no origin (e.g. curl, server-to-server)
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error(`CORS blocked: ${origin}`));
+    }
+  },
   credentials: true
 }));
 
@@ -46,6 +59,16 @@ app.use(cookieParser());
 
 // Serve static uploads
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
+
+// Root route handler
+app.get('/', (req, res) => {
+  res.json({
+    status: 'UP',
+    message: 'Welcome to the E-Learning Platform API. Please access the application via the frontend client.',
+    frontendUrl: process.env.FRONTEND_URL || 'http://localhost:5173',
+    healthCheckUrl: '/api/health'
+  });
+});
 
 // Base health route
 app.get('/api/health', (req, res) => {
