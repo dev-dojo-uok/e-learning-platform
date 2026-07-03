@@ -152,7 +152,7 @@ export function AppSidebar({
       },
       ...(displayCourses && displayCourses.length > 0 ? [{
         title: "Enrollment Management",
-        url: `/courses/${displayCourses[0]._id}/enrollments`,
+        url: `/courses/${displayCourses[0]._id || displayCourses[0].id}/enrollments`,
         icon: <Users />,
       }] : [])
     ] : [
