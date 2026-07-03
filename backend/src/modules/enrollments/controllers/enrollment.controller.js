@@ -38,7 +38,7 @@ export class EnrollmentController {
       if (req.user?.role === 'STUDENT' && req.user?.id !== studentId) {
         return res.status(403).json({
           message: 'Access denied. You can only view your own enrolled courses.',
-          error: 'Access denied.'
+          error: 'Access denied. You can only view your own enrolled courses.'
         });
       }
 
