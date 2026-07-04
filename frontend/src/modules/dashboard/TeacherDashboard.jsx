@@ -22,6 +22,12 @@ export default function TeacherDashboard() {
   const [quizAttempts, setQuizAttempts] = useState([]);
   const [quizLoading, setQuizLoading] = useState(false);
 
+  // ── Step 3: Assignment Analytics State ──
+  const [assignmentsList, setAssignmentsList] = useState([]);
+  const [selectedAssignmentId, setSelectedAssignmentId] = useState("");
+  const [assignmentSubmissions, setAssignmentSubmissions] = useState([]);
+  const [assignmentLoading, setAssignmentLoading] = useState(false);
+
   useEffect(() => {
     fetchCourses();
   }, [fetchCourses]);
@@ -56,6 +62,13 @@ export default function TeacherDashboard() {
         } else {
           setSelectedQuizId("");
         }
+
+        setAssignmentsList(aData);
+        if (aData.length > 0) {
+          setSelectedAssignmentId(aData[0]._id || aData[0].id);
+        } else {
+          setSelectedAssignmentId("");
+        }
       }).finally(() => {
         setStatsLoading(false);
       });
@@ -77,6 +90,21 @@ export default function TeacherDashboard() {
     }
   }, [selectedQuizId]);
 
+  // Fetch submissions for selected assignment
+  useEffect(() => {
+    if (selectedAssignmentId) {
+      setAssignmentLoading(true);
+      api.get(`/assignments/${selectedAssignmentId}/submissions`)
+        .then((res) => {
+          setAssignmentSubmissions(Array.isArray(res.data) ? res.data : (res.data || []));
+        })
+        .catch(() => setAssignmentSubmissions([]))
+        .finally(() => setAssignmentLoading(false));
+    } else {
+      setAssignmentSubmissions([]);
+    }
+  }, [selectedAssignmentId]);
+
   const selectedCourseObj = courses.find(c => (c._id || c.id) === selectedCourseId);
 
   // Calculate Quiz Pie Data
@@ -88,6 +116,17 @@ export default function TeacherDashboard() {
   const quizPieData = [
     { name: "Completed", value: quizCompletedCount, color: "#4F46E5" },
     { name: "Pending", value: quizRemainingCount, color: "#E2E8F0" }
+  ];
+
+  // Calculate Assignment Pie Data
+  const completedAssignmentStudents = new Set(
+    assignmentSubmissions.map(sub => sub.studentId || sub.userId || sub.student?._id || sub.student?.id || sub.user?._id || sub.id)
+  ).size;
+  const assignmentCompletedCount = Math.min(completedAssignmentStudents, enrolledCount || completedAssignmentStudents);
+  const assignmentRemainingCount = Math.max(0, enrolledCount - assignmentCompletedCount);
+  const assignmentPieData = [
+    { name: "Completed", value: assignmentCompletedCount, color: "#10B981" },
+    { name: "Pending", value: assignmentRemainingCount, color: "#E2E8F0" }
   ];
 
   return (
@@ -278,6 +317,96 @@ export default function TeacherDashboard() {
                   <span className="font-bold text-indigo-600 text-sm">
                     {enrolledCount > 0 ? Math.round((quizCompletedCount / enrolledCount) * 100) : 0}%
                   </span> of enrolled students have completed this evaluation.
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Step 3: Interactive Assignment Completion Section with Pie Chart ── */}
+      {selectedCourseObj && (
+        <div className="flex flex-col gap-5 p-6 bg-white rounded-2xl border border-slate-200 shadow-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+            <div>
+              <h3 className="text-lg font-bold text-black flex items-center gap-2">
+                <FileText className="h-5 w-5 text-emerald-600" />
+                <span>Assignment Completion Analytics</span>
+              </h3>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Select an assignment below to view student submission rates and progress.
+              </p>
+            </div>
+
+            {/* Assignment Selector Dropdown */}
+            {assignmentsList && assignmentsList.length > 0 ? (
+              <select
+                value={selectedAssignmentId}
+                onChange={(e) => setSelectedAssignmentId(e.target.value)}
+                className="px-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50 text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-600 cursor-pointer"
+              >
+                {assignmentsList.map((a) => (
+                  <option key={a._id || a.id} value={a._id || a.id}>
+                    {a.title}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <span className="text-xs text-slate-400 font-medium italic">No Assignments Available</span>
+            )}
+          </div>
+
+          {assignmentsList.length === 0 ? (
+            <div className="py-8 text-center text-xs text-slate-400">
+              No assignments created for this course yet.
+            </div>
+          ) : assignmentLoading ? (
+            <div className="flex items-center justify-center py-12 gap-2 text-xs text-slate-400 animate-pulse">
+              <Loader2 className="h-5 w-5 animate-spin text-emerald-600" />
+              <span>Loading assignment submission data...</span>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+              {/* Pie Chart */}
+              <div className="h-[200px] w-full flex items-center justify-center">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={assignmentPieData}
+                      dataKey="value"
+                      nameKey="name"
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={50}
+                      outerRadius={75}
+                      strokeWidth={2}
+                    >
+                      {assignmentPieData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip 
+                      formatter={(val) => [`${val} Student(s)`, 'Count']}
+                      contentStyle={{ borderRadius: '8px', fontSize: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+
+              {/* Text Breakdown */}
+              <div className="flex flex-col justify-center space-y-3 p-4 bg-slate-50/70 rounded-xl border border-slate-100">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-emerald-600"></div>
+                  <span className="text-xs font-semibold text-slate-600">Completed: <strong className="text-slate-800">{assignmentCompletedCount}</strong></span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-slate-200"></div>
+                  <span className="text-xs font-semibold text-slate-600">Pending: <strong className="text-slate-800">{assignmentRemainingCount}</strong></span>
+                </div>
+                <div className="pt-2 border-t border-slate-200/60 text-xs text-slate-500">
+                  <span className="font-bold text-emerald-600 text-sm">
+                    {enrolledCount > 0 ? Math.round((assignmentCompletedCount / enrolledCount) * 100) : 0}%
+                  </span> of enrolled students have submitted this evaluation.
                 </div>
               </div>
             </div>
