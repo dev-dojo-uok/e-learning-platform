@@ -411,16 +411,23 @@ export default function CourseDetails() {
         )}
       </section>
 
+      {/* ── Course Progress ── */}
+      {!isTeacherOrAdmin && (
+        <section aria-labelledby="course-progress-heading">
+          <CourseProgressCard courseId={id} />
+        </section>
+      )}
+
       {/* ── Module Management ── */}
       <section aria-labelledby="module-mgmt-heading">
         {/* <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden p-6"> */}
-          <ModuleList
-            courseId={id}
-            isEnrolled={isEnrolled}
-            onAdd={handleOpenAddModal}
-            onEdit={handleOpenEditModal}
-            onDelete={handleDeleteModule}
-          />
+        <ModuleList
+          courseId={id}
+          isEnrolled={isEnrolled}
+          onAdd={handleOpenAddModal}
+          onEdit={handleOpenEditModal}
+          onDelete={handleDeleteModule}
+        />
         {/* </div> */}
       </section>
 
