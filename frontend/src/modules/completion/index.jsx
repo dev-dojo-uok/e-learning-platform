@@ -1,5 +1,9 @@
 import React from 'react';
 
+export { CourseProgressCard } from './components/CourseProgressCard';
+export { default as useCompletionStore } from './store/useCompletionStore';
+export { default as completionService } from './services/completionService';
+
 export default function CompletionPlaceholder() {
   return (
     <div className="p-6 bg-slate-900 rounded-2xl border border-slate-800">
@@ -8,3 +12,4 @@ export default function CompletionPlaceholder() {
     </div>
   );
 }
+

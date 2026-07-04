@@ -26,7 +26,7 @@ import { Progress } from "@/components/ui/progress"
 import useCompletionStore from "../store/useCompletionStore"
 
 export function CourseProgressCard({ courseId }) {
-  const { progressData, isLoading, fetchCourseProgress } = useCompletionStore()
+  const { progressData, isLoading, error, fetchCourseProgress } = useCompletionStore()
 
   // Fetch data on mount
   useEffect(() => {
@@ -38,6 +38,15 @@ export function CourseProgressCard({ courseId }) {
   if (isLoading) {
     return <div className="p-8 text-center animate-pulse text-slate-500">Loading progress...</div>
   }
+
+  if (error && !progressData) {
+    return (
+      <div className="p-6 text-center text-sm text-slate-500 bg-slate-50 rounded-xl border border-slate-200">
+        {error}
+      </div>
+    )
+  }
+
 
   // Safe fallback extractions to completely prevent blank screen crashes
   const totalQuizzes = progressData?.totalQuizzes || 0
