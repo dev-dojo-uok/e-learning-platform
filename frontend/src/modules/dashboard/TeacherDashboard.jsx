@@ -4,6 +4,7 @@ import useCourses from "@/modules/courses/hooks/useCourses"
 import { BookOpen, Users, Loader2, AlertCircle, PlusCircle, ArrowRight, Award, FileText, HelpCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import api from "@/lib/axios"
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts"
 
 export default function TeacherDashboard() {
   const { courses, loading, error, fetchCourses } = useCourses();
@@ -14,6 +15,12 @@ export default function TeacherDashboard() {
   const [quizzesCount, setQuizzesCount] = useState(0);
   const [assignmentsCount, setAssignmentsCount] = useState(0);
   const [statsLoading, setStatsLoading] = useState(false);
+
+  // ── Step 2: Quiz Analytics State ──
+  const [quizzesList, setQuizzesList] = useState([]);
+  const [selectedQuizId, setSelectedQuizId] = useState("");
+  const [quizAttempts, setQuizAttempts] = useState([]);
+  const [quizLoading, setQuizLoading] = useState(false);
 
   useEffect(() => {
     fetchCourses();
@@ -35,16 +42,53 @@ export default function TeacherDashboard() {
         api.get(`/quizzes/course/${selectedCourseId}`).catch(() => ({ data: [] })),
         api.get(`/assignments/course/${selectedCourseId}`).catch(() => ({ data: [] }))
       ]).then(([studentsRes, quizzesRes, assignmentsRes]) => {
-        setEnrolledCount(Array.isArray(studentsRes.data) ? studentsRes.data.length : (studentsRes.data?.length || 0));
-        setQuizzesCount(Array.isArray(quizzesRes.data) ? quizzesRes.data.length : (quizzesRes.data?.length || 0));
-        setAssignmentsCount(Array.isArray(assignmentsRes.data) ? assignmentsRes.data.length : (assignmentsRes.data?.length || 0));
+        const sData = Array.isArray(studentsRes.data) ? studentsRes.data : (studentsRes.data || []);
+        const qData = Array.isArray(quizzesRes.data) ? quizzesRes.data : (quizzesRes.data || []);
+        const aData = Array.isArray(assignmentsRes.data) ? assignmentsRes.data : (assignmentsRes.data || []);
+        
+        setEnrolledCount(sData.length);
+        setQuizzesCount(qData.length);
+        setAssignmentsCount(aData.length);
+
+        setQuizzesList(qData);
+        if (qData.length > 0) {
+          setSelectedQuizId(qData[0]._id || qData[0].id);
+        } else {
+          setSelectedQuizId("");
+        }
       }).finally(() => {
         setStatsLoading(false);
       });
     }
   }, [selectedCourseId]);
 
+  // Fetch attempts for selected quiz
+  useEffect(() => {
+    if (selectedQuizId) {
+      setQuizLoading(true);
+      api.get(`/quizzes/${selectedQuizId}/attempts`)
+        .then((res) => {
+          setQuizAttempts(Array.isArray(res.data) ? res.data : (res.data || []));
+        })
+        .catch(() => setQuizAttempts([]))
+        .finally(() => setQuizLoading(false));
+    } else {
+      setQuizAttempts([]);
+    }
+  }, [selectedQuizId]);
+
   const selectedCourseObj = courses.find(c => (c._id || c.id) === selectedCourseId);
+
+  // Calculate Quiz Pie Data
+  const completedQuizStudents = new Set(
+    quizAttempts.map(att => att.studentId || att.userId || att.student?._id || att.student?.id || att.user?._id || att.id)
+  ).size;
+  const quizCompletedCount = Math.min(completedQuizStudents, enrolledCount || completedQuizStudents);
+  const quizRemainingCount = Math.max(0, enrolledCount - quizCompletedCount);
+  const quizPieData = [
+    { name: "Completed", value: quizCompletedCount, color: "#4F46E5" },
+    { name: "Pending", value: quizRemainingCount, color: "#E2E8F0" }
+  ];
 
   return (
     <div className="flex flex-col gap-8">
@@ -80,10 +124,11 @@ export default function TeacherDashboard() {
                     key={cid}
                     type="button"
                     onClick={() => setSelectedCourseId(cid)}
-                    className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer whitespace-nowrap ${isSelected
+                    className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer whitespace-nowrap ${
+                      isSelected
                         ? "bg-indigo-600 text-white shadow-sm scale-102"
                         : "bg-slate-100 text-slate-600 hover:bg-slate-200/80"
-                      }`}
+                    }`}
                   >
                     {c.title}
                   </button>
@@ -149,6 +194,96 @@ export default function TeacherDashboard() {
           </div>
         )}
       </div>
+
+      {/* ── Step 2: Interactive Quiz Completion Section with Pie Chart ── */}
+      {selectedCourseObj && (
+        <div className="flex flex-col gap-5 p-6 bg-white rounded-2xl border border-slate-200 shadow-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+            <div>
+              <h3 className="text-lg font-bold text-black flex items-center gap-2">
+                <HelpCircle className="h-5 w-5 text-purple-600" />
+                <span>Quiz Completion Analytics</span>
+              </h3>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Select a quiz below to view the completion ratio of your enrolled students.
+              </p>
+            </div>
+
+            {/* Quiz Selector Dropdown */}
+            {quizzesList && quizzesList.length > 0 ? (
+              <select
+                value={selectedQuizId}
+                onChange={(e) => setSelectedQuizId(e.target.value)}
+                className="px-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50 text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-purple-600 cursor-pointer"
+              >
+                {quizzesList.map((q) => (
+                  <option key={q._id || q.id} value={q._id || q.id}>
+                    {q.title}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <span className="text-xs text-slate-400 font-medium italic">No Quizzes Available</span>
+            )}
+          </div>
+
+          {quizzesList.length === 0 ? (
+            <div className="py-8 text-center text-xs text-slate-400">
+              No quizzes created for this course yet.
+            </div>
+          ) : quizLoading ? (
+            <div className="flex items-center justify-center py-12 gap-2 text-xs text-slate-400 animate-pulse">
+              <Loader2 className="h-5 w-5 animate-spin text-purple-600" />
+              <span>Loading quiz completion data...</span>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+              {/* Pie Chart */}
+              <div className="h-[200px] w-full flex items-center justify-center">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={quizPieData}
+                      dataKey="value"
+                      nameKey="name"
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={50}
+                      outerRadius={75}
+                      strokeWidth={2}
+                    >
+                      {quizPieData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip 
+                      formatter={(val) => [`${val} Student(s)`, 'Count']}
+                      contentStyle={{ borderRadius: '8px', fontSize: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+
+              {/* Text Breakdown */}
+              <div className="flex flex-col justify-center space-y-3 p-4 bg-slate-50/70 rounded-xl border border-slate-100">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-indigo-600"></div>
+                  <span className="text-xs font-semibold text-slate-600">Completed: <strong className="text-slate-800">{quizCompletedCount}</strong></span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-slate-200"></div>
+                  <span className="text-xs font-semibold text-slate-600">Pending: <strong className="text-slate-800">{quizRemainingCount}</strong></span>
+                </div>
+                <div className="pt-2 border-t border-slate-200/60 text-xs text-slate-500">
+                  <span className="font-bold text-indigo-600 text-sm">
+                    {enrolledCount > 0 ? Math.round((quizCompletedCount / enrolledCount) * 100) : 0}%
+                  </span> of enrolled students have completed this evaluation.
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Course Management / Enrollments list */}
       <div className="flex flex-col gap-4">
