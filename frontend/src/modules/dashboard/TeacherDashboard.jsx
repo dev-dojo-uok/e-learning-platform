@@ -1,18 +1,54 @@
-import React, { useEffect } from "react"
+import React, { useState, useEffect } from "react"
 import { Link } from "react-router-dom"
 import useCourses from "@/modules/courses/hooks/useCourses"
-import { BookOpen, Users, Loader2, AlertCircle, PlusCircle, ArrowRight } from "lucide-react"
+import { BookOpen, Users, Loader2, AlertCircle, PlusCircle, ArrowRight, Award, FileText, HelpCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import api from "@/lib/axios"
 
 export default function TeacherDashboard() {
   const { courses, loading, error, fetchCourses } = useCourses();
+
+  // ── Step 1: Course Selector & Stat State ──
+  const [selectedCourseId, setSelectedCourseId] = useState("");
+  const [enrolledCount, setEnrolledCount] = useState(0);
+  const [quizzesCount, setQuizzesCount] = useState(0);
+  const [assignmentsCount, setAssignmentsCount] = useState(0);
+  const [statsLoading, setStatsLoading] = useState(false);
 
   useEffect(() => {
     fetchCourses();
   }, [fetchCourses]);
 
+  // Default to first course when loaded
+  useEffect(() => {
+    if (!selectedCourseId && courses && courses.length > 0) {
+      setSelectedCourseId(courses[0]._id || courses[0].id);
+    }
+  }, [courses, selectedCourseId]);
+
+  // Fetch stats for selected course
+  useEffect(() => {
+    if (selectedCourseId) {
+      setStatsLoading(true);
+      Promise.all([
+        api.get(`/courses/${selectedCourseId}/students`).catch(() => ({ data: [] })),
+        api.get(`/quizzes/course/${selectedCourseId}`).catch(() => ({ data: [] })),
+        api.get(`/assignments/course/${selectedCourseId}`).catch(() => ({ data: [] }))
+      ]).then(([studentsRes, quizzesRes, assignmentsRes]) => {
+        setEnrolledCount(Array.isArray(studentsRes.data) ? studentsRes.data.length : (studentsRes.data?.length || 0));
+        setQuizzesCount(Array.isArray(quizzesRes.data) ? quizzesRes.data.length : (quizzesRes.data?.length || 0));
+        setAssignmentsCount(Array.isArray(assignmentsRes.data) ? assignmentsRes.data.length : (assignmentsRes.data?.length || 0));
+      }).finally(() => {
+        setStatsLoading(false);
+      });
+    }
+  }, [selectedCourseId]);
+
+  const selectedCourseObj = courses.find(c => (c._id || c.id) === selectedCourseId);
+
   return (
     <div className="flex flex-col gap-8">
+      {/* Header */}
       <div>
         <h2 className="text-2xl font-bold tracking-tight text-black">Welcome back, Professor</h2>
         <p className="text-slate-500 font-medium text-sm">
@@ -20,11 +56,98 @@ export default function TeacherDashboard() {
         </p>
       </div>
 
-      <div className="p-6 bg-white rounded-2xl border border-slate-200 shadow-sm">
-        <h3 className="text-lg font-bold text-black mb-2">Teacher Dashboard Overview</h3>
-        <p className="text-slate-500 text-sm">
-          Welcome to the course management console. Use the quick links below or the sidebar to plan, schedule, and configure course settings.
-        </p>
+      {/* ── Step 1: Interactive Course Selector & Stats Overview ── */}
+      <div className="flex flex-col gap-5 p-6 bg-white rounded-2xl border border-slate-200 shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+          <div>
+            <h3 className="text-lg font-bold text-black flex items-center gap-2">
+              <Award className="h-5 w-5 text-indigo-600" />
+              <span>Course Analytics & Overview</span>
+            </h3>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Select one of your courses below to view student enrollment and evaluation metrics.
+            </p>
+          </div>
+
+          {/* Course Selector Dropdown / Pills */}
+          {courses && courses.length > 0 && (
+            <div className="flex items-center gap-2 overflow-x-auto py-1">
+              {courses.map((c) => {
+                const cid = c._id || c.id;
+                const isSelected = selectedCourseId === cid;
+                return (
+                  <button
+                    key={cid}
+                    type="button"
+                    onClick={() => setSelectedCourseId(cid)}
+                    className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer whitespace-nowrap ${isSelected
+                        ? "bg-indigo-600 text-white shadow-sm scale-102"
+                        : "bg-slate-100 text-slate-600 hover:bg-slate-200/80"
+                      }`}
+                  >
+                    {c.title}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Selected Course Overview Stats */}
+        {statsLoading ? (
+          <div className="flex items-center justify-center py-8 gap-2 text-xs text-slate-400 animate-pulse">
+            <Loader2 className="h-4 w-4 animate-spin text-indigo-600" />
+            <span>Loading course analytics...</span>
+          </div>
+        ) : selectedCourseObj ? (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-semibold text-slate-700">
+                Viewing Stats for: <strong className="text-indigo-600 font-bold">{selectedCourseObj.title}</strong>
+              </span>
+              <span className="text-xs text-slate-400 font-medium">
+                Category: {selectedCourseObj.category || "General"}
+              </span>
+            </div>
+
+            {/* 3 Overview Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="p-4 rounded-xl bg-gradient-to-br from-slate-50 to-indigo-50/30 border border-slate-200/80 shadow-2xs flex items-center gap-3.5">
+                <div className="w-11 h-11 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center shrink-0 font-bold">
+                  <Users className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Enrolled Students</p>
+                  <p className="text-2xl font-extrabold text-slate-800">{enrolledCount}</p>
+                </div>
+              </div>
+
+              <div className="p-4 rounded-xl bg-gradient-to-br from-slate-50 to-purple-50/30 border border-slate-200/80 shadow-2xs flex items-center gap-3.5">
+                <div className="w-11 h-11 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center shrink-0 font-bold">
+                  <HelpCircle className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Course Quizzes</p>
+                  <p className="text-2xl font-extrabold text-slate-800">{quizzesCount}</p>
+                </div>
+              </div>
+
+              <div className="p-4 rounded-xl bg-gradient-to-br from-slate-50 to-emerald-50/30 border border-slate-200/80 shadow-2xs flex items-center gap-3.5">
+                <div className="w-11 h-11 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0 font-bold">
+                  <FileText className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Assignments</p>
+                  <p className="text-2xl font-extrabold text-slate-800">{assignmentsCount}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="py-6 text-center text-xs text-slate-400">
+            Please select or create a course to view analytics.
+          </div>
+        )}
       </div>
 
       {/* Course Management / Enrollments list */}
@@ -124,3 +247,4 @@ export default function TeacherDashboard() {
     </div>
   );
 }
+
