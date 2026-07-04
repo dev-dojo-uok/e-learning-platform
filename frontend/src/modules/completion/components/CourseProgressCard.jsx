@@ -1,7 +1,9 @@
 "use client"
 
-import { useEffect } from "react"
-import { BookOpen, FileText, CheckCircle2, Circle } from "lucide-react"
+import { useEffect, useState } from "react"
+import { BookOpen, FileText, CheckCircle2, Circle, MessageSquare } from "lucide-react"
+import { Link } from "react-router-dom"
+import api from "@/lib/axios"
 import {
   Label,
   Pie,
@@ -26,18 +28,70 @@ import { Progress } from "@/components/ui/progress"
 import useCompletionStore from "../store/useCompletionStore"
 
 export function CourseProgressCard({ courseId }) {
-  const { progressData, isLoading, fetchCourseProgress } = useCompletionStore()
+  const { progressData, isLoading, error, fetchCourseProgress } = useCompletionStore()
+  const [latestThread, setLatestThread] = useState(null)
+  const [latestMaterial, setLatestMaterial] = useState(null)
+  const [updatesLoading, setUpdatesLoading] = useState(false)
 
   // Fetch data on mount
   useEffect(() => {
     if (courseId) {
       fetchCourseProgress(courseId)
+
+      // Fetch latest teacher message and latest uploaded material
+      setUpdatesLoading(true)
+      Promise.all([
+        api.get(`/forums/${courseId}`).catch(() => ({ data: [] })),
+        api.get(`/modules/course/${courseId}`).catch(() => ({ data: [] }))
+      ]).then(async ([forumsRes, modulesRes]) => {
+        const forums = Array.isArray(forumsRes.data) ? forumsRes.data : (forumsRes.data || [])
+        const modules = Array.isArray(modulesRes.data) ? modulesRes.data : (modulesRes.data || [])
+
+        // Fetch threads from forums
+        let allThreads = []
+        if (forums.length > 0) {
+          const threadsResults = await Promise.all(
+            forums.map(f => api.get(`/threads/forum/${f._id || f.id}`).catch(() => ({ data: [] })))
+          )
+          threadsResults.forEach(res => {
+            const list = Array.isArray(res.data) ? res.data : (res.data?.threads || [])
+            allThreads.push(...list)
+          })
+        }
+        allThreads.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+        setLatestThread(allThreads[0] || null)
+
+        // Fetch materials from modules
+        let allMaterials = []
+        if (modules.length > 0) {
+          const matResults = await Promise.all(
+            modules.map(m => api.get(`/materials/module/${m._id || m.id}`).catch(() => ({ data: [] })))
+          )
+          matResults.forEach(res => {
+            const list = Array.isArray(res.data) ? res.data : (res.data || [])
+            allMaterials.push(...list)
+          })
+        }
+        allMaterials.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+        setLatestMaterial(allMaterials[0] || null)
+      }).finally(() => {
+        setUpdatesLoading(false)
+      })
     }
   }, [courseId, fetchCourseProgress])
 
   if (isLoading) {
     return <div className="p-8 text-center animate-pulse text-slate-500">Loading progress...</div>
   }
+
+  if (error && !progressData) {
+    return (
+      <div className="p-6 text-center text-sm text-slate-500 bg-slate-50 rounded-xl border border-slate-200">
+        {error}
+      </div>
+    )
+  }
+
 
   // Safe fallback extractions to completely prevent blank screen crashes
   const totalQuizzes = progressData?.totalQuizzes || 0
@@ -71,7 +125,7 @@ export function CourseProgressCard({ courseId }) {
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-4xl items-stretch">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 w-full items-stretch">
 
       {/* LEFT SIDE: Pie Chart Display */}
       <Card className="flex flex-col border border-slate-200 shadow-sm bg-white h-full justify-between">
@@ -89,8 +143,8 @@ export function CourseProgressCard({ courseId }) {
                 nameKey="name"
                 innerRadius={110}
                 outerRadius={140}
-                startAngle={360}
-                endAngle={0}
+                startAngle={90}
+                endAngle={-270}
                 strokeWidth={0}
               >
                 <Label
@@ -195,6 +249,96 @@ export function CourseProgressCard({ courseId }) {
                     );
                   })}
                 </div>
+              </div>
+            )}
+          </div>
+
+        </CardContent>
+      </Card>
+
+      {/* RIGHT SIDE (NEW 3rd CARD): Recent Course Updates */}
+      <Card className="flex flex-col border border-slate-200 shadow-sm bg-white h-full">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg font-bold text-slate-800">Course Updates</CardTitle>
+          <CardDescription className="text-sm text-slate-500">Latest messages & materials from your teacher.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4 flex-1 flex flex-col justify-between">
+          
+          {/* Newest Teacher Message Box */}
+          <div className="space-y-2 p-3 rounded-xl bg-slate-50 border border-slate-100 flex-1 flex flex-col justify-center">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                <MessageSquare className="w-4 h-4 text-[#5C29C2]" /> Latest Teacher Message
+              </div>
+              {latestThread?.createdAt && (
+                <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-white border border-slate-200 text-slate-500">
+                  {new Date(latestThread.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                </span>
+              )}
+            </div>
+
+            {updatesLoading ? (
+              <div className="text-xs text-slate-400 italic py-2">Loading latest message...</div>
+            ) : latestThread ? (
+              <Link to={`/threads/${latestThread.id}`} className="block group mt-1">
+                <p className="text-sm font-bold text-slate-800 group-hover:text-[#5C29C2] transition-colors line-clamp-1">
+                  {latestThread.title}
+                </p>
+                {latestThread.content && (
+                  <p className="text-xs text-slate-500 mt-1 line-clamp-2 leading-relaxed">
+                    {latestThread.content}
+                  </p>
+                )}
+                <span className="text-[10px] font-semibold text-[#5C29C2] mt-2 inline-block">View Discussion →</span>
+              </Link>
+            ) : (
+              <div className="text-xs text-slate-400 italic py-3 text-center">
+                No teacher messages posted yet.
+              </div>
+            )}
+          </div>
+
+          {/* Latest Uploaded File Box */}
+          <div className="space-y-2 p-3 rounded-xl bg-slate-50 border border-slate-100 flex-1 flex flex-col justify-center">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                <FileText className="w-4 h-4 text-[#5C29C2]" /> Latest Uploaded File
+              </div>
+              {latestMaterial?.createdAt && (
+                <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-white border border-slate-200 text-slate-500">
+                  {new Date(latestMaterial.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                </span>
+              )}
+            </div>
+
+            {updatesLoading ? (
+              <div className="text-xs text-slate-400 italic py-2">Loading uploaded file...</div>
+            ) : latestMaterial ? (
+              <div className="mt-1 flex items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="text-sm font-bold text-slate-800 truncate" title={latestMaterial.title}>
+                    {latestMaterial.title}
+                  </p>
+                  <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mt-0.5 inline-block">
+                    {latestMaterial.type || 'MATERIAL'}
+                  </span>
+                </div>
+                {latestMaterial.contentUrl && (
+                  <a
+                    href={latestMaterial.contentUrl.startsWith('http') ? latestMaterial.contentUrl : `${import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000'}/${latestMaterial.contentUrl}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    download
+                    className="px-2.5 py-1 rounded-lg text-xs font-bold text-white transition-all whitespace-nowrap shadow-sm"
+                    style={{ backgroundColor: '#5C29C2' }}
+                  >
+                    Download
+                  </a>
+                )}
+              </div>
+            ) : (
+              <div className="text-xs text-slate-400 italic py-3 text-center">
+                No course files uploaded yet.
               </div>
             )}
           </div>
