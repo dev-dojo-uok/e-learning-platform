@@ -21,6 +21,7 @@ import { getForumsByCourse } from '../../forums/services/forumService';
 import Modal from '@/components/Modal';
 import { Badge } from '@/components/ui/badge';
 import { enrollStudent, getMyEnrollments } from '../../enrollment';
+import { CourseProgressCard } from '../../completion';
 import {
   AlertDialog,
   AlertDialogContent,
@@ -414,7 +415,14 @@ export default function CourseDetails() {
       {/* ── Course Progress ── */}
       {!isTeacherOrAdmin && (
         <section aria-labelledby="course-progress-heading">
-          <CourseProgressCard courseId={id} />
+          {isEnrolled ? (
+            <CourseProgressCard courseId={id} />
+          ) : (
+            <div className="p-6 text-center border rounded-xl bg-slate-50/50 text-slate-400 text-sm flex items-center justify-center gap-2">
+              <Lock className="h-4 w-4" />
+              <span>Enroll in this course to unlock and track your learning progress.</span>
+            </div>
+          )}
         </section>
       )}
 
