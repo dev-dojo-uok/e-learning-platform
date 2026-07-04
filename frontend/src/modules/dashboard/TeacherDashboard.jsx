@@ -206,7 +206,7 @@ export default function TeacherDashboard() {
               </div>
 
               <div className="p-4 rounded-xl bg-gradient-to-br from-slate-50 to-purple-50/30 border border-slate-200/80 shadow-2xs flex items-center gap-3.5">
-                <div className="w-11 h-11 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center shrink-0 font-bold">
+                <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 font-bold" style={{ backgroundColor: '#EFEAFF', color: '#5C29C2' }}>
                   <HelpCircle className="h-5 w-5" />
                 </div>
                 <div>
@@ -215,8 +215,8 @@ export default function TeacherDashboard() {
                 </div>
               </div>
 
-              <div className="p-4 rounded-xl bg-gradient-to-br from-slate-50 to-emerald-50/30 border border-slate-200/80 shadow-2xs flex items-center gap-3.5">
-                <div className="w-11 h-11 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0 font-bold">
+              <div className="p-4 rounded-xl bg-gradient-to-br from-slate-50 to-purple-50/30 border border-slate-200/80 shadow-2xs flex items-center gap-3.5">
+                <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 font-bold" style={{ backgroundColor: '#EFEAFF', color: '#5C29C2' }}>
                   <FileText className="h-5 w-5" />
                 </div>
                 <div>

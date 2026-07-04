@@ -22,6 +22,7 @@ import Modal from '@/components/Modal';
 import { Badge } from '@/components/ui/badge';
 import { enrollStudent, getMyEnrollments } from '../../enrollment';
 import { CourseProgressCard } from '../../completion';
+import CourseEvaluationAnalytics from '../components/CourseEvaluationAnalytics';
 import {
   AlertDialog,
   AlertDialogContent,
@@ -412,7 +413,7 @@ export default function CourseDetails() {
         )}
       </section>
 
-      {/* ── Course Progress ── */}
+      {/* ── Course Progress (Student View) ── */}
       {!isTeacherOrAdmin && (
         <section aria-labelledby="course-progress-heading">
           {isEnrolled ? (
@@ -423,6 +424,13 @@ export default function CourseDetails() {
               <span>Enroll in this course to unlock and track your learning progress.</span>
             </div>
           )}
+        </section>
+      )}
+
+      {/* ── Course Evaluation Analytics (Teacher/Admin View) ── */}
+      {isTeacherOrAdmin && (
+        <section aria-labelledby="teacher-analytics-heading">
+          <CourseEvaluationAnalytics courseId={id} />
         </section>
       )}
 
