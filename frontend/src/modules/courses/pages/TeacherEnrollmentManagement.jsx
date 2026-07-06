@@ -55,19 +55,10 @@ export default function TeacherEnrollmentManagement() {
     courses,
     selectedCourse,
     loading: courseDetailsLoading,
+    error: courseError,
     fetchCourses,
     fetchCourseById
   } = useCourses();
-
-  // Guard: Redirect if teacher tries to access another teacher's course enrollments
-  useEffect(() => {
-    if (selectedCourse && !courseDetailsLoading) {
-      const isOwner = selectedCourse.teacherId === user?.id || selectedCourse.teacher?.id === user?.id;
-      if (user?.role === 'TEACHER' && !isOwner) {
-        navigate('/');
-      }
-    }
-  }, [selectedCourse, courseDetailsLoading, user, navigate]);
 
   // Local state for enrolled students
   const [enrollments, setEnrollments] = useState([]);
@@ -98,12 +89,24 @@ export default function TeacherEnrollmentManagement() {
     fetchCourses();
   }, [fetchCourses]);
 
+  // Fetch course details on mount/ID change
   useEffect(() => {
     if (courseId) {
       fetchCourseById(courseId);
-      loadEnrollments();
     }
-  }, [courseId, fetchCourseById, loadEnrollments]);
+  }, [courseId, fetchCourseById]);
+
+  // Guard & Load: Verify access and load enrollments once course details are loaded
+  useEffect(() => {
+    if (selectedCourse && selectedCourse._id === courseId && !courseDetailsLoading) {
+      const isOwner = selectedCourse.teacherId === user?.id || selectedCourse.teacher?.id === user?.id;
+      if (user?.role === 'TEACHER' && !isOwner) {
+        navigate('/');
+      } else {
+        loadEnrollments();
+      }
+    }
+  }, [selectedCourse, courseDetailsLoading, courseId, user, navigate, loadEnrollments]);
 
   // ── Handlers ────────────────────────────────────────────────────────────────
   const handleCourseChange = (newCourseId) => {
@@ -122,7 +125,8 @@ export default function TeacherEnrollmentManagement() {
       })
     : enrollments;
 
-  const isPageLoading = courseDetailsLoading || (studentsLoading && enrollments.length === 0);
+  const course = selectedCourse?._id === courseId ? selectedCourse : null;
+  const isPageLoading = courseDetailsLoading || (!course && !courseError) || (studentsLoading && enrollments.length === 0 && !studentsError && !courseError);
 
   return (
     <div className="flex flex-col gap-6 max-w-7xl mx-auto">
@@ -145,11 +149,11 @@ export default function TeacherEnrollmentManagement() {
           </div>
           <div>
             <h1 className="text-2xl font-bold text-slate-900 leading-tight">
-              {selectedCourse?.title || 'Enrollment Management'}
+              {course?.title || 'Enrollment Management'}
             </h1>
             <div className="flex items-center gap-2 mt-1">
               <span className="text-sm text-slate-500 font-medium">Manage student rosters</span>
-              {!isPageLoading && !studentsError && (
+              {!isPageLoading && !studentsError && !courseError && (
                 <span className="flex items-center gap-1.5 bg-slate-100 rounded-full px-2.5 py-0.5 text-xs font-semibold text-slate-600">
                   {enrollments.length} {enrollments.length === 1 ? 'student' : 'students'}
                 </span>
@@ -184,8 +188,30 @@ export default function TeacherEnrollmentManagement() {
         )}
       </div>
 
+      {/* Course Loading Error state */}
+      {courseError && !courseDetailsLoading && (
+        <div
+          role="alert"
+          className="flex items-start gap-3 p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 shadow-sm animate-in fade-in duration-200"
+        >
+          <AlertCircle className="h-5 w-5 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-semibold">Failed to load course details</p>
+            <p className="text-xs mt-0.5 text-red-500">{courseError}</p>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => fetchCourseById(courseId)}
+              className="mt-3 bg-white text-red-700 border-red-200 hover:bg-red-50 cursor-pointer"
+            >
+              Try Again
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* API Error state */}
-      {studentsError && !isPageLoading && (
+      {studentsError && !isPageLoading && !courseError && (
         <div
           role="alert"
           className="flex items-start gap-3 p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 shadow-sm"
@@ -207,7 +233,7 @@ export default function TeacherEnrollmentManagement() {
       )}
 
       {/* Controls & Search bar */}
-      {!studentsError && !isPageLoading && (
+      {!studentsError && !courseError && !isPageLoading && (
         <div className="flex flex-col sm:flex-row sm:items-center gap-4 justify-between">
           <div className="relative w-full sm:max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
@@ -271,7 +297,7 @@ export default function TeacherEnrollmentManagement() {
       )}
 
       {/* Success data state */}
-      {!isPageLoading && !studentsError && (
+      {!isPageLoading && !studentsError && !courseError && (
         enrollments.length === 0 ? (
           /* No enrolled students empty state */
           <div className="flex flex-col items-center justify-center py-20 gap-4 text-slate-400 bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">

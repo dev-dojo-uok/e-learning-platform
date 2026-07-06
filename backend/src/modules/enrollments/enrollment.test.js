@@ -4,7 +4,7 @@ import { fork } from 'child_process';
 import prisma from '../../config/db.js';
 
 const PORT = 5005;
-const BASE_URL = `http://127.0.0.1:${PORT}/api`;
+const BASE_URL = `http://localhost:${PORT}/api`;
 
 let serverProcess;
 let studentToken;
@@ -38,23 +38,27 @@ before(async () => {
   // Start server process on test port
   serverProcess = fork('src/index.js', [], {
     env: { ...process.env, PORT: String(PORT), NODE_ENV: 'test' },
-    silent: true
+    silent: false
   });
 
-  serverProcess.stdout.on('data', (data) => {
-    console.log(`[SERVER OUT] ${data.toString().trim()}`);
-  });
+  if (serverProcess.stdout) {
+    serverProcess.stdout.on('data', (data) => {
+      console.log(`[SERVER OUT] ${data.toString().trim()}`);
+    });
+  }
 
-  serverProcess.stderr.on('data', (data) => {
-    console.log(`[SERVER ERR] ${data.toString().trim()}`);
-  });
+  if (serverProcess.stderr) {
+    serverProcess.stderr.on('data', (data) => {
+      console.log(`[SERVER ERR] ${data.toString().trim()}`);
+    });
+  }
 
   serverProcess.on('exit', (code, signal) => {
     console.log(`[SERVER EXIT] child process exited with code ${code} and signal ${signal}`);
   });
 
-  // Wait for health check
-  await waitForServer(`${BASE_URL}/health`);
+  // Wait for health check (with 30 retries / 15 seconds max wait time)
+  await waitForServer(`${BASE_URL}/health`, 30);
   console.log('Enrollments test server is online.');
 
   // Clean up existing test data
@@ -279,7 +283,7 @@ test('Test 6: Get Course Enrolled Students', async () => {
   const res = await fetch(`${BASE_URL}/courses/${courseId}/students`, {
     method: 'GET',
     headers: {
-      'Authorization': `Bearer ${studentToken}`
+      'Authorization': `Bearer ${teacherToken}`
     }
   });
 
@@ -404,4 +408,30 @@ test('Test 11: Teacher Cannot Remove Enrollments from Unowned Course (403)', asy
       'Authorization': `Bearer ${studentToken2}`
     }
   });
+});
+
+test('Test 12: Student Cannot View Course Enrolled Students (403)', async () => {
+  const res = await fetch(`${BASE_URL}/courses/${courseId}/students`, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${studentToken}`
+    }
+  });
+
+  assert.strictEqual(res.status, 403);
+  const data = await res.json();
+  assert.strictEqual(data.error, 'Unauthorized role permissions.');
+});
+
+test('Test 13: Teacher Cannot View Enrolled Students from Unowned Course (403)', async () => {
+  const res = await fetch(`${BASE_URL}/courses/${courseId}/students`, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${teacherToken2}`
+    }
+  });
+
+  assert.strictEqual(res.status, 403);
+  const data = await res.json();
+  assert.strictEqual(data.error, 'Access denied. You do not own this course.');
 });

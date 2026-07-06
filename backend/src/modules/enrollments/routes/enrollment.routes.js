@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { EnrollmentController } from '../controllers/enrollment.controller.js';
-import { authenticateToken } from '../../../config/auth.js';
+import { authenticateToken, authorizeRole, verifyCourseOwner } from '../../../config/auth.js';
 import {
   validateEnroll,
   validateIdParam,
@@ -40,7 +40,9 @@ studentEnrollmentRoutes.get(
 courseEnrollmentRoutes.get(
   '/:courseId/students',
   authenticateToken,
+  authorizeRole(['TEACHER', 'ADMIN']),
   validateCourseIdParam,
+  verifyCourseOwner,
   EnrollmentController.getCourseStudents
 );
 
