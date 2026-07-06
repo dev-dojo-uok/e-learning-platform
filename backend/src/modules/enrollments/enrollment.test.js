@@ -4,13 +4,17 @@ import { fork } from 'child_process';
 import prisma from '../../config/db.js';
 
 const PORT = 5005;
-const BASE_URL = `http://localhost:${PORT}/api`;
+const BASE_URL = `http://127.0.0.1:${PORT}/api`;
 
 let serverProcess;
 let studentToken;
 let studentId;
+let studentToken2;
+let studentId2;
 let teacherToken;
 let teacherId;
+let teacherToken2;
+let teacherId2;
 let courseId;
 let enrollmentId;
 
@@ -21,7 +25,7 @@ async function waitForServer(url, retries = 10, delay = 500) {
       const res = await fetch(url);
       if (res.ok) return true;
     } catch (e) {
-      // Ignored: wait and try again
+      console.log(`[waitForServer] Attempt ${i + 1} failed: ${e.message}`);
     }
     await new Promise(resolve => setTimeout(resolve, delay));
   }
@@ -37,6 +41,18 @@ before(async () => {
     silent: true
   });
 
+  serverProcess.stdout.on('data', (data) => {
+    console.log(`[SERVER OUT] ${data.toString().trim()}`);
+  });
+
+  serverProcess.stderr.on('data', (data) => {
+    console.log(`[SERVER ERR] ${data.toString().trim()}`);
+  });
+
+  serverProcess.on('exit', (code, signal) => {
+    console.log(`[SERVER EXIT] child process exited with code ${code} and signal ${signal}`);
+  });
+
   // Wait for health check
   await waitForServer(`${BASE_URL}/health`);
   console.log('Enrollments test server is online.');
@@ -44,9 +60,11 @@ before(async () => {
   // Clean up existing test data
   const emailT = 'enroll_test_teacher@uok.lk';
   const emailS = 'enroll_test_student@uok.lk';
+  const emailT2 = 'enroll_test_teacher2@uok.lk';
+  const emailS2 = 'enroll_test_student2@uok.lk';
 
   const users = await prisma.user.findMany({
-    where: { email: { in: [emailT, emailS] } }
+    where: { email: { in: [emailT, emailS, emailT2, emailS2] } }
   });
 
   if (users.length > 0) {
@@ -77,6 +95,21 @@ before(async () => {
   studentToken = sData.token;
   studentId = sData.user.id;
 
+  // Register Student 2
+  const s2Res = await fetch(`${BASE_URL}/auth/register`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      name: 'Enroll Test Student 2',
+      email: emailS2,
+      password: 'password123',
+      role: 'STUDENT'
+    })
+  });
+  const s2Data = await s2Res.json();
+  studentToken2 = s2Data.token;
+  studentId2 = s2Data.user.id;
+
   // Register Teacher via auth endpoint to get token
   const tRes = await fetch(`${BASE_URL}/auth/register`, {
     method: 'POST',
@@ -91,6 +124,21 @@ before(async () => {
   const tData = await tRes.json();
   teacherToken = tData.token;
   teacherId = tData.user.id;
+
+  // Register Teacher 2
+  const t2Res = await fetch(`${BASE_URL}/auth/register`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      name: 'Enroll Test Teacher 2',
+      email: emailT2,
+      password: 'password123',
+      role: 'TEACHER'
+    })
+  });
+  const t2Data = await t2Res.json();
+  teacherToken2 = t2Data.token;
+  teacherId2 = t2Data.user.id;
 
   // Create Course (Teacher account token needed)
   const cRes = await fetch(`${BASE_URL}/courses`, {
@@ -119,13 +167,18 @@ after(async () => {
   // Final database clean up
   if (studentId) {
     await prisma.enrollment.deleteMany({
-      where: { studentId }
+      where: { studentId: { in: [studentId, studentId2] } }
     });
     await prisma.course.deleteMany({
       where: { title: 'Enrollment Test Course' }
     });
     await prisma.user.deleteMany({
-      where: { email: { in: ['enroll_test_teacher@uok.lk', 'enroll_test_student@uok.lk'] } }
+      where: { email: { in: [
+        'enroll_test_teacher@uok.lk',
+        'enroll_test_student@uok.lk',
+        'enroll_test_teacher2@uok.lk',
+        'enroll_test_student2@uok.lk'
+      ] } }
     });
   }
 });
@@ -248,4 +301,107 @@ test('Test 7: Remove Enrollment', async () => {
   assert.strictEqual(res.status, 200);
   const data = await res.json();
   assert.strictEqual(data.message, 'Enrollment removed successfully.');
+});
+
+test('Test 8: Student Cannot Enroll Another Student (403)', async () => {
+  const res = await fetch(`${BASE_URL}/enrollments`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${studentToken2}`
+    },
+    body: JSON.stringify({
+      studentId: studentId, // Student 2 trying to enroll Student 1
+      courseId
+    })
+  });
+
+  assert.strictEqual(res.status, 403);
+  const data = await res.json();
+  assert.strictEqual(data.message, 'Access denied. Students can only enroll themselves.');
+});
+
+test('Test 9: Student Cannot View Other Students Enrollments (403)', async () => {
+  const res = await fetch(`${BASE_URL}/students/${studentId}/courses`, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${studentToken2}` // Student 2 trying to view Student 1's courses
+    }
+  });
+
+  assert.strictEqual(res.status, 403);
+  const data = await res.json();
+  assert.strictEqual(data.message, 'Access denied. You can only view your own enrolled courses.');
+});
+
+test('Test 10: Student Cannot Remove Other Students Enrollments (403)', async () => {
+  // Create an enrollment first to try and delete (Student 1 enrolling back in Course)
+  const enrollRes = await fetch(`${BASE_URL}/enrollments`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${studentToken}`
+    },
+    body: JSON.stringify({
+      studentId,
+      courseId
+    })
+  });
+  const enrollData = await enrollRes.json();
+  const tempEnrollId = enrollData.enrollment.id;
+
+  const res = await fetch(`${BASE_URL}/enrollments/${tempEnrollId}`, {
+    method: 'DELETE',
+    headers: {
+      'Authorization': `Bearer ${studentToken2}` // Student 2 trying to remove Student 1's enrollment
+    }
+  });
+
+  assert.strictEqual(res.status, 403);
+  const data = await res.json();
+  assert.strictEqual(data.message, 'Access denied. You can only remove your own enrollment.');
+
+  // Clean up: delete Student 1's enrollment
+  await fetch(`${BASE_URL}/enrollments/${tempEnrollId}`, {
+    method: 'DELETE',
+    headers: {
+      'Authorization': `Bearer ${studentToken}`
+    }
+  });
+});
+
+test('Test 11: Teacher Cannot Remove Enrollments from Unowned Course (403)', async () => {
+  // Create an enrollment first (Student 2 enrolling in Course)
+  const enrollRes = await fetch(`${BASE_URL}/enrollments`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${studentToken2}`
+    },
+    body: JSON.stringify({
+      studentId: studentId2,
+      courseId
+    })
+  });
+  const enrollData = await enrollRes.json();
+  const tempEnrollmentId = enrollData.enrollment.id;
+
+  const res = await fetch(`${BASE_URL}/enrollments/${tempEnrollmentId}`, {
+    method: 'DELETE',
+    headers: {
+      'Authorization': `Bearer ${teacherToken2}` // Teacher 2 trying to delete enrollment from Course (owned by Teacher 1)
+    }
+  });
+
+  assert.strictEqual(res.status, 403);
+  const data = await res.json();
+  assert.strictEqual(data.message, 'Access denied. You do not own this course.');
+
+  // Clean up the temp enrollment as Student 2
+  await fetch(`${BASE_URL}/enrollments/${tempEnrollmentId}`, {
+    method: 'DELETE',
+    headers: {
+      'Authorization': `Bearer ${studentToken2}`
+    }
+  });
 });
