@@ -219,3 +219,87 @@ import moduleRoutes from './modules/courseModules/index.js';
 // ...
 app.use('/api/modules', moduleRoutes);
 ```
+
+---
+
+## 📈 Member 04 — Student Completion Tracking & Analytics Engine
+
+### ✅ Implementation Status
+
+| Feature | Status |
+|---|---|
+| Student Progress Tracking Engine | ✅ Completed |
+| Course Progress & Enrollment Cards (`CourseProgressCard`) | ✅ Completed |
+| Teacher Dashboard Overview Metrics & Stat Cards | ✅ Completed |
+| Interactive Quiz & Assignment Analytics Charts | ✅ Completed |
+| Course Evaluation Analytics & Overview Cards | ✅ Completed |
+
+---
+
+### 🗂️ Folder Structure
+
+```text
+frontend/src/modules/
+├── completion/                     # Student progress tracking & visual cards
+│   └── components/
+│       └── CourseProgressCard.jsx  ← Renders real-time course completion bars & stats
+└── dashboard/                      # Teacher analytics & evaluation charts
+    ├── TeacherDashboard.jsx        ← Main dashboard with course selector & stat cards
+    └── components/
+        └── CourseEvaluationAnalytics.jsx ← Interactive Recharts for quizzes & assignments
+
+backend/src/modules/completion/
+├── routes/
+│   └── completion.routes.js        ← Express Router with authentication middleware
+└── controllers/
+    └── completion.controller.js    ← Aggregates quiz & assignment completion percentages
+```
+
+---
+
+### 🌐 REST API Endpoints
+
+| Method | Endpoint | Auth Required | Description |
+|---|---|---|---|
+| `GET` | `/api/completion/course/:courseId/progress` | ✅ STUDENT / TEACHER | Get real-time aggregated completion metrics and task breakdown for a course |
+
+---
+
+### 📋 API Usage Example
+
+#### Get Course Progress — `GET /api/completion/course/:courseId/progress`
+
+**Headers:**
+```
+Authorization: Bearer <jwt_token>
+```
+
+**Response `200 OK`:**
+```json
+{
+  "totalQuizzes": 4,
+  "completedQuizzes": 3,
+  "totalAssignments": 2,
+  "completedAssignments": 2,
+  "progressPercentage": 83,
+  "assignments": [
+    {
+      "id": "c1a2b3c4-e5f6-7890-abcd-ef1234567890",
+      "title": "React Capstone Project",
+      "dueDate": "2026-07-15T23:59:59.000Z",
+      "submissions": [{ "id": "sub_01..." }]
+    }
+  ]
+}
+```
+
+---
+
+### 🔗 Route Registration in `src/index.js`
+
+```js
+import completionRoutes from './modules/completion/completion.routes.js';
+// ...
+app.use('/api/completion', completionRoutes);
+```
+
