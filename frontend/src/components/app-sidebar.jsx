@@ -230,9 +230,9 @@ export function AppSidebar({
                 <SidebarMenu>
                   {displayCourses && displayCourses.length > 0 ? (
                     displayCourses.map((course) => (
-                      <SidebarMenuItem key={course._id}>
+                      <SidebarMenuItem key={course._id || course.id}>
                         <SidebarMenuButton asChild>
-                          <Link to={`/courses/${course._id}`}>
+                          <Link to={`/courses/${course._id || course.id}`}>
                             <span>{course.title}</span>
                           </Link>
                         </SidebarMenuButton>
