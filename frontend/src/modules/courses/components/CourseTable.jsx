@@ -1,7 +1,6 @@
 import React from 'react';
-import { Eye, Pencil, Trash2, BookOpen, Loader2, InboxIcon, Users } from 'lucide-react';
+import { Pencil, Trash2, BookOpen, Loader2, InboxIcon, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Link } from 'react-router-dom';
 import useAuthStore from '@/store/useAuthStore';
 
@@ -15,7 +14,7 @@ import useAuthStore from '@/store/useAuthStore';
  *  - onEdit   {Function} Called with the full course object when Edit is clicked.
  *  - onDelete {Function} Called with course._id when Delete is clicked.
  */
-const CourseTable = ({ courses = [], loading, onView, onEdit, onDelete }) => {
+const CourseTable = ({ courses = [], loading, onEdit, onDelete }) => {
   const { user } = useAuthStore();
 
   // ── Loading state ────────────────────────────────────────────────────────────
@@ -82,7 +81,6 @@ const CourseTable = ({ courses = [], loading, onView, onEdit, onDelete }) => {
             <CourseTableRow
               key={course._id || idx}
               course={course}
-              onView={onView}
               onEdit={onEdit}
               onDelete={onDelete}
             />
@@ -94,8 +92,8 @@ const CourseTable = ({ courses = [], loading, onView, onEdit, onDelete }) => {
 };
 
 // ── Private row sub-component ────────────────────────────────────────────────
-const CourseTableRow = ({ course, onView, onEdit, onDelete }) => {
-  const { _id, title, description, category, thumbnail } = course;
+const CourseTableRow = ({ course, onEdit, onDelete }) => {
+  const { _id, title, description, thumbnail } = course;
   const { user } = useAuthStore();
 
 

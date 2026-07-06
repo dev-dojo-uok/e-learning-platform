@@ -3,11 +3,32 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Pencil, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
 import CourseForm from '../components/CourseForm';
 import useCourses from '../hooks/useCourses';
+import useAuthStore from '../../../store/useAuthStore';
 
 export default function EditCourse() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuthStore();
+  const isTeacherOrAdmin = user?.role === 'TEACHER' || user?.role === 'ADMIN';
+
+  // Guard: Redirect if not teacher/admin
+  useEffect(() => {
+    if (user && !isTeacherOrAdmin) {
+      navigate('/');
+    }
+  }, [user, isTeacherOrAdmin, navigate]);
+
   const { selectedCourse, loading, error, fetchCourseById, updateCourse } = useCourses();
+
+  // Guard: Redirect if teacher tries to edit another teacher's course
+  useEffect(() => {
+    if (selectedCourse && !loading) {
+      const isOwner = selectedCourse.teacherId === user?.id || selectedCourse.teacher?.id === user?.id;
+      if (user?.role === 'TEACHER' && !isOwner) {
+        navigate('/');
+      }
+    }
+  }, [selectedCourse, loading, user, navigate]);
   const [successMsg, setSuccessMsg] = useState(null);
   const [fetchError, setFetchError] = useState(null);
 

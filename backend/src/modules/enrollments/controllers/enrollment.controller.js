@@ -7,7 +7,7 @@ export class EnrollmentController {
   static async enroll(req, res, next) {
     try {
       const { studentId, courseId } = req.body;
-      const enrollment = await EnrollmentService.enrollStudent({ studentId, courseId });
+      const enrollment = await EnrollmentService.enrollStudent({ studentId, courseId }, req.user);
       return res.status(201).json({
         message: 'Student enrolled successfully',
         enrollment: {
@@ -33,6 +33,15 @@ export class EnrollmentController {
   static async getStudentCourses(req, res, next) {
     try {
       const { studentId } = req.params;
+
+      // Authorization guard: Students can only view their own enrollments
+      if (req.user?.role === 'STUDENT' && req.user?.id !== studentId) {
+        return res.status(403).json({
+          message: 'Access denied. You can only view your own enrolled courses.',
+          error: 'Access denied. You can only view your own enrolled courses.'
+        });
+      }
+
       const enrollments = await EnrollmentService.getStudentEnrolledCourses(studentId);
       return res.status(200).json(enrollments);
     } catch (error) {
@@ -71,7 +80,7 @@ export class EnrollmentController {
   static async remove(req, res, next) {
     try {
       const { id } = req.params;
-      await EnrollmentService.removeEnrollment(id);
+      await EnrollmentService.removeEnrollment(id, req.user);
       return res.status(200).json({
         message: 'Enrollment removed successfully.'
       });

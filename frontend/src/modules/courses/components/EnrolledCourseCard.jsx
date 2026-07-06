@@ -6,9 +6,19 @@ import { Link } from 'react-router-dom';
 import { completionService } from '../../completion';
 
 
+/**
+ * EnrolledCourseCard – Displays a course enrolled by the student.
+ *
+ * Props:
+ *  - enrollment  {Object}   Enrollment data with course and enrolledAt fields.
+ *  - onUnenroll  {Function} Optional. Called with the enrollment object when
+ *                           the student clicks the Unenroll button.
+ *  - unenrolling {boolean}  Optional. When true, shows a spinner on the Unenroll
+ *                           button and disables it to prevent duplicate requests.
+ */
 const EnrolledCourseCard = ({ enrollment, onUnenroll, unenrolling = false }) => {
   const { course, enrolledAt } = enrollment || {};
-  const { id, _id, title, description, category, thumbnail, teacher } = course || {};
+  const { id, _id, title, category, thumbnail, teacher } = course || {};
   const courseId = id || _id;
   const teacherName = teacher?.name || 'Unknown Teacher';
   const enrollmentDate = enrolledAt
@@ -98,7 +108,7 @@ const EnrolledCourseCard = ({ enrollment, onUnenroll, unenrolling = false }) => 
           </div>
 
           {/* Enrollment Date */}
-          <div className="flex items-center gap-2 text-xs text-slate-450 font-medium">
+          <div className="flex items-center gap-2 text-xs text-slate-500 font-medium">
             <Calendar className="h-3.5 w-3.5 text-slate-400 flex-shrink-0" />
             <span className="text-slate-500">
               Enrolled: <span className="text-slate-700 font-semibold">{enrollmentDate}</span>
@@ -155,14 +165,19 @@ const EnrolledCourseCard = ({ enrollment, onUnenroll, unenrolling = false }) => 
         <Button
           id={`course-continue-${courseId}`}
           aria-label={`Continue learning ${title}`}
-          asChild
+          asChild={!unenrolling}
+          disabled={unenrolling}
           className="w-full text-white cursor-pointer hover:opacity-90 transition-opacity"
           style={{ backgroundColor: '#000000' }}
           size="sm"
         >
-          <Link to={`/courses/${courseId}`}>
-            Continue Learning
-          </Link>
+          {unenrolling ? (
+            <span>Continue Learning</span>
+          ) : (
+            <Link to={`/courses/${courseId}`}>
+              Continue Learning
+            </Link>
+          )}
         </Button>
 
         {/* Unenroll button – rendered only when a handler is provided */}

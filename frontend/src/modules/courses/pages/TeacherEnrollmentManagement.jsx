@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import React, { useEffect, useState, useCallback } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
   Users,
@@ -12,8 +12,11 @@ import {
 import { getCourseStudents } from '@/modules/enrollment';
 import useCourses from '../hooks/useCourses';
 import { Button } from '@/components/ui/button';
+import useAuthStore from '../../../store/useAuthStore';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Skeleton } from '@/components/ui/skeleton';
+import { toast } from 'sonner';
 import {
   Select,
   SelectContent,
@@ -37,12 +40,22 @@ const formatDate = (iso) => {
 export default function TeacherEnrollmentManagement() {
   const { id: courseId } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuthStore();
+  const isTeacherOrAdmin = user?.role === 'TEACHER' || user?.role === 'ADMIN';
+
+  // Guard: Redirect if not teacher/admin
+  useEffect(() => {
+    if (user && !isTeacherOrAdmin) {
+      navigate('/');
+    }
+  }, [user, isTeacherOrAdmin, navigate]);
 
   // Course store hook to get the teacher's list of courses
   const {
     courses,
     selectedCourse,
     loading: courseDetailsLoading,
+    error: courseError,
     fetchCourses,
     fetchCourseById
   } = useCourses();
@@ -54,7 +67,7 @@ export default function TeacherEnrollmentManagement() {
   const [searchQuery, setSearchQuery] = useState('');
 
   // ── Fetch data ─────────────────────────────────────────────────────────────
-  const loadEnrollments = async () => {
+  const loadEnrollments = useCallback(async () => {
     if (!courseId) return;
     setStudentsLoading(true);
     setStudentsError(null);
@@ -63,27 +76,37 @@ export default function TeacherEnrollmentManagement() {
       setEnrollments(data || []);
     } catch (err) {
       console.error('Failed to load course students:', err);
-      setStudentsError(
-        err.response?.data?.message ||
-        err.message ||
-        'Failed to load enrolled students.'
-      );
+      const errMsg = err.response?.data?.message || err.message || 'Failed to load enrolled students.';
+      setStudentsError(errMsg);
+      toast.error(errMsg);
     } finally {
       setStudentsLoading(false);
     }
-  };
+  }, [courseId]);
 
   useEffect(() => {
     // Fetch all teacher courses to populate the selector dropdown
     fetchCourses();
   }, [fetchCourses]);
 
+  // Fetch course details on mount/ID change
   useEffect(() => {
     if (courseId) {
       fetchCourseById(courseId);
-      loadEnrollments();
     }
-  }, [courseId]);
+  }, [courseId, fetchCourseById]);
+
+  // Guard & Load: Verify access and load enrollments once course details are loaded
+  useEffect(() => {
+    if (selectedCourse && selectedCourse._id === courseId && !courseDetailsLoading) {
+      const isOwner = selectedCourse.teacherId === user?.id || selectedCourse.teacher?.id === user?.id;
+      if (user?.role === 'TEACHER' && !isOwner) {
+        navigate('/');
+      } else {
+        loadEnrollments();
+      }
+    }
+  }, [selectedCourse, courseDetailsLoading, courseId, user, navigate, loadEnrollments]);
 
   // ── Handlers ────────────────────────────────────────────────────────────────
   const handleCourseChange = (newCourseId) => {
@@ -102,7 +125,8 @@ export default function TeacherEnrollmentManagement() {
       })
     : enrollments;
 
-  const isPageLoading = courseDetailsLoading || (studentsLoading && enrollments.length === 0);
+  const course = selectedCourse?._id === courseId ? selectedCourse : null;
+  const isPageLoading = courseDetailsLoading || (!course && !courseError) || (studentsLoading && enrollments.length === 0 && !studentsError && !courseError);
 
   return (
     <div className="flex flex-col gap-6 max-w-7xl mx-auto">
@@ -125,11 +149,11 @@ export default function TeacherEnrollmentManagement() {
           </div>
           <div>
             <h1 className="text-2xl font-bold text-slate-900 leading-tight">
-              {selectedCourse?.title || 'Enrollment Management'}
+              {course?.title || 'Enrollment Management'}
             </h1>
             <div className="flex items-center gap-2 mt-1">
               <span className="text-sm text-slate-500 font-medium">Manage student rosters</span>
-              {!isPageLoading && !studentsError && (
+              {!isPageLoading && !studentsError && !courseError && (
                 <span className="flex items-center gap-1.5 bg-slate-100 rounded-full px-2.5 py-0.5 text-xs font-semibold text-slate-600">
                   {enrollments.length} {enrollments.length === 1 ? 'student' : 'students'}
                 </span>
@@ -164,8 +188,30 @@ export default function TeacherEnrollmentManagement() {
         )}
       </div>
 
+      {/* Course Loading Error state */}
+      {courseError && !courseDetailsLoading && (
+        <div
+          role="alert"
+          className="flex items-start gap-3 p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 shadow-sm animate-in fade-in duration-200"
+        >
+          <AlertCircle className="h-5 w-5 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-semibold">Failed to load course details</p>
+            <p className="text-xs mt-0.5 text-red-500">{courseError}</p>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => fetchCourseById(courseId)}
+              className="mt-3 bg-white text-red-700 border-red-200 hover:bg-red-50 cursor-pointer"
+            >
+              Try Again
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* API Error state */}
-      {studentsError && !isPageLoading && (
+      {studentsError && !isPageLoading && !courseError && (
         <div
           role="alert"
           className="flex items-start gap-3 p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 shadow-sm"
@@ -187,7 +233,7 @@ export default function TeacherEnrollmentManagement() {
       )}
 
       {/* Controls & Search bar */}
-      {!studentsError && !isPageLoading && (
+      {!studentsError && !courseError && !isPageLoading && (
         <div className="flex flex-col sm:flex-row sm:items-center gap-4 justify-between">
           <div className="relative w-full sm:max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
@@ -195,6 +241,7 @@ export default function TeacherEnrollmentManagement() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search students by name or email..."
+              aria-label="Search students by name or email"
               className="pl-9 pr-4 py-2 border border-slate-200 rounded-xl bg-white shadow-sm"
             />
           </div>
@@ -203,22 +250,54 @@ export default function TeacherEnrollmentManagement() {
 
       {/* Loading indicator */}
       {isPageLoading && (
-        <div className="flex flex-col items-center justify-center py-20 gap-3 text-slate-500 bg-white border border-slate-200 rounded-2xl shadow-sm">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-sm font-medium tracking-wide">Loading enrollment data...</p>
-          <div className="w-full mt-6 space-y-3 px-6">
-            {[1, 2, 3].map((i) => (
-              <div
-                key={i}
-                className="h-14 w-full rounded-xl bg-slate-100 animate-pulse"
-              />
-            ))}
+        <div className="flex flex-col gap-4 bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+          <div className="flex items-center gap-2 text-slate-500 py-1">
+            <Loader2 className="h-5 w-5 animate-spin text-primary" />
+            <span className="text-sm font-medium tracking-wide">Loading enrollment data...</span>
+          </div>
+          <div className="w-full overflow-x-auto rounded-xl border border-slate-200 mt-2">
+            <table className="min-w-full divide-y divide-slate-200 bg-white">
+              <thead>
+                <tr className="bg-slate-50">
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                    Student Name
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                    Email Address
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                    Enrollment Date
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-32">
+                    Status
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <tr key={i}>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <Skeleton className="h-4 w-32" />
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <Skeleton className="h-4 w-48" />
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <Skeleton className="h-4 w-24" />
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <Skeleton className="h-6 w-20 rounded-full" />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       )}
 
       {/* Success data state */}
-      {!isPageLoading && !studentsError && (
+      {!isPageLoading && !studentsError && !courseError && (
         enrollments.length === 0 ? (
           /* No enrolled students empty state */
           <div className="flex flex-col items-center justify-center py-20 gap-4 text-slate-400 bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">

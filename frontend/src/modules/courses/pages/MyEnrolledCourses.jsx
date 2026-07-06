@@ -1,9 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BookOpen, AlertCircle, Loader2, Compass, CheckCircle2, XCircle } from 'lucide-react';
+import { BookOpen, AlertCircle, Loader2, Compass } from 'lucide-react';
 import { getMyEnrollments, removeEnrollment } from '@/modules/enrollment';
 import EnrolledCourseCard from '../components/EnrolledCourseCard';
 import { Button } from '@/components/ui/button';
+import useAuthStore from '../../../store/useAuthStore';
+import { Skeleton } from '@/components/ui/skeleton';
+import { toast } from 'sonner';
 import {
   AlertDialog,
   AlertDialogContent,
@@ -15,57 +18,26 @@ import {
   AlertDialogCancel,
 } from '@/components/ui/alert-dialog';
 
-// ── Inline Toast notification component (same pattern as CourseList.jsx) ──────
-const Toast = ({ message, type = 'success', onClose }) => {
-  useEffect(() => {
-    const timer = setTimeout(onClose, 4000);
-    return () => clearTimeout(timer);
-  }, [onClose]);
 
-  const config = {
-    success: {
-      bg: 'bg-emerald-50 border-emerald-200',
-      text: 'text-emerald-800',
-      icon: <CheckCircle2 className="h-4 w-4 text-emerald-500 flex-shrink-0" />,
-    },
-    error: {
-      bg: 'bg-red-50 border-red-200',
-      text: 'text-red-800',
-      icon: <XCircle className="h-4 w-4 text-red-500 flex-shrink-0" />,
-    },
-  };
-
-  const { bg, text, icon } = config[type] || config.success;
-
-  return (
-    <div
-      role="alert"
-      className={`fixed top-5 right-5 z-50 flex items-center gap-2.5 px-4 py-3 rounded-xl border shadow-lg ${bg} ${text} text-sm font-medium animate-in slide-in-from-top-2 duration-300 max-w-sm`}
-    >
-      {icon}
-      <span className="flex-1">{message}</span>
-      <button
-        onClick={onClose}
-        aria-label="Dismiss"
-        className="ml-1 opacity-60 hover:opacity-100 transition-opacity text-lg leading-none"
-      >
-        ×
-      </button>
-    </div>
-  );
-};
 
 // ── MyEnrolledCourses page ────────────────────────────────────────────────────
 export default function MyEnrolledCourses() {
   const navigate = useNavigate();
+  const { user } = useAuthStore();
   const [enrollments, setEnrollments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Guard: Redirect if not student
+  useEffect(() => {
+    if (user && user.role !== 'STUDENT') {
+      navigate('/');
+    }
+  }, [user, navigate]);
+
   // ── Unenroll state (mirrors the delete pattern in CourseList.jsx) ──────────
   const [enrollmentToRemove, setEnrollmentToRemove] = useState(null); // enrollment object
   const [unenrollingId, setUnenrollingId] = useState(null);           // enrollment id being deleted
-  const [toast, setToast] = useState(null);                            // { message, type }
 
   // ── Fetch enrolled courses ────────────────────────────────────────────────
   const fetchEnrollments = async () => {
@@ -115,19 +87,14 @@ export default function MyEnrolledCourses() {
       await removeEnrollment(target.id);
       // Remove from local state — no page refresh required
       setEnrollments((prev) => prev.filter((e) => e.id !== target.id));
-      setToast({
-        message: `Successfully unenrolled from "${target.course?.title || 'the course'}"`,
-        type: 'success',
-      });
+      toast.success(`Successfully unenrolled from "${target.course?.title || 'the course'}"`);
     } catch (err) {
       console.error('Unenroll failed:', err);
-      setToast({
-        message:
-          err.response?.data?.message ||
-          err.message ||
-          'Failed to unenroll. Please try again.',
-        type: 'error',
-      });
+      toast.error(
+        err.response?.data?.message ||
+        err.message ||
+        'Failed to unenroll. Please try again.'
+      );
     } finally {
       setUnenrollingId(null);
     }
@@ -137,14 +104,7 @@ export default function MyEnrolledCourses() {
   return (
     <div className="flex flex-col gap-6">
 
-      {/* Toast notification */}
-      {toast && (
-        <Toast
-          message={toast.message}
-          type={toast.type}
-          onClose={() => setToast(null)}
-        />
-      )}
+
 
       {/* ── Page Header ── */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -174,15 +134,37 @@ export default function MyEnrolledCourses() {
 
       {/* ── Loading state ── */}
       {loading && (
-        <div className="flex flex-col items-center justify-center py-20 gap-3 text-slate-500">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-sm font-medium tracking-wide">Loading your courses…</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full mt-6">
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center gap-2 text-slate-500 py-2">
+            <Loader2 className="h-5 w-5 animate-spin text-primary" />
+            <span className="text-sm font-medium tracking-wide">Loading your courses…</span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full mt-2">
             {[1, 2, 3].map((i) => (
               <div
                 key={i}
-                className="h-80 w-full rounded-2xl bg-slate-100 animate-pulse border border-slate-200"
-              />
+                className="flex flex-col bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm h-[380px]"
+              >
+                <Skeleton className="h-44 w-full rounded-none" />
+                <div className="flex flex-col flex-1 p-5 gap-3">
+                  <Skeleton className="h-5 w-3/4" />
+                  <div className="space-y-2 mt-1">
+                    <Skeleton className="h-3 w-1/2" />
+                    <Skeleton className="h-3 w-2/3" />
+                  </div>
+                  <div className="mt-auto space-y-1.5 pt-2">
+                    <div className="flex items-center justify-between">
+                      <Skeleton className="h-3 w-16" />
+                      <Skeleton className="h-3 w-8" />
+                    </div>
+                    <Skeleton className="h-1.5 w-full rounded-full" />
+                  </div>
+                </div>
+                <div className="px-5 pb-5 pt-3 border-t border-slate-100 mt-auto flex flex-col gap-2">
+                  <Skeleton className="h-8 w-full" />
+                  <Skeleton className="h-8 w-full" />
+                </div>
+              </div>
             ))}
           </div>
         </div>
