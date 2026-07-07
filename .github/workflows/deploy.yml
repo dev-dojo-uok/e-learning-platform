@@ -27,7 +27,7 @@ jobs:
           npm ci
           npm run build
         env:
-          REACT_APP_API_URL: ${{ secrets.BACKEND_API_URL }} 
+          VITE_API_URL: ${{ secrets.BACKEND_API_URL }} 
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
