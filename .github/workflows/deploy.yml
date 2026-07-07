@@ -59,9 +59,15 @@ jobs:
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            cd /var/www/backend
+            # 1. Pull the code from the root git folder
+            cd /var/www
             git pull origin main
+            
+            # 2. Move into the backend folder to run system commands
+            cd /var/www/backend
             npm install --production
             npx prisma generate
             npx prisma db push
-            pm2 restart express-lms-backend
+            
+            # 3. Restart your application process
+            pm2 restart express-lms-backend || pm2 start src/app.js --name "express-lms-backend"
