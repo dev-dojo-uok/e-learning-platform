@@ -38,7 +38,7 @@ jobs:
 
       - name: Deploy Static Files to Amazon S3
         run: |
-          aws s3 sync ./frontend/build s3://${{ secrets.S3_BUCKET_NAME }} --delete
+          aws s3 sync ./frontend/dist s3://${{ secrets.S3_BUCKET_NAME }} --delete
 
       - name: Invalidate CloudFront Cache
         run: |
@@ -75,4 +75,4 @@ jobs:
             npx prisma db push
             
             # 4. Restart your application process
-            pm2 restart express-lms-backend || pm2 start src/index.js --name "e-learning-backend"
+            pm2 reload src/index.js --name "e-learning-backend" || pm2 start src/index.js --name "e-learning-backend"
