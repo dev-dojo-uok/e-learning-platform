@@ -63,11 +63,16 @@ jobs:
             cd /var/www
             git pull origin main
             
-            # 2. Move into the backend folder to run system commands
+            # 2. Source the user profile to load NVM/Node command paths automatically
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+            export PATH=$PATH:/usr/bin:/usr/local/bin
+            
+            # 3. Move into the backend folder to run system commands
             cd /var/www/backend
             npm install --production
             npx prisma generate
             npx prisma db push
             
-            # 3. Restart your application process
-            pm2 restart express-lms-backend || pm2 start src/app.js --name "express-lms-backend"
+            # 4. Restart your application process
+            pm2 restart express-lms-backend || pm2 start src/index.js --name "e-learning-backend"
