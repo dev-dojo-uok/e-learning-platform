@@ -16,6 +16,7 @@ import useCourses from '../hooks/useCourses';
 import { ModuleList, ModuleForm, useModules } from '../../modules';
 import { MaterialUpload, MaterialList } from '../../materials';
 import useAuthStore from '../../../store/useAuthStore';
+<<<<<<< Updated upstream
 
 // ── Small detail row ─────────────────────────────────────────────────────────
 const DetailRow = ({ icon: Icon, label, value }) => (
@@ -45,6 +46,27 @@ const formatDate = (iso) => {
     minute: '2-digit',
   });
 };
+=======
+import { Button } from '@/components/ui/button';
+import { getForumsByCourse } from '../../forums/services/forumService';
+import Modal from '@/components/Modal';
+import { Badge } from '@/components/ui/badge';
+import { enrollStudent, getMyEnrollments } from '../../enrollment';
+import { toast } from 'sonner';
+import { CourseProgressCard } from '../../completion';
+import AssignmentsModule from '../../assignments';
+import CourseEvaluationAnalytics from '../components/CourseEvaluationAnalytics';
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogAction,
+  AlertDialogCancel,
+} from '@/components/ui/alert-dialog';
+>>>>>>> Stashed changes
 
 // ── CourseDetails page ────────────────────────────────────────────────────────
 export default function CourseDetails() {
@@ -237,6 +259,7 @@ export default function CourseDetails() {
                 </p>
               </div>
             </div>
+<<<<<<< Updated upstream
             <DetailRow
               icon={CalendarDays}
               label="Created"
@@ -250,6 +273,29 @@ export default function CourseDetails() {
           </div>
         </div>
       </section>
+=======
+          )}
+        </section>
+      )}
+
+      {/* ── Course Evaluation Analytics (Teacher/Admin View) ── */}
+      {isTeacherOrAdmin && (
+        <section aria-labelledby="teacher-analytics-heading">
+          <CourseEvaluationAnalytics courseId={id} />
+        </section>
+      )}
+      {/* ── Assignments ── */}
+<section aria-labelledby="assignments-heading">
+  {isEnrolled ? (
+    <AssignmentsModule courseId={id} />
+  ) : (
+    <div className="p-6 text-center border rounded-xl bg-slate-50/50 text-slate-400 text-sm flex items-center justify-center gap-2">
+      <Lock className="h-4 w-4" />
+      <span>Enroll in this course to view and submit assignments.</span>
+    </div>
+  )}
+</section>
+>>>>>>> Stashed changes
 
       {/* ── Module Management ── */}
       <section aria-labelledby="module-mgmt-heading">
