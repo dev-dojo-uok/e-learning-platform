@@ -66,30 +66,30 @@ app.get('/', (req, res) => {
     status: 'UP',
     message: 'Welcome to the E-Learning Platform API. Please access the application via the frontend client.',
     frontendUrl: process.env.FRONTEND_URL || 'http://localhost:5173',
-    healthCheckUrl: '/api/health'
+    healthCheckUrl: '/health'
   });
 });
 
 // Base health route
-app.get('/api/health', (req, res) => {
+app.get('/health', (req, res) => {
   res.json({ status: 'UP', message: 'E-Learning Platform API is healthy' });
 });
 
 // Bind route dispatchers
-app.use('/api/auth', authRoutes);
-app.use('/api/users', usersRoutes);
-app.use('/api/courses', courseRoutes);
-app.use('/api/modules', moduleRoutes);
-app.use('/api/materials', materialRoutes);
-app.use('/api/quizzes', quizRoutes);
-app.use('/api/forums', forumRoutes);
-app.use('/api/threads', threadRoutes);
-app.use('/api/posts', postRoutes);
-app.use('/api/completion', completionRoutes);
-app.use('/api/assignments', assignmentRoutes);
-app.use('/api/enrollments', enrollmentRoutes);
-app.use('/api/students', studentEnrollmentRoutes);
-app.use('/api/courses', courseEnrollmentRoutes);
+app.use('/auth', authRoutes);
+app.use('/users', usersRoutes);
+app.use('/courses', courseRoutes);
+app.use('/modules', moduleRoutes);
+app.use('/materials', materialRoutes);
+app.use('/quizzes', quizRoutes);
+app.use('/forums', forumRoutes);
+app.use('/threads', threadRoutes);
+app.use('/posts', postRoutes);
+app.use('/completion', completionRoutes);
+app.use('/assignments', assignmentRoutes);
+app.use('/enrollments', enrollmentRoutes);
+app.use('/students', studentEnrollmentRoutes);
+app.use('/courses', courseEnrollmentRoutes);
 
 // Error Handling middleware
 app.use((err, req, res, next) => {
