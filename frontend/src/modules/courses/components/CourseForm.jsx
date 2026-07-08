@@ -19,16 +19,34 @@ const CourseForm = ({ initialData = null, onSubmit, loading = false, error = nul
     title: '',
     description: '',
   });
+  const [selectedThumbnail, setSelectedThumbnail] = useState('auto');
+  const [customThumbnail, setCustomThumbnail] = useState(null);
 
   const [validationErrors, setValidationErrors] = useState({});
 
   // Populate fields when in edit mode or when initialData changes
   useEffect(() => {
     if (initialData) {
+      let desc = initialData.description || '';
+      let thumb = 'auto';
+      let custom = null;
+      const match = desc.match(/<!--thumbnail: (.*?)-->/);
+      if (match) {
+        const val = match[1];
+        if (val.startsWith('data:image')) {
+          thumb = 'custom';
+          custom = val;
+        } else {
+          thumb = val;
+        }
+        desc = desc.replace(/<!--thumbnail: (.*?)-->/, '').trim();
+      }
       setFields({
         title: initialData.title || '',
-        description: initialData.description || '',
+        description: desc,
       });
+      setSelectedThumbnail(thumb);
+      setCustomThumbnail(custom);
     }
   }, [initialData]);
 
@@ -47,12 +65,55 @@ const CourseForm = ({ initialData = null, onSubmit, loading = false, error = nul
     }
   };
 
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert('File is too large. Please select an image under 5MB.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        // Resize with canvas to keep the Base64 footprint small (~15-20KB)
+        const canvas = document.createElement('canvas');
+        const max_width = 400;
+        const scale = max_width / img.width;
+        canvas.width = max_width;
+        canvas.height = img.height * scale;
+
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
+        setCustomThumbnail(compressedDataUrl);
+        
+        // Clear thumbnail validation error
+        if (validationErrors.thumbnail) {
+          setValidationErrors((prev) => {
+            const next = { ...prev };
+            delete next.thumbnail;
+            return next;
+          });
+        }
+      };
+      img.src = event.target.result;
+    };
+    reader.readAsDataURL(file);
+  };
+
   // ── Validation ───────────────────────────────────────────────────────────────
 
   const validate = () => {
     const errors = {};
     if (!fields.title.trim()) errors.title = 'Title is required';
     if (!fields.description.trim()) errors.description = 'Description is required';
+    if (selectedThumbnail === 'custom' && !customThumbnail) {
+      errors.thumbnail = 'Please upload a thumbnail image';
+    }
     return errors;
   };
 
@@ -67,10 +128,19 @@ const CourseForm = ({ initialData = null, onSubmit, loading = false, error = nul
       return;
     }
 
+    let thumbnailVal = selectedThumbnail;
+    if (selectedThumbnail === 'custom' && customThumbnail) {
+      thumbnailVal = customThumbnail;
+    }
+
+    const descWithTag = thumbnailVal === 'auto'
+      ? fields.description.trim()
+      : `${fields.description.trim()}\n\n<!--thumbnail: ${thumbnailVal}-->`;
+
     // Pass plain object — the page component adds teacherId before calling the store
     onSubmit?.({
       title: fields.title.trim(),
-      description: fields.description.trim(),
+      description: descWithTag,
     });
   };
 
@@ -129,6 +199,60 @@ const CourseForm = ({ initialData = null, onSubmit, loading = false, error = nul
           className={`${inputClass(validationErrors.description)} resize-none`}
         />
       </FormField>
+
+      {/* ── Thumbnail Selection ── */}
+      <FormField
+        id="course-thumbnail"
+        label="Course Thumbnail Image"
+        error={validationErrors.thumbnail}
+      >
+        <select
+          id="course-thumbnail"
+          name="thumbnail"
+          value={selectedThumbnail}
+          onChange={(e) => setSelectedThumbnail(e.target.value)}
+          disabled={loading}
+          className={inputClass(validationErrors.thumbnail)}
+        >
+          <option value="auto">Auto-detect from title/category</option>
+          <option value="custom">Upload custom image...</option>
+          <option value="web-development">Web Development</option>
+          <option value="react">React JS</option>
+          <option value="database">Database Systems</option>
+          <option value="programming">Programming & Software</option>
+          <option value="ui-ux">UI/UX Design</option>
+          <option value="cybersecurity">Cybersecurity</option>
+          <option value="data-science">Data Science</option>
+        </select>
+      </FormField>
+
+      {/* ── Custom Image Upload Field ── */}
+      {selectedThumbnail === 'custom' && (
+        <FormField
+          id="course-custom-image"
+          label="Upload Image File"
+          required={!customThumbnail}
+          error={validationErrors.thumbnail}
+        >
+          <input
+            id="course-custom-image"
+            type="file"
+            accept="image/*"
+            onChange={handleImageUpload}
+            disabled={loading}
+            className={inputClass(validationErrors.thumbnail)}
+          />
+          {customThumbnail && (
+            <div className="mt-3 relative w-48 h-32 rounded-xl overflow-hidden border border-slate-200 shadow-sm bg-slate-50 flex items-center justify-center">
+              <img
+                src={customThumbnail}
+                alt="Uploaded thumbnail preview"
+                className="w-full h-full object-cover"
+              />
+            </div>
+          )}
+        </FormField>
+      )}
 
       <div className="pt-2">
         <Button
