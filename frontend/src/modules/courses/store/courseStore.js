@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import courseService from '../services/courseService';
+import { getCourseThumbnail } from '../utils/thumbnailMapper';
 
 /**
  * Zustand store for the Course module.
@@ -26,7 +27,24 @@ import courseService from '../services/courseService';
  */
 const normalizeCourse = (course) => {
   if (!course) return course;
-  return { ...course, _id: course.id };
+  
+  let thumbnail = course.thumbnail;
+  let description = course.description || '';
+  
+  // Parse and extract the thumbnail from the comment tag in the description
+  const match = description.match(/<!--thumbnail: (.*?)-->/);
+  if (match) {
+    const val = match[1];
+    thumbnail = val.startsWith('data:image') ? val : `/course-thumbnails/${val}.jpg`;
+    description = description.replace(/<!--thumbnail: (.*?)-->/, '').trim();
+  }
+
+  return {
+    ...course,
+    _id: course.id,
+    description: description,
+    thumbnail: thumbnail || getCourseThumbnail({ ...course, description }),
+  };
 };
 
 /**
