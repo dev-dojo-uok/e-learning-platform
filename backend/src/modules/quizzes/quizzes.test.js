@@ -3,8 +3,8 @@ import assert from 'node:assert';
 import { fork } from 'child_process';
 import prisma from '../../config/db.js';
 
-const PORT = 5002;
-const BASE_URL = `http://localhost:${PORT}/api`;
+const PORT = process.env.QUIZZES_TEST_PORT || 5002;
+const BASE_URL = process.env.BASE_URL || `http://localhost:${PORT}`;
 
 let serverProcess;
 let teacherToken;

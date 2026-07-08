@@ -3,8 +3,8 @@ import assert from 'node:assert';
 import { fork } from 'child_process';
 import prisma from '../../config/db.js';
 
-const PORT = 5003;
-const BASE_URL = `http://localhost:${PORT}/api/auth`;
+const PORT = process.env.AUTH_TEST_PORT || 5003;
+const BASE_URL = process.env.BASE_URL ? `${process.env.BASE_URL}/auth` : `http://localhost:${PORT}/auth`;
 
 let serverProcess;
 
@@ -31,8 +31,8 @@ before(async () => {
     silent: true
   });
 
-  // Wait for the health check endpoint to be online (assuming health check at root /api/health)
-  await waitForServer(`http://localhost:${PORT}/api/health`);
+  // Wait for the health check endpoint to be online (assuming health check at root /health)
+  await waitForServer(`http://localhost:${PORT}/health`);
   console.log('Auth test server is online.');
 
   // Clean up any user with emails starting with auth_test_

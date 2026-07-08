@@ -137,7 +137,7 @@ export default function CreateQuiz() {
       await axios.post(
         `${backendUrl}/quizzes`,
         {
-          moduleId,
+          sectionId: moduleId,
           courseId,
           title: title.trim(),
           timeLimit: hasTimeLimit ? Number(timeLimitMinutes) : null,
@@ -147,7 +147,7 @@ export default function CreateQuiz() {
           attemptLimit: attemptLimit ? Number(attemptLimit) : null,
           openTime: openTime ? new Date(openTime).toISOString() : null,
           closeTime: closeTime ? new Date(closeTime).toISOString() : null,
-          questions: questions.map((q) => ({
+          questionsJson: questions.map((q) => ({
             type: q.type,
             questionText: q.questionText.trim(),
             points: Number(q.points),
