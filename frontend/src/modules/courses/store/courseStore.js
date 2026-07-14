@@ -50,6 +50,8 @@ const normalizeCourse = (course) => {
     const val = match[1];
     thumbnail = getCourseThumbnailUrl(val);
     description = description.replace(/<!--thumbnail: (.*?)-->/, '').trim();
+  } else if (thumbnail) {
+    thumbnail = getCourseThumbnailUrl(thumbnail);
   }
 
   return {

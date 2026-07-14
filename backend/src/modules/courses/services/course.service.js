@@ -2,12 +2,16 @@ import prisma from '../../../config/db.js';
 import { StorageService } from '../../../services/storageService.js';
 import { randomUUID } from 'crypto';
 
-async function processDescriptionThumbnail(description) {
-  if (!description) return description;
+async function processDescriptionThumbnail(description, existingThumbnail = null) {
+  if (!description) return { description: null, thumbnail: existingThumbnail };
   
-  const match = description.match(/<!--thumbnail: (data:image\/[^;]+;base64,.*?)-->/);
-  if (match) {
-    const base64Data = match[1];
+  let thumbnail = existingThumbnail;
+  let cleanDescription = description;
+
+  // 1. Check for base64 thumbnail
+  const base64Match = description.match(/<!--thumbnail: (data:image\/[^;]+;base64,.*?)-->/);
+  if (base64Match) {
+    const base64Data = base64Match[1];
     const matches = base64Data.match(/^data:image\/([^;]+);base64,(.*)$/);
     if (matches) {
       const ext = matches[1];
@@ -20,11 +24,20 @@ async function processDescriptionThumbnail(description) {
         `image/${ext}`,
         'thumbnails'
       );
-      
-      return description.replace(base64Data, fileUrl);
+      thumbnail = fileUrl;
+    }
+  } else {
+    // 2. Check for standard/mapped thumbnail value (e.g. "react" or existing URL)
+    const standardMatch = description.match(/<!--thumbnail: (.*?)-->/);
+    if (standardMatch) {
+      thumbnail = standardMatch[1];
     }
   }
-  return description;
+
+  // Strip the thumbnail comment tag out of the description
+  cleanDescription = description.replace(/<!--thumbnail: (.*?)-->/, '').trim();
+
+  return { description: cleanDescription || null, thumbnail };
 }
 
 export class CourseService {
@@ -50,13 +63,14 @@ export class CourseService {
       throw error;
     }
 
-    const processedDescription = await processDescriptionThumbnail(description);
+    const { description: cleanDesc, thumbnail } = await processDescriptionThumbnail(description);
 
     // 2. Create course and return it with basic teacher info
     return await prisma.course.create({
       data: {
         title,
-        description: processedDescription || null,
+        description: cleanDesc,
+        thumbnail,
         teacherId
       },
       include: {
@@ -159,17 +173,12 @@ export class CourseService {
     if (title !== undefined) updateData.title = title;
     
     if (description !== undefined) {
-      const oldThumbnailMatch = course.description?.match(/<!--thumbnail: (.*?)-->/);
-      const oldThumbnailUrl = oldThumbnailMatch ? oldThumbnailMatch[1] : null;
+      const { description: cleanDesc, thumbnail: newThumbnail } = await processDescriptionThumbnail(description, course.thumbnail);
+      updateData.description = cleanDesc;
+      updateData.thumbnail = newThumbnail;
 
-      const processedDescription = await processDescriptionThumbnail(description);
-      updateData.description = processedDescription || null;
-
-      const newThumbnailMatch = processedDescription?.match(/<!--thumbnail: (.*?)-->/);
-      const newThumbnailUrl = newThumbnailMatch ? newThumbnailMatch[1] : null;
-
-      if (oldThumbnailUrl && oldThumbnailUrl !== newThumbnailUrl && StorageService.isCustomUploadedUrl(oldThumbnailUrl)) {
-        await StorageService.deleteFile(oldThumbnailUrl);
+      if (course.thumbnail && course.thumbnail !== newThumbnail && StorageService.isCustomUploadedUrl(course.thumbnail)) {
+        await StorageService.deleteFile(course.thumbnail);
       }
     }
 
@@ -211,14 +220,8 @@ export class CourseService {
       throw error;
     }
 
-    if (course.description) {
-      const match = course.description.match(/<!--thumbnail: (.*?)-->/);
-      if (match) {
-        const url = match[1];
-        if (StorageService.isCustomUploadedUrl(url)) {
-          await StorageService.deleteFile(url);
-        }
-      }
+    if (course.thumbnail && StorageService.isCustomUploadedUrl(course.thumbnail)) {
+      await StorageService.deleteFile(course.thumbnail);
     }
 
     // 2. Perform deletion (cascade deletes sections/materials due to schema setup)

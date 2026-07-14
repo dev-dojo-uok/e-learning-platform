@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Link } from 'react-router-dom';
 import { completionService } from '../../completion';
+import { getCourseThumbnail } from '../utils/thumbnailMapper';
 
 
 /**
@@ -18,7 +19,7 @@ import { completionService } from '../../completion';
  */
 const EnrolledCourseCard = ({ enrollment, onUnenroll, unenrolling = false }) => {
   const { course, enrolledAt } = enrollment || {};
-  const { id, _id, title, category, thumbnail, teacher } = course || {};
+  const { id, _id, title, category, thumbnail, teacher, description } = course || {};
   const courseId = id || _id;
   const teacherName = teacher?.name || 'Unknown Teacher';
   const enrollmentDate = enrolledAt
@@ -28,6 +29,35 @@ const EnrolledCourseCard = ({ enrollment, onUnenroll, unenrolling = false }) => 
       day: 'numeric',
     })
     : 'Unknown Date';
+
+  // Format thumbnail URL correctly
+  const getThumbnailUrl = (val) => {
+    if (!val) {
+      const fallback = getCourseThumbnail({ title, category, description });
+      if (fallback) return fallback;
+      return '';
+    }
+    if (val.startsWith('data:image') || val.startsWith('http://') || val.startsWith('https://')) {
+      return val;
+    }
+    if (val.startsWith('uploads/')) {
+      const backendBase = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+      const serverOrigin = backendBase.replace('/api', '');
+      return `${serverOrigin}/${val}`;
+    }
+    return `/course-thumbnails/${val}.jpg`;
+  };
+
+  // Extract custom S3/local thumbnail from description comment tag if present
+  let rawThumbnail = thumbnail;
+  if (description) {
+    const match = description.match(/<!--thumbnail: (.*?)-->/);
+    if (match) {
+      rawThumbnail = match[1];
+    }
+  }
+
+  const displayThumbnail = getThumbnailUrl(rawThumbnail);
 
   //  Completion Progress State  
   const [progressData, setProgressData] = useState(null);
@@ -66,9 +96,9 @@ const EnrolledCourseCard = ({ enrollment, onUnenroll, unenrolling = false }) => 
     <div className="group relative flex flex-col bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
       {/*  Thumbnail  */}
       <div className="relative h-44 bg-gradient-to-br from-slate-100 to-slate-200 overflow-hidden flex-shrink-0">
-        {thumbnail ? (
+        {displayThumbnail ? (
           <img
-            src={thumbnail}
+            src={displayThumbnail}
             alt={title}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
           />
