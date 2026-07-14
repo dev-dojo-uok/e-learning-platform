@@ -1,8 +1,9 @@
 import { AssignmentService } from '../services/assignment.service.js';
+import { StorageService } from '../../../services/storageService.js';
 
 export class AssignmentController {
 
-  // ─── ASSIGNMENT CRUD ────────────────────────────────────────────────────────
+  // ASSIGNMENT CRUD
 
   /**
    * POST /api/assignments
@@ -95,7 +96,7 @@ export class AssignmentController {
     }
   }
 
-  // ─── SUBMISSION CRUD ────────────────────────────────────────────────────────
+  // SUBMISSION CRUD
 
   /**
    * POST /api/assignments/:id/submit
@@ -104,7 +105,23 @@ export class AssignmentController {
   static async submit(req, res, next) {
     try {
       const { id: assignmentId } = req.params;
-      const { fileUrl, notes } = req.body;
+      const { notes } = req.body;
+      let { fileUrl } = req.body;
+
+      if (req.file) {
+        // Upload the file using StorageService (handling S3 or local fallback)
+        fileUrl = await StorageService.uploadFile(
+          req.file.buffer,
+          req.file.originalname,
+          req.file.mimetype,
+          'submissions'
+        );
+      }
+
+      if (!fileUrl) {
+        return res.status(400).json({ error: 'A file upload or file URL is required.' });
+      }
+
       const submission = await AssignmentService.submitAssignment({
         assignmentId,
         studentId: req.user.id,

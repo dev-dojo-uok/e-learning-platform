@@ -1,4 +1,31 @@
 import prisma from '../../../config/db.js';
+import { StorageService } from '../../../services/storageService.js';
+import { randomUUID } from 'crypto';
+
+async function processDescriptionThumbnail(description) {
+  if (!description) return description;
+  
+  const match = description.match(/<!--thumbnail: (data:image\/[^;]+;base64,.*?)-->/);
+  if (match) {
+    const base64Data = match[1];
+    const matches = base64Data.match(/^data:image\/([^;]+);base64,(.*)$/);
+    if (matches) {
+      const ext = matches[1];
+      const buffer = Buffer.from(matches[2], 'base64');
+      const filename = `thumbnail-${randomUUID()}.${ext}`;
+      
+      const fileUrl = await StorageService.uploadFile(
+        buffer,
+        filename,
+        `image/${ext}`,
+        'thumbnails'
+      );
+      
+      return description.replace(base64Data, fileUrl);
+    }
+  }
+  return description;
+}
 
 export class CourseService {
   /**
@@ -23,11 +50,13 @@ export class CourseService {
       throw error;
     }
 
+    const processedDescription = await processDescriptionThumbnail(description);
+
     // 2. Create course and return it with basic teacher info
     return await prisma.course.create({
       data: {
         title,
-        description: description || null,
+        description: processedDescription || null,
         teacherId
       },
       include: {
@@ -128,7 +157,21 @@ export class CourseService {
     // 2. Build update payload dynamically
     const updateData = {};
     if (title !== undefined) updateData.title = title;
-    if (description !== undefined) updateData.description = description || null;
+    
+    if (description !== undefined) {
+      const oldThumbnailMatch = course.description?.match(/<!--thumbnail: (.*?)-->/);
+      const oldThumbnailUrl = oldThumbnailMatch ? oldThumbnailMatch[1] : null;
+
+      const processedDescription = await processDescriptionThumbnail(description);
+      updateData.description = processedDescription || null;
+
+      const newThumbnailMatch = processedDescription?.match(/<!--thumbnail: (.*?)-->/);
+      const newThumbnailUrl = newThumbnailMatch ? newThumbnailMatch[1] : null;
+
+      if (oldThumbnailUrl && oldThumbnailUrl !== newThumbnailUrl && StorageService.isCustomUploadedUrl(oldThumbnailUrl)) {
+        await StorageService.deleteFile(oldThumbnailUrl);
+      }
+    }
 
     if (Object.keys(updateData).length === 0) {
       const error = new Error('At least one field (title or description) must be provided.');
@@ -166,6 +209,16 @@ export class CourseService {
       const error = new Error('Course not found.');
       error.statusCode = 404;
       throw error;
+    }
+
+    if (course.description) {
+      const match = course.description.match(/<!--thumbnail: (.*?)-->/);
+      if (match) {
+        const url = match[1];
+        if (StorageService.isCustomUploadedUrl(url)) {
+          await StorageService.deleteFile(url);
+        }
+      }
     }
 
     // 2. Perform deletion (cascade deletes sections/materials due to schema setup)

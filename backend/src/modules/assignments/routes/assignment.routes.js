@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import multer from 'multer';
 import { AssignmentController } from '../controllers/assignment.controller.js';
 import { authenticateToken, authorizeRole, verifyAssignmentAccess, verifyCourseEnrollment } from '../../../config/auth.js';
 import {
@@ -10,6 +11,10 @@ import {
 } from '../validations/assignment.validation.js';
 
 const router = Router();
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 50 * 1024 * 1024 } // 50MB
+});
 
 // ─── ASSIGNMENT ROUTES ───────────────────────────────────────────────────────
 
@@ -75,6 +80,7 @@ router.post(
   authenticateToken,
   authorizeRole(['STUDENT']),
   verifyAssignmentAccess,
+  upload.single('file'),
   validateSubmission,
   AssignmentController.submit
 );

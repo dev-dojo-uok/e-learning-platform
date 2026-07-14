@@ -40,7 +40,12 @@ router.get('/:id', async (req, res) => {
         name: true,
         role: true,
         createdAt: true,
-        updatedAt: true
+        updatedAt: true,
+        _count: {
+          select: {
+            courses: true
+          }
+        }
       }
     });
 

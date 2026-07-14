@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ChevronLeft, BookOpen, Layers, MessageSquare, X } from 'lucide-react';
-import { getForumsByCourse, createForum } from '../services/forumService';
+import { ChevronLeft, BookOpen, Layers, MessageSquare, X, ShieldAlert, Flag, CheckCircle, Trash2 } from 'lucide-react';
+import { getForumsByCourse, createForum, getReports, resolveReport, deletePost } from '../services/forumService';
 import { getModulesByCourse } from '../../courseModule/services/moduleService';
 import useAuthStore from '../../../store/useAuthStore';
+import { toast } from 'sonner';
 import ForumList from '../components/ForumList';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -33,6 +34,11 @@ export default function CourseForumsPage() {
   const [selectedModuleId, setSelectedModuleId] = useState('');
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState(null);
+
+  // Moderation reports states
+  const [showReports, setShowReports] = useState(false);
+  const [reports, setReports] = useState([]);
+  const [loadingReports, setLoadingReports] = useState(false);
 
   const fetchForums = () => {
     setLoading(true);
@@ -86,6 +92,45 @@ export default function CourseForumsPage() {
     }
   };
 
+  const handleOpenReports = async () => {
+    setShowReports(true);
+    setLoadingReports(true);
+    try {
+      const data = await getReports();
+      setReports(data || []);
+    } catch (err) {
+      toast.error('Failed to load moderation reports.');
+    } finally {
+      setLoadingReports(false);
+    }
+  };
+
+  const handleResolveReport = async (reportId) => {
+    try {
+      await resolveReport(reportId);
+      setReports((prev) =>
+        prev.map((r) => (r.id === reportId ? { ...r, status: 'RESOLVED' } : r))
+      );
+      toast.success('Report resolved successfully.');
+    } catch (err) {
+      toast.error('Failed to resolve report.');
+    }
+  };
+
+  const handleDeleteReportedPost = async (reportId, postId) => {
+    if (!window.confirm('Are you sure you want to delete this reported post? This cannot be undone.')) return;
+    try {
+      await deletePost(postId);
+      await resolveReport(reportId);
+      setReports((prev) =>
+        prev.map((r) => (r.id === reportId ? { ...r, status: 'RESOLVED', post: null } : r))
+      );
+      toast.success('Post deleted and report resolved.');
+    } catch (err) {
+      toast.error('Failed to delete post.');
+    }
+  };
+
   // Group forums: general (no moduleId) vs module-specific
   const generalForums = forums.filter((f) => !f.moduleId);
   const moduleForums = forums.filter((f) => f.moduleId);
@@ -128,9 +173,19 @@ export default function CourseForumsPage() {
           </div>
         </div>
         {isTeacherOrAdmin && (
-          <Button onClick={() => setShowCreate(true)} className="shrink-0">
-            + New Forum
-          </Button>
+          <div className="flex items-center gap-2 shrink-0">
+            <Button
+              variant="outline"
+              onClick={handleOpenReports}
+              className="flex items-center gap-1.5 border-amber-200 bg-amber-50 hover:bg-amber-100 hover:text-amber-800 text-amber-700"
+            >
+              <ShieldAlert className="w-4 h-4" />
+              Flagged Content
+            </Button>
+            <Button onClick={() => setShowCreate(true)}>
+              + New Forum
+            </Button>
+          </div>
         )}
       </div>
 
@@ -253,6 +308,122 @@ export default function CourseForumsPage() {
               </Button>
             </div>
           </form>
+        </Modal>
+      )}
+
+      {/* Moderation Reports Modal */}
+      {showReports && (
+        <Modal isOpen={true} onClose={() => setShowReports(false)} title="Forum Flagged Content" size="lg">
+          <div className="space-y-4">
+            <p className="text-xs text-slate-500">
+              Below are the reports submitted by students and teachers flagging posts or threads for review.
+            </p>
+
+            {loadingReports ? (
+              <div className="space-y-2 py-4">
+                <div className="h-10 bg-slate-50 rounded-xl animate-pulse" />
+                <div className="h-10 bg-slate-50 rounded-xl animate-pulse" />
+              </div>
+            ) : reports.length === 0 ? (
+              <div className="text-center py-8 bg-slate-50 rounded-2xl border border-slate-100">
+                <CheckCircle className="w-8 h-8 text-slate-400 mx-auto mb-2" />
+                <p className="text-sm font-semibold text-slate-600">No flagged reports</p>
+                <p className="text-xs text-slate-400">All forum content is clean!</p>
+              </div>
+            ) : (
+              <div className="space-y-3 max-h-[400px] overflow-y-auto pr-1">
+                {reports.map((report) => (
+                  <div key={report.id} className="p-4 rounded-xl border border-border bg-white space-y-3">
+                    <div className="flex items-start justify-between gap-3 flex-wrap">
+                      <div className="space-y-0.5">
+                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                          report.status === 'PENDING' ? 'bg-amber-100 text-amber-800' : 'bg-green-100 text-green-800'
+                        }`}>
+                          {report.status}
+                        </span>
+                        <p className="text-[11px] text-slate-500 mt-1">
+                          Reported by <span className="font-semibold text-slate-700">{report.user?.name}</span> ({report.user?.email})
+                        </p>
+                      </div>
+
+                      {report.status === 'PENDING' && (
+                        <div className="flex items-center gap-1.5">
+                          {report.postId && report.post && (
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => handleDeleteReportedPost(report.id, report.postId)}
+                              className="text-xs h-7 gap-1 px-2.5"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                              Delete Post
+                            </Button>
+                          )}
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => handleResolveReport(report.id)}
+                            className="text-xs h-7 gap-1 px-2.5"
+                          >
+                            <CheckCircle className="w-3.5 h-3.5" />
+                            Resolve
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="bg-slate-50 rounded-lg p-3 text-xs border border-slate-100 space-y-1">
+                      <p className="font-bold text-slate-700 uppercase tracking-wide text-[9px]">Reason</p>
+                      <p className="text-slate-600 font-medium italic">"{report.reason}"</p>
+                    </div>
+
+                    {report.postId && (
+                      <div className="border-l-2 border-red-200 pl-3 space-y-1">
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Reported Post Content</p>
+                        {report.post ? (
+                          <>
+                            <p className="text-xs text-slate-700 leading-relaxed font-medium whitespace-pre-wrap">
+                              {report.post.content}
+                            </p>
+                            <p className="text-[10px] text-slate-400">
+                              By {report.post.creator?.name} in thread:{" "}
+                              <Link to={`/threads/${report.post.thread?.id}`} className="text-primary hover:underline font-semibold">
+                                {report.post.thread?.title}
+                              </Link>
+                            </p>
+                          </>
+                        ) : (
+                          <p className="text-xs text-slate-400 italic">This post has been deleted.</p>
+                        )}
+                      </div>
+                    )}
+
+                    {report.threadId && (
+                      <div className="border-l-2 border-red-200 pl-3 space-y-1">
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Reported Thread</p>
+                        {report.thread ? (
+                          <p className="text-xs text-slate-700 leading-relaxed font-medium">
+                            Title:{" "}
+                            <Link to={`/threads/${report.thread.id}`} className="text-primary hover:underline font-bold">
+                              {report.thread.title}
+                            </Link>
+                          </p>
+                        ) : (
+                          <p className="text-xs text-slate-400 italic">This thread has been deleted.</p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="pt-2 border-t border-border mt-4 flex justify-end">
+              <Button onClick={() => setShowReports(false)} className="px-5 text-white">
+                Close
+              </Button>
+            </div>
+          </div>
         </Modal>
       )}
     </div>

@@ -32,7 +32,7 @@ function buildPostTree(posts) {
  *   onEdit   – fn(postId, content)
  *   onDelete – fn(postId)
  */
-export default function PostList({ posts = [], loading, error, onReply, onEdit, onDelete, isForumOwner = false }) {
+export default function PostList({ posts = [], loading, error, onReply, onEdit, onDelete, onReport, isForumOwner = false }) {
   if (loading) {
     return (
       <div className="space-y-4">
@@ -80,6 +80,7 @@ export default function PostList({ posts = [], loading, error, onReply, onEdit, 
           onReply={onReply}
           onEdit={onEdit}
           onDelete={onDelete}
+          onReport={onReport}
           isForumOwner={isForumOwner}
         />
       ))}

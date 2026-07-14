@@ -14,6 +14,7 @@ export default function ReviewQuiz() {
   const { user } = useAuthStore();
 
   const [attempt, setAttempt] = useState(null);
+  const [attempts, setAttempts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -24,6 +25,10 @@ export default function ReviewQuiz() {
         const backendBase = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
         const res = await axios.get(`${backendBase}/quizzes/attempts/${attemptId}`);
         setAttempt(res.data);
+
+        // Fetch all attempts for this quiz to determine limit & finalize status
+        const attemptsRes = await axios.get(`${backendBase}/quizzes/${res.data.quizId}/attempts`);
+        setAttempts(attemptsRes.data);
       } catch (err) {
         console.error(err);
         setError('Failed to load quiz review details.');
@@ -72,9 +77,27 @@ export default function ReviewQuiz() {
 
   const isTeacher = user?.role === 'TEACHER' || user?.role === 'ADMIN';
 
+  // State-based attributes for student attempts
+  const submittedAttempts = attempts.filter(a => a.submittedAt !== null);
+  const isFinalized = attempts.some(a => a.isFinal === true);
+  const limitReached = submittedAttempts.length >= (quiz?.attemptLimit || 2);
+
   // Determine if review answers are available based on the returned questions content
   const isReviewAvailable = questions.length > 0 && (questions[0].correctAnswer !== undefined || questions[0].correctOption !== undefined);
   const showAnswersReview = isReviewAvailable || isTeacher;
+
+  const handleFinalizeQuiz = async () => {
+    try {
+      const backendBase = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+      await axios.put(`${backendBase}/quizzes/attempts/${attemptId}/finalize`);
+      toast.success("Quiz finalized. Answer review unlocked!");
+      
+      // Reload page to fetch and display the newly unlocked correct answers
+      window.location.reload();
+    } catch (err) {
+      toast.error("Failed to finalize quiz.");
+    }
+  };
 
   // Formatting date helper
   const formatPublishTime = (iso) => {
@@ -175,6 +198,33 @@ export default function ReviewQuiz() {
             </div>
           </div>
         )}
+
+        {/* Actions for remaining attempts */}
+        {!isTeacher && !isFinalized && !limitReached && (
+          <div className="p-6 bg-amber-50/50 border-t border-border flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex flex-col gap-0.5">
+              <span className="text-xs font-bold text-amber-800">You have attempts remaining</span>
+              <span className="text-[11px] text-amber-700 leading-relaxed">
+                You can retake the quiz to improve your score, or finalize this attempt to immediately unlock the full review sheet (forfeits remaining attempts).
+              </span>
+            </div>
+            <div className="flex items-center gap-2 self-end sm:self-auto">
+              <Button
+                variant="outline"
+                onClick={handleFinalizeQuiz}
+                className="text-xs h-9 border-amber-200 hover:bg-amber-100 hover:text-amber-800 text-amber-700 font-bold"
+              >
+                Finalize Quiz
+              </Button>
+              <Button
+                onClick={() => navigate(`/quizzes/${quiz?.id}/take`)}
+                className="text-xs h-9 text-white font-bold"
+              >
+                Retake Quiz
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* DETAILED ANSWERS REVIEW */}
@@ -191,6 +241,12 @@ export default function ReviewQuiz() {
               <p className="text-sm text-muted-foreground max-w-md leading-relaxed mt-1">
                 The instructor has disabled detailed answer reviews for this quiz. Only your final score is available.
               </p>
+            ) : quiz?.reviewPolicy === 'IMMEDIATE' ? (
+              <div className="flex flex-col items-center gap-1.5 mt-1">
+                <p className="text-sm text-muted-foreground max-w-md leading-relaxed">
+                  Answers and question breakdowns will become visible after you finalize your submission or exhaust all attempts.
+                </p>
+              </div>
             ) : (
               <div className="flex flex-col items-center gap-1.5 mt-1">
                 <p className="text-sm text-muted-foreground max-w-md leading-relaxed">
@@ -198,7 +254,7 @@ export default function ReviewQuiz() {
                 </p>
                 <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-muted border border-border rounded-xl text-xs font-bold text-muted-foreground mt-2">
                   <Calendar className="h-3.5 w-3.5 text-primary" />
-                  Release: {formatPublishTime(quiz?.reviewPublishTime)}
+                  Release: {quiz?.reviewPublishTime ? formatPublishTime(quiz.reviewPublishTime) : 'To be announced'}
                 </div>
               </div>
             )}

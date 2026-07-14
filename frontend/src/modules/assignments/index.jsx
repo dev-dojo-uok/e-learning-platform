@@ -30,20 +30,32 @@ function StatusBadge({ status }) {
 }
 
 function SubmitModal({ assignment, onClose, onSuccess }) {
-  const [fileUrl, setFileUrl] = useState('');
+  const [file, setFile] = useState(null);
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   async function handleSubmit() {
+    if (!file) {
+      setError('Please select a file to upload.');
+      return;
+    }
     setLoading(true);
     setError('');
     try {
-      await apiFetch(`/api/assignments/${assignment.id}/submit`, 'POST', { fileUrl, notes });
+      const formData = new FormData();
+      formData.append('file', file);
+      if (notes) formData.append('notes', notes);
+
+      await api.post(`/assignments/${assignment.id}/submit`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
       onSuccess();
       onClose();
     } catch (e) {
-      setError(e.response?.data?.error || e.message);
+      setError(e.response?.data?.error || e.response?.data?.message || e.message);
     } finally {
       setLoading(false);
     }
@@ -62,9 +74,8 @@ function SubmitModal({ assignment, onClose, onSuccess }) {
         {error && <p className="text-destructive text-sm mb-3 bg-destructive/10 p-3 rounded-lg border border-destructive/20">{error}</p>}
         <div className="space-y-4">
           <div className="space-y-1.5">
-            <Label>File URL</Label>
-            <Input type="url" placeholder="https://drive.google.com/..." value={fileUrl}
-              onChange={e => setFileUrl(e.target.value)} />
+            <Label>Submission File</Label>
+            <Input type="file" onChange={e => setFile(e.target.files[0])} />
           </div>
           <div className="space-y-1.5">
             <Label>Notes (optional)</Label>

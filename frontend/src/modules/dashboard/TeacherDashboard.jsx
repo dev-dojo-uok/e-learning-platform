@@ -114,7 +114,7 @@ export default function TeacherDashboard() {
   const quizCompletedCount = Math.min(completedQuizStudents, enrolledCount || completedQuizStudents);
   const quizRemainingCount = Math.max(0, enrolledCount - quizCompletedCount);
   const quizPieData = [
-    { name: "Completed", value: quizCompletedCount, color: "#5C29C2" },
+    { name: "Completed", value: quizCompletedCount, color: "var(--primary)" },
     { name: "Pending", value: quizRemainingCount, color: "#DAD9DB" }
   ];
 
@@ -125,7 +125,7 @@ export default function TeacherDashboard() {
   const assignmentCompletedCount = Math.min(completedAssignmentStudents, enrolledCount || completedAssignmentStudents);
   const assignmentRemainingCount = Math.max(0, enrolledCount - assignmentCompletedCount);
   const assignmentPieData = [
-    { name: "Completed", value: assignmentCompletedCount, color: "#5C29C2" },
+    { name: "Completed", value: assignmentCompletedCount, color: "var(--primary)" },
     { name: "Pending", value: assignmentRemainingCount, color: "#DAD9DB" }
   ];
 
@@ -144,7 +144,7 @@ export default function TeacherDashboard() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
           <div>
             <h3 className="text-lg font-bold text-black flex items-center gap-2">
-              <Award className="h-5 w-5 text-indigo-600" />
+              <Award className="h-5 w-5 text-primary" />
               <span>Course Analytics & Overview</span>
             </h3>
             <p className="text-xs text-slate-500 mt-0.5">
@@ -164,8 +164,8 @@ export default function TeacherDashboard() {
                     type="button"
                     onClick={() => setSelectedCourseId(cid)}
                     className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer whitespace-nowrap ${isSelected
-                      ? "bg-indigo-600 text-white shadow-sm scale-102"
-                      : "bg-slate-100 text-slate-600 hover:bg-slate-200/80"
+                      ? "bg-primary text-primary-foreground shadow-sm scale-102"
+                      : "bg-muted text-muted-foreground hover:bg-muted/80"
                       }`}
                   >
                     {c.title}
@@ -179,14 +179,14 @@ export default function TeacherDashboard() {
         {/* Selected Course Overview Stats */}
         {statsLoading ? (
           <div className="flex items-center justify-center py-8 gap-2 text-xs text-slate-400 animate-pulse">
-            <Loader2 className="h-4 w-4 animate-spin text-indigo-600" />
+            <Loader2 className="h-4 w-4 animate-spin text-primary" />
             <span>Loading course analytics...</span>
           </div>
         ) : selectedCourseObj ? (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <span className="text-sm font-semibold text-slate-700">
-                Viewing Stats for: <strong className="text-indigo-600 font-bold">{selectedCourseObj.title}</strong>
+                Viewing Stats for: <strong className="text-primary font-bold">{selectedCourseObj.title}</strong>
               </span>
               <span className="text-xs text-slate-400 font-medium">
                 Category: {selectedCourseObj.category || "General"}
@@ -195,8 +195,8 @@ export default function TeacherDashboard() {
 
             {/* 3 Overview Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="p-4 rounded-xl bg-gradient-to-br from-slate-50 to-indigo-50/30 border border-slate-200/80 shadow-2xs flex items-center gap-3.5">
-                <div className="w-11 h-11 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center shrink-0 font-bold">
+              <div className="p-4 rounded-xl bg-gradient-to-br from-slate-50 to-primary/5 border border-slate-200/80 shadow-2xs flex items-center gap-3.5">
+                <div className="w-11 h-11 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0 font-bold">
                   <Users className="h-5 w-5" />
                 </div>
                 <div>
@@ -205,8 +205,8 @@ export default function TeacherDashboard() {
                 </div>
               </div>
 
-              <div className="p-4 rounded-xl bg-gradient-to-br from-slate-50 to-purple-50/30 border border-slate-200/80 shadow-2xs flex items-center gap-3.5">
-                <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 font-bold" style={{ backgroundColor: '#EFEAFF', color: '#5C29C2' }}>
+              <div className="p-4 rounded-xl bg-gradient-to-br from-slate-50 to-primary/5 border border-slate-200/80 shadow-2xs flex items-center gap-3.5">
+                <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 font-bold bg-primary/10 text-primary">
                   <HelpCircle className="h-5 w-5" />
                 </div>
                 <div>
@@ -215,8 +215,8 @@ export default function TeacherDashboard() {
                 </div>
               </div>
 
-              <div className="p-4 rounded-xl bg-gradient-to-br from-slate-50 to-purple-50/30 border border-slate-200/80 shadow-2xs flex items-center gap-3.5">
-                <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 font-bold" style={{ backgroundColor: '#EFEAFF', color: '#5C29C2' }}>
+              <div className="p-4 rounded-xl bg-gradient-to-br from-slate-50 to-primary/5 border border-slate-200/80 shadow-2xs flex items-center gap-3.5">
+                <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 font-bold bg-primary/10 text-primary">
                   <FileText className="h-5 w-5" />
                 </div>
                 <div>
@@ -303,7 +303,7 @@ export default function TeacherDashboard() {
                     </PieChart>
                   </ResponsiveContainer>
                   <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                    <span className="text-xl font-black" style={{ color: '#5C29C2' }}>
+                    <span className="text-xl font-black text-primary">
                       {enrolledCount > 0 ? Math.round((quizCompletedCount / enrolledCount) * 100) : 0}%
                     </span>
                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Done</span>
@@ -313,7 +313,7 @@ export default function TeacherDashboard() {
                 {/* Text Breakdown */}
                 <div className="flex flex-col justify-center space-y-3 p-4 bg-slate-50/70 rounded-xl border border-slate-100 w-full">
                   <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#5C29C2' }}></div>
+                    <div className="w-3 h-3 rounded-full bg-primary"></div>
                     <span className="text-xs font-semibold text-slate-600">Completed: <strong className="text-slate-800">{quizCompletedCount}</strong></span>
                   </div>
                   <div className="flex items-center gap-2">
@@ -321,7 +321,7 @@ export default function TeacherDashboard() {
                     <span className="text-xs font-semibold text-slate-600">Pending: <strong className="text-slate-800">{quizRemainingCount}</strong></span>
                   </div>
                   <div className="pt-2 border-t border-slate-200/60 text-xs text-slate-500">
-                    <span className="font-bold text-sm" style={{ color: '#5C29C2' }}>
+                    <span className="font-bold text-sm text-primary">
                       {enrolledCount > 0 ? Math.round((quizCompletedCount / enrolledCount) * 100) : 0}%
                     </span> of enrolled students have completed this evaluation.
                   </div>
@@ -335,7 +335,7 @@ export default function TeacherDashboard() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
               <div>
                 <h3 className="text-lg font-bold text-black flex items-center gap-2">
-                  <FileText className="h-5 w-5" style={{ color: '#5C29C2' }} />
+                  <FileText className="h-5 w-5 text-primary" />
                   <span>Assignment Completion Analytics</span>
                 </h3>
                 <p className="text-xs text-slate-500 mt-0.5">
@@ -348,8 +348,7 @@ export default function TeacherDashboard() {
                 <select
                   value={selectedAssignmentId}
                   onChange={(e) => setSelectedAssignmentId(e.target.value)}
-                  className="px-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50 text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 cursor-pointer"
-                  style={{ '--tw-ring-color': '#5C29C2' }}
+                  className="px-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50 text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer"
                 >
                   {assignmentsList.map((a) => (
                     <option key={a._id || a.id} value={a._id || a.id}>
@@ -368,7 +367,7 @@ export default function TeacherDashboard() {
               </div>
             ) : assignmentLoading ? (
               <div className="flex items-center justify-center py-12 gap-2 text-xs text-slate-400 animate-pulse">
-                <Loader2 className="h-5 w-5 animate-spin" style={{ color: '#5C29C2' }} />
+                <Loader2 className="h-5 w-5 animate-spin text-primary" />
                 <span>Loading assignment submission data...</span>
               </div>
             ) : (
@@ -398,7 +397,7 @@ export default function TeacherDashboard() {
                     </PieChart>
                   </ResponsiveContainer>
                   <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                    <span className="text-xl font-black" style={{ color: '#5C29C2' }}>
+                    <span className="text-xl font-black text-primary">
                       {enrolledCount > 0 ? Math.round((assignmentCompletedCount / enrolledCount) * 100) : 0}%
                     </span>
                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Done</span>
@@ -408,7 +407,7 @@ export default function TeacherDashboard() {
                 {/* Text Breakdown */}
                 <div className="flex flex-col justify-center space-y-3 p-4 bg-slate-50/70 rounded-xl border border-slate-100 w-full">
                   <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#5C29C2' }}></div>
+                    <div className="w-3 h-3 rounded-full bg-primary"></div>
                     <span className="text-xs font-semibold text-slate-600">Completed: <strong className="text-slate-800">{assignmentCompletedCount}</strong></span>
                   </div>
                   <div className="flex items-center gap-2">
@@ -416,7 +415,7 @@ export default function TeacherDashboard() {
                     <span className="text-xs font-semibold text-slate-600">Pending: <strong className="text-slate-800">{assignmentRemainingCount}</strong></span>
                   </div>
                   <div className="pt-2 border-t border-slate-200/60 text-xs text-slate-500">
-                    <span className="font-bold text-sm" style={{ color: '#5C29C2' }}>
+                    <span className="font-bold text-sm text-primary">
                       {enrolledCount > 0 ? Math.round((assignmentCompletedCount / enrolledCount) * 100) : 0}%
                     </span> of enrolled students have submitted this evaluation.
                   </div>

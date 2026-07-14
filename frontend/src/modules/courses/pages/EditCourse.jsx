@@ -67,7 +67,7 @@ export default function EditCourse() {
         type="button"
         id="back-to-course-detail-btn"
         onClick={() => navigate(`/courses/${id}`)}
-        className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-indigo-600 transition-colors duration-150 self-start group"
+        className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-primary transition-colors duration-150 self-start group"
       >
         <ArrowLeft className="h-4 w-4 group-hover:-translate-x-0.5 transition-transform" />
         Back to Course Details
@@ -104,9 +104,9 @@ export default function EditCourse() {
       {successMsg && (
         <div
           role="status"
-          className="flex items-center gap-2.5 p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm font-medium"
+          className="flex items-center gap-2.5 p-4 rounded-xl bg-primary/10 border border-primary/20 text-primary text-sm font-medium"
         >
-          <CheckCircle2 className="h-4 w-4 text-emerald-500 flex-shrink-0" />
+          <CheckCircle2 className="h-4 w-4 text-primary flex-shrink-0" />
           {successMsg}
         </div>
       )}
@@ -116,7 +116,7 @@ export default function EditCourse() {
         {isFetching ? (
           /* Loading skeleton */
           <div className="flex flex-col items-center justify-center py-16 gap-3 text-slate-500">
-            <Loader2 className="h-8 w-8 animate-spin text-indigo-500" />
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
             <p className="text-sm font-medium">Loading course…</p>
           </div>
         ) : (

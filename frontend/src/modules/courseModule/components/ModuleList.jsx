@@ -29,7 +29,7 @@ const ModuleList = ({ courseId, isEnrolled, onAdd, onEdit, onDelete }) => {
   if (loading && modules.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16 gap-3 text-slate-500 animate-in fade-in duration-300">
-        <Loader2 className="h-8 w-8 animate-spin text-indigo-500" />
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
         <p className="text-sm font-medium tracking-wide">Loading modules…</p>
         <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
           {[1, 2].map((i) => (
@@ -56,8 +56,8 @@ const ModuleList = ({ courseId, isEnrolled, onAdd, onEdit, onDelete }) => {
   if (!modules || modules.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16 px-6 gap-4 text-center animate-in fade-in duration-300">
-        <div className="flex items-center justify-center w-16 h-16 rounded-2xl bg-indigo-50">
-          <InboxIcon className="h-8 w-8 text-indigo-300" strokeWidth={1.5} />
+        <div className="flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10">
+          <InboxIcon className="h-8 w-8 text-primary/60" strokeWidth={1.5} />
         </div>
         <div>
           <p className="text-base font-semibold text-slate-600">No modules found.</p>
@@ -66,14 +66,14 @@ const ModuleList = ({ courseId, isEnrolled, onAdd, onEdit, onDelete }) => {
           </p>
         </div>
         {isTeacherOrAdmin && (
-          <button
+          <Button
             type="button"
             onClick={onAdd}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 transition-colors duration-150 shadow-sm"
+            className="flex items-center gap-2"
           >
             <PlusCircle className="h-4 w-4" />
             Create your first module
-          </button>
+          </Button>
         )}
       </div>
     );

@@ -115,12 +115,12 @@ export function CourseProgressCard({ courseId }) {
 
   // Chart configuration mapped to your learning data
   const chartData = [
-    { name: "completed", value: completedTasks, fill: "#5C29C2" },
+    { name: "completed", value: completedTasks, fill: "var(--primary)" },
     { name: "remaining", value: totalTasks === 0 ? 1 : remainingTasks, fill: "#DAD9DB" }
   ]
 
   const chartConfig = {
-    completed: { label: "Completed", color: "#5C29C2" },
+    completed: { label: "Completed", color: "var(--primary)" },
     remaining: { label: "Remaining", color: "#DAD9DB" }
   }
 
@@ -187,7 +187,7 @@ export function CourseProgressCard({ courseId }) {
             <div className="text-2xl font-bold text-slate-900">
               {completedQuizzes} <span className="text-base font-medium text-slate-400">/ {totalQuizzes}</span>
             </div>
-            <Progress value={quizPercentage} className="h-2 w-full bg-slate-200" indicatorClassName="bg-[#5C29C2]" />
+            <Progress value={quizPercentage} className="h-2 w-full bg-slate-200" indicatorClassName="bg-primary" />
             <div className="text-xs font-medium text-slate-500 flex justify-between">
               <span>{quizPercentage}% achieved</span>
               <span>{Math.max(0, totalQuizzes - completedQuizzes)} remaining</span>
@@ -206,7 +206,7 @@ export function CourseProgressCard({ courseId }) {
                 {completedAssignments} <span className="text-base font-medium text-slate-400">/ {totalAssignments}</span>
               </div>
 
-              <Progress value={assignmentPercentage} className="h-2 w-full mt-2 bg-slate-200" indicatorClassName="bg-[#5C29C2]" />
+              <Progress value={assignmentPercentage} className="h-2 w-full mt-2 bg-slate-200" indicatorClassName="bg-primary" />
 
               <div className="text-xs font-medium text-slate-500 flex justify-between mt-1">
                 <span>{assignmentPercentage}% achieved</span>
@@ -263,12 +263,12 @@ export function CourseProgressCard({ courseId }) {
           <CardDescription className="text-sm text-slate-500">Latest messages & materials from your teacher.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4 flex-1 flex flex-col justify-between">
-          
+
           {/* Newest Teacher Message Box */}
           <div className="space-y-2 p-3 rounded-xl bg-slate-50 border border-slate-100 flex-1 flex flex-col justify-center">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                <MessageSquare className="w-4 h-4 text-[#5C29C2]" /> Latest Teacher Message
+                <MessageSquare className="w-4 h-4 text-primary" /> Latest Teacher Message
               </div>
               {latestThread?.createdAt && (
                 <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-white border border-slate-200 text-slate-500">
@@ -281,7 +281,7 @@ export function CourseProgressCard({ courseId }) {
               <div className="text-xs text-slate-400 italic py-2">Loading latest message...</div>
             ) : latestThread ? (
               <Link to={`/threads/${latestThread.id}`} className="block group mt-1">
-                <p className="text-sm font-bold text-slate-800 group-hover:text-[#5C29C2] transition-colors line-clamp-1">
+                <p className="text-sm font-bold text-slate-800 group-hover:text-primary transition-colors line-clamp-1">
                   {latestThread.title}
                 </p>
                 {latestThread.content && (
@@ -289,7 +289,7 @@ export function CourseProgressCard({ courseId }) {
                     {latestThread.content}
                   </p>
                 )}
-                <span className="text-[10px] font-semibold text-[#5C29C2] mt-2 inline-block">View Discussion →</span>
+                <span className="text-[10px] font-semibold text-primary mt-2 inline-block">View Discussion →</span>
               </Link>
             ) : (
               <div className="text-xs text-slate-400 italic py-3 text-center">
@@ -302,7 +302,7 @@ export function CourseProgressCard({ courseId }) {
           <div className="space-y-2 p-3 rounded-xl bg-slate-50 border border-slate-100 flex-1 flex flex-col justify-center">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                <FileText className="w-4 h-4 text-[#5C29C2]" /> Latest Uploaded File
+                <FileText className="w-4 h-4 text-primary" /> Latest Uploaded File
               </div>
               {latestMaterial?.createdAt && (
                 <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-white border border-slate-200 text-slate-500">
@@ -329,8 +329,7 @@ export function CourseProgressCard({ courseId }) {
                     target="_blank"
                     rel="noopener noreferrer"
                     download
-                    className="px-2.5 py-1 rounded-lg text-xs font-bold text-white transition-all whitespace-nowrap shadow-sm"
-                    style={{ backgroundColor: '#5C29C2' }}
+                    className="px-2.5 py-1 rounded-lg text-xs font-bold text-primary-foreground bg-primary hover:bg-primary/90 transition-all whitespace-nowrap shadow-sm"
                   >
                     Download
                   </a>

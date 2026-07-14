@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Pencil, Trash2, Reply, Clock } from 'lucide-react';
+import { Pencil, Trash2, Reply, Clock, Flag } from 'lucide-react';
 import useAuthStore from '../../../store/useAuthStore';
 import ReplyBox from './ReplyBox';
 import { Button } from '@/components/ui/button';
@@ -22,6 +22,7 @@ export default function PostCard({
   onReply,
   onEdit,
   onDelete,
+  onReport,
   depth = 0,
   isForumOwner = false,
 }) {
@@ -52,6 +53,14 @@ export default function PostCard({
   const isTopLevel = depth === 0;
   const canEdit = isTopLevel && (isOwner || isForumOwner);
   const canDelete = isOwner || isForumOwner;
+  const canReport = user && user.id !== post.userId && user.id !== post.createdBy;
+
+  function handleReportClick() {
+    const reason = window.prompt("State the reason for reporting this post:");
+    if (reason && reason.trim()) {
+      onReport(post.id, reason.trim());
+    }
+  }
 
   async function handleSaveEdit() {
     if (!editContent.trim()) return;
@@ -94,8 +103,19 @@ export default function PostCard({
           </div>
 
           {/* Actions */}
-          {!isEditing && (canEdit || canDelete) && (
+          {!isEditing && (canEdit || canDelete || canReport) && (
             <div className="flex items-center gap-1">
+              {canReport && (
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  onClick={handleReportClick}
+                  title="Report post"
+                  className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                >
+                  <Flag className="w-3.5 h-3.5" />
+                </Button>
+              )}
               {canEdit && (
                 <Button
                   variant="ghost"
@@ -193,6 +213,7 @@ export default function PostCard({
               onReply={onReply}
               onEdit={onEdit}
               onDelete={onDelete}
+              onReport={onReport}
               isForumOwner={isForumOwner}
             />
           ))}
