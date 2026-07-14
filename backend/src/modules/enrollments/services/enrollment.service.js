@@ -115,7 +115,7 @@ export class EnrollmentService {
                 name: true,
                 email: true
               }
-            }
+            },
           }
         }
       },
