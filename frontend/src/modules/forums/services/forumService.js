@@ -167,6 +167,49 @@ export async function deletePost(postId) {
   }
 }
 
+// ─── Reports API ─────────────────────────────────────────────────────────────
+
+/**
+ * Creates a moderation report for a post or thread.
+ * @param {Object} reportData - { reason, postId?, threadId? }
+ */
+export async function createReport(reportData) {
+  try {
+    const response = await api.post('/reports', reportData);
+    return response.data;
+  } catch (error) {
+    console.error('Report API Error:', error);
+    throw error;
+  }
+}
+
+/**
+ * Retrieves all content reports.
+ */
+export async function getReports() {
+  try {
+    const response = await api.get('/reports');
+    return response.data;
+  } catch (error) {
+    console.error('Report API Error:', error);
+    throw error;
+  }
+}
+
+/**
+ * Resolves a moderation report.
+ * @param {string} reportId - The ID of the report to resolve.
+ */
+export async function resolveReport(reportId) {
+  try {
+    const response = await api.patch(`/reports/${reportId}/resolve`);
+    return response.data;
+  } catch (error) {
+    console.error('Report API Error:', error);
+    throw error;
+  }
+}
+
 const forumService = {
   getForumsByCourse,
   getForumById,
@@ -179,6 +222,9 @@ const forumService = {
   createPost,
   updatePost,
   deletePost,
+  createReport,
+  getReports,
+  resolveReport,
 };
 
 export default forumService;

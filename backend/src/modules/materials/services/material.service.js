@@ -1,8 +1,6 @@
 import prisma from '../../../config/db.js';
-import fs from 'fs';
-import path from 'path';
 import { MATERIAL_TYPE_MAP } from '../validations/material.validation.js';
-import { UPLOAD_DIR } from '../middleware/upload.middleware.js';
+import { StorageService } from '../../../services/storageService.js';
 
 // ---------------------------------------------------------------------------
 // File-based material types that require a physical upload
@@ -34,7 +32,17 @@ export class MaterialService {
     MaterialService._validateTypeRequirements(type, contentUrl, embedCode, file);
 
     // 3. Build content fields
-    const resolvedContentUrl = MaterialService._resolveContentUrl(type, contentUrl, file);
+    let resolvedContentUrl = null;
+    if (FILE_BASED_TYPES.includes(type) && file) {
+      resolvedContentUrl = await StorageService.uploadFile(
+        file.buffer,
+        file.originalname,
+        file.mimetype,
+        'materials'
+      );
+    } else if (type === 'VIDEO') {
+      resolvedContentUrl = contentUrl || null;
+    }
     const resolvedEmbedCode  = type === 'YOUTUBE' ? (embedCode || null) : null;
 
     // 4. Map API type → Prisma enum
@@ -150,13 +158,23 @@ export class MaterialService {
       MaterialService._validateTypeRequirements(type, contentUrl, embedCode, file);
       updateData.type = MATERIAL_TYPE_MAP[type];
 
-      const resolvedContentUrl = MaterialService._resolveContentUrl(type, contentUrl, file);
+      let resolvedContentUrl = null;
+      if (FILE_BASED_TYPES.includes(type) && file) {
+        resolvedContentUrl = await StorageService.uploadFile(
+          file.buffer,
+          file.originalname,
+          file.mimetype,
+          'materials'
+        );
+      } else if (type === 'VIDEO') {
+        resolvedContentUrl = contentUrl || null;
+      }
       updateData.contentUrl = resolvedContentUrl;
       updateData.embedCode  = type === 'YOUTUBE' ? (embedCode || null) : null;
 
-      // Delete old file if the material had one and a new one is replacing it
-      if (file && existing.contentUrl && MaterialService._isLocalFile(existing.contentUrl)) {
-        MaterialService._deleteFile(existing.contentUrl);
+      // Delete old file if the material had one and a new one is replacing it or type changed
+      if (existing.contentUrl && StorageService.isCustomUploadedUrl(existing.contentUrl)) {
+        await StorageService.deleteFile(existing.contentUrl);
       }
     } else {
       // No type change; handle file replacement or plain URL update
@@ -168,9 +186,14 @@ export class MaterialService {
           throw error;
         }
 
-        updateData.contentUrl = `${UPLOAD_DIR}/${file.filename}`;
-        if (existing.contentUrl && MaterialService._isLocalFile(existing.contentUrl)) {
-          MaterialService._deleteFile(existing.contentUrl);
+        updateData.contentUrl = await StorageService.uploadFile(
+          file.buffer,
+          file.originalname,
+          file.mimetype,
+          'materials'
+        );
+        if (existing.contentUrl && StorageService.isCustomUploadedUrl(existing.contentUrl)) {
+          await StorageService.deleteFile(existing.contentUrl);
         }
       } else if (contentUrl !== undefined) {
         // Only VIDEO_SRC materials should have a contentUrl
@@ -233,9 +256,9 @@ export class MaterialService {
     // 2. Remove from database
     await prisma.material.delete({ where: { id } });
 
-    // 3. Remove file from disk if applicable
-    if (material.contentUrl && MaterialService._isLocalFile(material.contentUrl)) {
-      MaterialService._deleteFile(material.contentUrl);
+    // 3. Remove file from S3 or disk if applicable
+    if (material.contentUrl && StorageService.isCustomUploadedUrl(material.contentUrl)) {
+      await StorageService.deleteFile(material.contentUrl);
     }
   }
 
@@ -272,38 +295,5 @@ export class MaterialService {
     }
   }
 
-  /**
-   * Determines the final contentUrl value based on the material type.
-   */
-  static _resolveContentUrl(type, contentUrl, file) {
-    if (FILE_BASED_TYPES.includes(type) && file) {
-      return `${UPLOAD_DIR}/${file.filename}`;
-    }
-    if (type === 'VIDEO') {
-      return contentUrl || null;
-    }
-    // YOUTUBE does not use contentUrl
-    return null;
-  }
-
-  /**
-   * Returns true if the URL represents a locally stored file (not an external http/https URL).
-   */
-  static _isLocalFile(url) {
-    return url && !url.startsWith('http://') && !url.startsWith('https://');
-  }
-
-  /**
-   * Attempts to delete a local file; silently ignores errors (e.g., already deleted).
-   */
-  static _deleteFile(filePath) {
-    try {
-      const resolvedPath = path.isAbsolute(filePath) ? filePath : path.resolve(process.cwd(), filePath);
-      if (fs.existsSync(resolvedPath)) {
-        fs.unlinkSync(resolvedPath);
-      }
-    } catch (err) {
-      console.warn(`[MaterialService] Could not delete file at "${filePath}":`, err.message);
-    }
-  }
+  // Note: Helper methods migrated to StorageService
 }

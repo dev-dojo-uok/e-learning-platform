@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import {
-  ChevronLeft, Eye, Pin, Lock, MessageSquare, Clock, AlertCircle,
+  ChevronLeft, Eye, Pin, Lock, MessageSquare, Clock, AlertCircle, Flag
 } from 'lucide-react';
 import {
   getThreadById,
@@ -10,10 +10,13 @@ import {
   updatePost,
   deletePost,
   incrementThreadViews,
+  createReport,
 } from '../services/forumService';
 import PostList from '../components/PostList';
 import ReplyBox from '../components/ReplyBox';
 import useAuthStore from '../../../store/useAuthStore';
+import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 
 /**
  * ThreadDetailPage – /threads/:threadId
@@ -105,6 +108,29 @@ export default function ThreadDetailPage() {
     }
   }
 
+  // Report post handler
+  const handleReportPost = useCallback(async (postId, reason) => {
+    try {
+      await createReport({ postId, reason });
+      toast.success("Post has been reported successfully.");
+    } catch (err) {
+      toast.error(err.response?.data?.error || "Failed to report post.");
+    }
+  }, []);
+
+  // Report thread handler
+  async function handleReportThread() {
+    const reason = window.prompt("State the reason for reporting this thread:");
+    if (!reason || !reason.trim()) return;
+
+    try {
+      await createReport({ threadId, reason: reason.trim() });
+      toast.success("Thread has been reported successfully.");
+    } catch (err) {
+      toast.error(err.response?.data?.error || "Failed to report thread.");
+    }
+  }
+
   const createdDate = thread?.createdAt
     ? new Date(thread.createdAt).toLocaleString('en-US', {
         month: 'long',
@@ -185,24 +211,38 @@ export default function ThreadDetailPage() {
           <h1 className="text-2xl font-bold text-slate-900 leading-tight">{thread.title}</h1>
 
           {/* Meta */}
-          <div className="flex flex-wrap items-center gap-4 text-xs text-slate-500">
-            <div className="flex items-center gap-1.5">
-              <div className="w-5 h-5 rounded-full bg-muted flex items-center justify-center text-primary text-[9px] font-bold">
-                {avatarInitial}
+          <div className="flex flex-wrap items-center justify-between gap-4 text-xs text-slate-500">
+            <div className="flex flex-wrap items-center gap-4">
+              <div className="flex items-center gap-1.5">
+                <div className="w-5 h-5 rounded-full bg-muted flex items-center justify-center text-primary text-[9px] font-bold">
+                  {avatarInitial}
+                </div>
+                <span className="font-medium text-slate-700">{authorName}</span>
               </div>
-              <span className="font-medium text-slate-700">{authorName}</span>
-            </div>
-            {createdDate && (
+              {createdDate && (
+                <span className="flex items-center gap-1">
+                  <Clock className="w-3 h-3" /> {createdDate}
+                </span>
+              )}
               <span className="flex items-center gap-1">
-                <Clock className="w-3 h-3" /> {createdDate}
+                <Eye className="w-3 h-3" /> {thread.views ?? 0} views
               </span>
+              <span className="flex items-center gap-1">
+                <MessageSquare className="w-3 h-3" /> {posts.length} {posts.length === 1 ? 'reply' : 'replies'}
+              </span>
+            </div>
+
+            {user && user.id !== (thread.createdBy?.id || thread.createdBy) && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleReportThread}
+                className="text-slate-500 hover:text-destructive hover:bg-destructive/10 gap-1.5 h-7 px-2"
+              >
+                <Flag className="w-3.5 h-3.5" />
+                Report Thread
+              </Button>
             )}
-            <span className="flex items-center gap-1">
-              <Eye className="w-3 h-3" /> {thread.views ?? 0} views
-            </span>
-            <span className="flex items-center gap-1">
-              <MessageSquare className="w-3 h-3" /> {posts.length} {posts.length === 1 ? 'reply' : 'replies'}
-            </span>
           </div>
 
           {/* OP Content card */}
@@ -229,6 +269,7 @@ export default function ThreadDetailPage() {
             onReply={handleReply}
             onEdit={handleEdit}
             onDelete={handleDelete}
+            onReport={handleReportPost}
             isForumOwner={isTeacherOrAdmin}
           />
 

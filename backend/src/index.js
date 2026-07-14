@@ -17,6 +17,7 @@ import postRoutes from './modules/forums/routes/post.routes.js';
 import completionRoutes from './modules/completion/completion.routes.js';
 import assignmentRoutes from './modules/assignments/index.js';
 import { enrollmentRoutes, studentEnrollmentRoutes, courseEnrollmentRoutes } from './modules/enrollments/index.js';
+import reportRoutes from './modules/forums/routes/report.routes.js';
 
 dotenv.config();
 
@@ -90,6 +91,7 @@ app.use('/assignments', assignmentRoutes);
 app.use('/enrollments', enrollmentRoutes);
 app.use('/students', studentEnrollmentRoutes);
 app.use('/courses', courseEnrollmentRoutes);
+app.use('/reports', reportRoutes);
 
 // Error Handling middleware
 app.use((err, req, res, next) => {

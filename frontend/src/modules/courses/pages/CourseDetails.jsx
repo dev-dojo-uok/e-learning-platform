@@ -23,6 +23,7 @@ import { enrollStudent, getMyEnrollments } from '../../enrollment';
 import { toast } from 'sonner';
 import { CourseProgressCard } from '../../completion';
 import CourseEvaluationAnalytics from '../components/CourseEvaluationAnalytics';
+import api from '@/lib/axios';
 import {
   AlertDialog,
   AlertDialogContent,
@@ -41,6 +42,26 @@ export default function CourseDetails() {
   const { selectedCourse, loading, error, fetchCourseById } = useCourses();
   const { user } = useAuthStore();
   const isTeacherOrAdmin = user?.role === 'TEACHER' || user?.role === 'ADMIN';
+
+  // Teacher profile card state
+  const [isTeacherModalOpen, setIsTeacherModalOpen] = useState(false);
+  const [teacherDetails, setTeacherDetails] = useState(null);
+  const [teacherLoading, setTeacherLoading] = useState(false);
+
+  const handleTeacherClick = async (teacherId) => {
+    if (!teacherId) return;
+    setTeacherLoading(true);
+    setIsTeacherModalOpen(true);
+    try {
+      const response = await api.get(`/users/${teacherId}`);
+      setTeacherDetails(response.data);
+    } catch (err) {
+      console.error('Failed to fetch teacher profile:', err);
+      toast.error('Failed to load teacher profile.');
+    } finally {
+      setTeacherLoading(false);
+    }
+  };
 
   // ── Module State & Hook ──
   const {
@@ -264,7 +285,20 @@ export default function CourseDetails() {
             <p className="text-slate-400 text-sm italic">No description provided for this course.</p>
           )}
           <div className="flex items-center gap-2 text-xs font-semibold text-slate-500">
-            <span>Teacher: <span className="text-slate-800 font-bold">{course?.teacher?.name || 'Unknown'}</span></span>
+            <span>
+              Teacher:{' '}
+              {course?.teacher ? (
+                <button
+                  type="button"
+                  onClick={() => handleTeacherClick(course.teacher.id)}
+                  className="text-primary hover:underline hover:text-primary/80 font-bold transition-colors cursor-pointer focus:outline-none text-xs"
+                >
+                  {course.teacher.name}
+                </button>
+              ) : (
+                <span className="text-slate-800 font-bold">Unknown</span>
+              )}
+            </span>
             <span>•</span>
             {course?.category && (
               <>
@@ -283,7 +317,7 @@ export default function CourseDetails() {
               id="enroll-course-btn"
               onClick={handleEnroll}
               disabled={enrolling || checkingEnrollment || isEnrolled}
-              className={isEnrolled ? "bg-emerald-600 hover:bg-emerald-650 text-white cursor-default" : "text-white"}
+              className={isEnrolled ? "cursor-default" : "text-white"}
             >
               {checkingEnrollment ? (
                 <>
@@ -336,14 +370,7 @@ export default function CourseDetails() {
               Edit Course
             </Button>
           )}
-          <Button
-            variant="secondary"
-            id="back-to-courses-btn"
-            onClick={() => navigate('/courses')}
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Courses
-          </Button>
+
         </div>
       </div>
 
@@ -462,6 +489,68 @@ export default function CourseDetails() {
           loading={moduleActionLoading}
           error={moduleStoreError}
         />
+      </Modal>
+
+      {/* Teacher Profile Modal */}
+      <Modal
+        isOpen={isTeacherModalOpen}
+        onClose={() => setIsTeacherModalOpen(false)}
+        title="Teacher Profile"
+        size="sm"
+      >
+        {teacherLoading ? (
+          <div className="flex flex-col items-center justify-center py-12 gap-3">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <p className="text-sm text-slate-500 font-medium animate-pulse">Loading profile…</p>
+          </div>
+        ) : teacherDetails ? (
+          <div className="relative flex flex-col items-center -mt-6">
+            {/* Decorative top cover */}
+            <div className="absolute top-0 left-0 right-0 h-24 bg-primary/10  rounded-t-lg -mx-6" />
+
+            {/* Avatar Container */}
+            <div className="relative mt-10 z-10">
+              <div className="flex items-center justify-center h-24 w-24 rounded-full bg-primary text-white font-extrabold text-3xl shadow-lg border-4 border-card">
+                {teacherDetails.name ? teacherDetails.name.charAt(0).toUpperCase() : '?'}
+              </div>
+            </div>
+
+            {/* Profile Details */}
+            <div className="mt-4 space-y-2 text-center w-full animate-in fade-in slide-in-from-bottom-2 duration-300">
+              <h4 className="text-xl font-bold text-slate-900 tracking-tight">{teacherDetails.name}</h4>
+              <p className="text-sm text-slate-500 font-medium flex items-center justify-center gap-1.5">
+                <a href={`mailto:${teacherDetails.email}`} className='hover:underline' title='Mail the teacher'>{teacherDetails.email}</a>
+              </p>
+              <div className="flex justify-center gap-2 pt-1">
+                <Badge className="bg-primary/10 text-primary hover:bg-primary/20 border-none font-semibold px-3">
+                  {teacherDetails.role}
+                </Badge>
+                <Badge variant="outline" className="text-slate-500 border-slate-200">
+                  Joined {new Date(teacherDetails.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'long' })}
+                </Badge>
+              </div>
+            </div>
+
+            {/* Stats Section */}
+            <div className="w-full mt-6 grid grid-cols-1 gap-4 pt-6 border-t border-border animate-in fade-in slide-in-from-bottom-3 duration-300">
+              <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 flex items-center justify-between transition-all hover:bg-slate-100/50">
+                <div className="space-y-0.5 text-left">
+                  <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider">Total Courses</p>
+                  {/* <p className="text-sm text-slate-600 font-medium"></p> */}
+                </div>
+                <div className="text-right">
+                  <span className="text-3xl font-black text-primary leading-none">
+                    {teacherDetails._count?.courses ?? 0}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center py-6 text-slate-500 text-sm">
+            <p>Could not fetch teacher details. Please try again later.</p>
+          </div>
+        )}
       </Modal>
 
 

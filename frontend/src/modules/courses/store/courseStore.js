@@ -25,6 +25,19 @@ import { getCourseThumbnail } from '../utils/thumbnailMapper';
  * Adds `_id` alias for `id` so UI components (CourseCard, CourseTable)
  * that reference `course._id` work correctly.
  */
+const getCourseThumbnailUrl = (val) => {
+  if (!val) return '';
+  if (val.startsWith('data:image') || val.startsWith('http://') || val.startsWith('https://')) {
+    return val;
+  }
+  if (val.startsWith('uploads/')) {
+    const backendBase = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+    const serverOrigin = backendBase.replace('/api', '');
+    return `${serverOrigin}/${val}`;
+  }
+  return `/course-thumbnails/${val}.jpg`;
+};
+
 const normalizeCourse = (course) => {
   if (!course) return course;
   
@@ -35,7 +48,7 @@ const normalizeCourse = (course) => {
   const match = description.match(/<!--thumbnail: (.*?)-->/);
   if (match) {
     const val = match[1];
-    thumbnail = val.startsWith('data:image') ? val : `/course-thumbnails/${val}.jpg`;
+    thumbnail = getCourseThumbnailUrl(val);
     description = description.replace(/<!--thumbnail: (.*?)-->/, '').trim();
   }
 

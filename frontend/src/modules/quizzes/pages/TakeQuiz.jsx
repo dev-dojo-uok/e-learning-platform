@@ -186,16 +186,23 @@ export default function TakeQuiz() {
     setFinalizing(true);
     try {
       const backendBase = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-      // Finalize route locks the quiz, marking it finalize
-      await axios.put(`${backendBase}/quizzes/${id}/finalize`);
+      
+      const submitted = attempts.filter(a => a.submittedAt !== null);
+      if (submitted.length === 0) {
+        toast.error('No attempts found to finalize.');
+        return;
+      }
+      
+      const sorted = [...submitted].sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt));
+      const latestAttempt = sorted[0];
+
+      // Finalize the latest submitted attempt
+      await axios.put(`${backendBase}/quizzes/attempts/${latestAttempt.id}/finalize`);
       toast.success('Quiz finalized. Review sheet unlocked!');
       setShowFinalizeConfirm(false);
       
-      // Reload details
-      const quizRes = await axios.get(`${backendBase}/quizzes/${id}`);
-      setQuiz(quizRes.data);
-      const attemptsRes = await axios.get(`${backendBase}/quizzes/${id}/attempts`);
-      setAttempts(attemptsRes.data);
+      // Redirect to review page
+      navigate(`/quizzes/attempts/${latestAttempt.id}/review`);
     } catch (err) {
       console.error(err);
       toast.error('Failed to finalize quiz.');

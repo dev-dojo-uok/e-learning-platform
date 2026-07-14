@@ -44,8 +44,6 @@ model User {
   forums       Forum[]
   threads      ForumThread[]
   posts        ForumPost[]
-  postLikes    PostLike[]
-  threadLikes  ThreadLike[]
   reports      Report[]
   assignmentsGiven    Assignment[]         @relation("TeacherAssignments")
   submissions         Submission[]         @relation("StudentSubmissions")
@@ -272,7 +270,6 @@ model ForumThread {
   forum       Forum        @relation(fields: [forumId], references: [id], onDelete: Cascade)
   creator     User         @relation(fields: [createdBy], references: [id], onDelete: SetNull)
   posts       ForumPost[]
-  threadLikes ThreadLike[]
   reports     Report[]
 
   @@index([forumId])
@@ -295,8 +292,6 @@ model ForumPost {
   parentPost      ForumPost?       @relation("PostReplies", fields: [parentPostId], references: [id], onDelete: Cascade)
   replies         ForumPost[]      @relation("PostReplies")
   creator         User             @relation(fields: [createdBy], references: [id], onDelete: SetNull)
-  postLikes       PostLike[]
-  postAttachments PostAttachment[]
   reports         Report[]
 
   @@index([threadId])
@@ -305,51 +300,7 @@ model ForumPost {
   @@map("forum_posts")
 }
 
-model PostLike {
-  id        String   @id @default(uuid())
-  postId    String   @map("post_id")
-  userId    String   @map("user_id")
-  createdAt DateTime @default(now()) @map("created_at")
 
-  // Relations
-  post ForumPost @relation(fields: [postId], references: [id], onDelete: Cascade)
-  user User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([postId, userId])
-  @@index([postId])
-  @@index([userId])
-  @@map("post_likes")
-}
-
-model ThreadLike {
-  id        String   @id @default(uuid())
-  threadId  String   @map("thread_id")
-  userId    String   @map("user_id")
-  createdAt DateTime @default(now()) @map("created_at")
-
-  // Relations
-  thread ForumThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
-  user   User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([threadId, userId])
-  @@index([threadId])
-  @@index([userId])
-  @@map("thread_likes")
-}
-
-model PostAttachment {
-  id         String   @id @default(uuid())
-  postId     String   @map("post_id")
-  fileName   String   @map("file_name")
-  fileUrl    String   @map("file_url")
-  uploadedAt DateTime @default(now()) @map("uploaded_at")
-
-  // Relations
-  post ForumPost @relation(fields: [postId], references: [id], onDelete: Cascade)
-
-  @@index([postId])
-  @@map("post_attachments")
-}
 
 model Report {
   id        String       @id @default(uuid())

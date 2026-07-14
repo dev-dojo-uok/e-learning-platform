@@ -71,7 +71,7 @@ export default function Register() {
               </div>
             )}
             {success && (
-              <div className="p-3 bg-emerald-50 border border-emerald-100 text-emerald-600 text-xs font-semibold rounded-lg">
+              <div className="p-3 bg-primary/10 border border-primary/20 text-primary text-xs font-semibold rounded-lg animate-fade-in">
                 Registration successful! Redirecting to login...
               </div>
             )}
@@ -86,7 +86,7 @@ export default function Register() {
                 placeholder="John Doe"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full border border-slate-200 bg-white text-black focus-visible:ring-1 focus-visible:ring-black rounded-lg h-10 px-3"
+                className="w-full border border-slate-200 bg-white text-black focus-visible:ring-1 focus-visible:ring-ring rounded-lg h-10 px-3"
               />
             </div>
             <div className="space-y-1">
@@ -100,7 +100,7 @@ export default function Register() {
                 placeholder="name@uok.lk"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full border border-slate-200 bg-white text-black focus-visible:ring-1 focus-visible:ring-black rounded-lg h-10 px-3"
+                className="w-full border border-slate-200 bg-white text-black focus-visible:ring-1 focus-visible:ring-ring rounded-lg h-10 px-3"
               />
             </div>
             <div className="space-y-1">
@@ -114,7 +114,7 @@ export default function Register() {
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full border border-slate-200 bg-white text-black focus-visible:ring-1 focus-visible:ring-black rounded-lg h-10 px-3"
+                className="w-full border border-slate-200 bg-white text-black focus-visible:ring-1 focus-visible:ring-ring rounded-lg h-10 px-3"
               />
             </div>
             <div className="space-y-1">
@@ -122,7 +122,7 @@ export default function Register() {
                 Register as
               </Label>
               <Select value={role} onValueChange={(val) => setRole(val)}>
-                <SelectTrigger className="w-full border border-slate-200 bg-white text-black focus:ring-1 focus:ring-black rounded-lg h-10 px-3 text-left">
+                <SelectTrigger className="w-full border border-slate-200 bg-white text-black focus:ring-1 focus:ring-ring rounded-lg h-10 px-3 text-left">
                   <SelectValue placeholder="Select role" />
                 </SelectTrigger>
                 <SelectContent className="bg-white border border-slate-200 text-black rounded-lg shadow-sm">
@@ -136,7 +136,7 @@ export default function Register() {
             <Button
               type="submit"
               disabled={loading || success}
-              className="w-full bg-black text-white hover:bg-slate-900 font-bold rounded-lg h-10 transition-colors"
+              className="w-full font-bold rounded-lg h-10 transition-colors"
             >
               {loading ? 'Registering...' : 'Register'}
             </Button>

@@ -236,7 +236,7 @@ const inputClass = (hasError) =>
     'focus:ring-2 focus:ring-offset-0',
     hasError
       ? 'border-red-400 focus:ring-red-300 focus:border-red-400'
-      : 'border-slate-300 focus:ring-indigo-300 focus:border-indigo-400',
+      : 'border-input focus:ring-primary/20 focus:border-primary',
   ].join(' ');
 
 export default ModuleForm;

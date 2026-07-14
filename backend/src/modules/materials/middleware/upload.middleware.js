@@ -43,16 +43,7 @@ const MIME_TYPES = {
 // ---------------------------------------------------------------------------
 // Multer storage configuration
 // ---------------------------------------------------------------------------
-const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => {
-    cb(null, UPLOAD_DIR);
-  },
-  filename: (_req, file, cb) => {
-    const ext = path.extname(file.originalname).toLowerCase();
-    const uniqueName = `${randomUUID()}${ext}`;
-    cb(null, uniqueName);
-  }
-});
+const storage = multer.memoryStorage();
 
 // ---------------------------------------------------------------------------
 // File filter: validates extension and MIME type
@@ -111,7 +102,6 @@ export const handleFileUpload = (req, res, next) => {
 
         // Reject files for non-file-based types (e.g., VIDEO/YOUTUBE) or mismatched extensions
         if (!allowed || !allowed.includes(ext)) {
-          try { fs.unlinkSync(req.file.path); } catch (_) {}
           return res.status(400).json({
             errors: [{ msg: 'Uploaded file does not match the provided material "type".' }]
           });
