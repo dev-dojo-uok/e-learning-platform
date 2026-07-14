@@ -3,7 +3,7 @@ import { StorageService } from '../../../services/storageService.js';
 
 export class AssignmentController {
 
-  // ─── ASSIGNMENT CRUD ────────────────────────────────────────────────────────
+  // ASSIGNMENT CRUD
 
   /**
    * POST /api/assignments
@@ -96,7 +96,7 @@ export class AssignmentController {
     }
   }
 
-  // ─── SUBMISSION CRUD ────────────────────────────────────────────────────────
+  // SUBMISSION CRUD
 
   /**
    * POST /api/assignments/:id/submit
