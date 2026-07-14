@@ -27,10 +27,10 @@ import { getCourseThumbnail } from '../utils/thumbnailMapper';
  */
 const normalizeCourse = (course) => {
   if (!course) return course;
-  
+
   let thumbnail = course.thumbnail;
   let description = course.description || '';
-  
+
   // Parse and extract the thumbnail from the comment tag in the description
   const match = description.match(/<!--thumbnail: (.*?)-->/);
   if (match) {
@@ -62,13 +62,13 @@ const extractErrorMessage = (error, fallback) => {
 };
 
 const useCourseStore = create((set) => ({
-  // ── Initial State ────────────────────────────────────────────────────────────
+  // -------------Initial State ------------------------------------------------------------
   courses: [],
   selectedCourse: null,
   loading: false,
   error: null,
 
-  // ── Actions ──────────────────────────────────────────────────────────────────
+  // ----------------- Actions ----------------------------------------------------------------
 
   /**
    * fetchCourses

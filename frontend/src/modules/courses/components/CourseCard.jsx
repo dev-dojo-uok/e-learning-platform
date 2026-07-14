@@ -23,7 +23,7 @@ const CourseCard = ({ course, onView, onEdit, onDelete }) => {
 
   return (
     <div className="group relative flex flex-col bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
-      {/* ── Thumbnail ── */}
+      {/*  Thumbnail  */}
       <div className="relative h-44 bg-gradient-to-br from-slate-100 to-slate-200 overflow-hidden flex-shrink-0">
         {thumbnail ? (
           <img
@@ -48,7 +48,7 @@ const CourseCard = ({ course, onView, onEdit, onDelete }) => {
         )}
       </div>
 
-      {/* ── Card body ── */}
+      {/*  Card body  */}
       <div className="flex flex-col flex-1 p-5 gap-2">
         <h3 className="text-base font-semibold text-slate-900 leading-snug line-clamp-2">
           {title || 'Untitled Course'}
@@ -58,7 +58,7 @@ const CourseCard = ({ course, onView, onEdit, onDelete }) => {
         </p>
       </div>
 
-      {/* ── Actions ── */}
+      {/*  Actions  */}
       <div className="flex items-center gap-2 px-5 pb-5 pt-3 border-t border-slate-100">
         {/* View */}
         <Button

@@ -25,7 +25,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-// ── Format ISO date helper ───────────────────────────────────────────────────
+// ---------------- Format ISO date helper ---------------------------------------------------
 const formatDate = (iso) => {
   if (!iso) return '—';
   return new Date(iso).toLocaleDateString(undefined, {
@@ -66,7 +66,7 @@ export default function TeacherEnrollmentManagement() {
   const [studentsError, setStudentsError] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
 
-  // ── Fetch data ─────────────────────────────────────────────────────────────
+  //---------------Fetch data -----------------------
   const loadEnrollments = useCallback(async () => {
     if (!courseId) return;
     setStudentsLoading(true);
@@ -108,21 +108,21 @@ export default function TeacherEnrollmentManagement() {
     }
   }, [selectedCourse, courseDetailsLoading, courseId, user, navigate, loadEnrollments]);
 
-  // ── Handlers ────────────────────────────────────────────────────────────────
+  // -------------------- Handlers -----------------
   const handleCourseChange = (newCourseId) => {
     if (newCourseId) {
       navigate(`/courses/${newCourseId}/enrollments`);
     }
   };
 
-  // ── Filter student list by search query ──────────────────────────────────────
+  // ------------------- Filter student list by search query ----------------
   const filteredEnrollments = searchQuery.trim()
     ? enrollments.filter((enrollment) => {
-        const studentName = enrollment.student?.name?.toLowerCase() || '';
-        const studentEmail = enrollment.student?.email?.toLowerCase() || '';
-        const query = searchQuery.toLowerCase();
-        return studentName.includes(query) || studentEmail.includes(query);
-      })
+      const studentName = enrollment.student?.name?.toLowerCase() || '';
+      const studentEmail = enrollment.student?.email?.toLowerCase() || '';
+      const query = searchQuery.toLowerCase();
+      return studentName.includes(query) || studentEmail.includes(query);
+    })
     : enrollments;
 
   const course = selectedCourse?._id === courseId ? selectedCourse : null;

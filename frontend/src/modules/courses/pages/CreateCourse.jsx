@@ -34,7 +34,7 @@ export default function CreateCourse() {
 
   return (
     <div className="flex flex-col gap-6 max-w-2xl mx-auto">
-      {/* ── Back navigation ── */}
+      {/*  Back navigation  */}
       <button
         type="button"
         id="back-to-courses-btn"
@@ -45,7 +45,7 @@ export default function CreateCourse() {
         Back to Courses
       </button>
 
-      {/* ── Page header ── */}
+      {/* Page header  */}
       <div className="flex items-center gap-3">
         <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-indigo-100">
           <PlusCircle className="h-5 w-5 text-indigo-600" />
@@ -56,7 +56,7 @@ export default function CreateCourse() {
         </div>
       </div>
 
-      {/* ── Success banner ── */}
+      {/* Success banner  */}
       {successMsg && (
         <div
           role="status"
@@ -67,7 +67,7 @@ export default function CreateCourse() {
         </div>
       )}
 
-      {/* ── Card wrapper ── */}
+      {/*  Card wrapper  */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-8">
         <CourseForm
           initialData={null}

@@ -21,7 +21,7 @@ const ModuleForm = ({
 }) => {
   const isEditMode = Boolean(initialData);
 
-  // ── Form state ───────────────────────────────────────────────────────────────
+  // ----------------------Form state -----------------------------------
   const [fields, setFields] = useState({
     title: '',
     description: '',
@@ -47,7 +47,7 @@ const ModuleForm = ({
     }
   }, [initialData]);
 
-  // ── Handlers ─────────────────────────────────────────────────────────────────
+  // -------------------------- Handlers -----------------------------------------
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -62,14 +62,14 @@ const ModuleForm = ({
     }
   };
 
-  // ── Validation ───────────────────────────────────────────────────────────────
+  // ---------------Validation ------------------------
 
   const validate = () => {
     const errors = {};
     if (!fields.title.trim()) {
       errors.title = 'Title is required';
     }
-    
+
     if (!fields.order.trim()) {
       errors.order = 'Order number is required';
     } else {
@@ -83,7 +83,7 @@ const ModuleForm = ({
     return errors;
   };
 
-  // ── Submit ───────────────────────────────────────────────────────────────────
+  // ------------------------------- Submit ------------------------------
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -101,7 +101,7 @@ const ModuleForm = ({
     });
   };
 
-  // ── Render ───────────────────────────────────────────────────────────────────
+  // ----------------------Render -------------------------------
   return (
     <form
       onSubmit={handleSubmit}
@@ -119,7 +119,7 @@ const ModuleForm = ({
         </div>
       )}
 
-      {/* ── Title ── */}
+      {/* Title */}
       <FormField
         id="module-title"
         label="Module Title"
@@ -138,7 +138,7 @@ const ModuleForm = ({
         />
       </FormField>
 
-      {/* ── Description ── */}
+      {/*  Description  */}
       <FormField
         id="module-description"
         label="Description"
@@ -156,7 +156,7 @@ const ModuleForm = ({
         />
       </FormField>
 
-      {/* ── Order Number ── */}
+      {/*  Order Number */}
       <FormField
         id="module-order"
         label="Order Number"
@@ -177,7 +177,7 @@ const ModuleForm = ({
         />
       </FormField>
 
-      {/* ── Actions ── */}
+      {/* Actions */}
       <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
         {onCancel && (
           <Button
@@ -210,7 +210,7 @@ const ModuleForm = ({
   );
 };
 
-// ── Private helper components ────────────────────────────────────────────────
+// ----------------Private helper components-------------------------
 
 const FormField = ({ id, label, required, error, children }) => (
   <div className="flex flex-col gap-1.5">

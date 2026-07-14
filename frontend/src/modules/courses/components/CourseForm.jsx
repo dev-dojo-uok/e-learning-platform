@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button';
 const CourseForm = ({ initialData = null, onSubmit, loading = false, error = null }) => {
   const isEditMode = Boolean(initialData);
 
-  // ── Form state ───────────────────────────────────────────────────────────────
+  // -------------------- Form state -------------------------------------------
   const [fields, setFields] = useState({
     title: '',
     description: '',
@@ -50,7 +50,7 @@ const CourseForm = ({ initialData = null, onSubmit, loading = false, error = nul
     }
   }, [initialData]);
 
-  // ── Handlers ─────────────────────────────────────────────────────────────────
+  // ----------------------- Handlers --------------------------------------------------
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -90,7 +90,7 @@ const CourseForm = ({ initialData = null, onSubmit, loading = false, error = nul
 
         const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
         setCustomThumbnail(compressedDataUrl);
-        
+
         // Clear thumbnail validation error
         if (validationErrors.thumbnail) {
           setValidationErrors((prev) => {
@@ -105,7 +105,7 @@ const CourseForm = ({ initialData = null, onSubmit, loading = false, error = nul
     reader.readAsDataURL(file);
   };
 
-  // ── Validation ───────────────────────────────────────────────────────────────
+  // --------------------Validation -------------------------------------------
 
   const validate = () => {
     const errors = {};
@@ -117,7 +117,7 @@ const CourseForm = ({ initialData = null, onSubmit, loading = false, error = nul
     return errors;
   };
 
-  // ── Submit ───────────────────────────────────────────────────────────────────
+  // -------------------- Submit --------------------------------------------
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -144,7 +144,7 @@ const CourseForm = ({ initialData = null, onSubmit, loading = false, error = nul
     });
   };
 
-  // ── Render ───────────────────────────────────────────────────────────────────
+  // -------------------- Render ---------------------------------------------
   return (
     <form
       onSubmit={handleSubmit}
@@ -181,7 +181,7 @@ const CourseForm = ({ initialData = null, onSubmit, loading = false, error = nul
         />
       </FormField>
 
-      {/* ── Description ── */}
+      {/*  Description  */}
       <FormField
         id="course-description"
         label="Description"
@@ -200,7 +200,7 @@ const CourseForm = ({ initialData = null, onSubmit, loading = false, error = nul
         />
       </FormField>
 
-      {/* ── Thumbnail Selection ── */}
+      {/*  Thumbnail Selection  */}
       <FormField
         id="course-thumbnail"
         label="Course Thumbnail Image"
@@ -226,7 +226,7 @@ const CourseForm = ({ initialData = null, onSubmit, loading = false, error = nul
         </select>
       </FormField>
 
-      {/* ── Custom Image Upload Field ── */}
+      {/*  Custom Image Upload Field  */}
       {selectedThumbnail === 'custom' && (
         <FormField
           id="course-custom-image"
@@ -276,7 +276,7 @@ const CourseForm = ({ initialData = null, onSubmit, loading = false, error = nul
   );
 };
 
-// ── Private helper components ────────────────────────────────────────────────
+// -------------------- Private helper components ----------------------------------------------
 
 /**
  * FormField – Wraps a form control with a label and inline error message.
