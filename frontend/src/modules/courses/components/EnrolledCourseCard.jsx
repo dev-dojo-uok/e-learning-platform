@@ -29,7 +29,7 @@ const EnrolledCourseCard = ({ enrollment, onUnenroll, unenrolling = false }) => 
     })
     : 'Unknown Date';
 
-  // ── Completion Progress State ──
+  //  Completion Progress State  
   const [progressData, setProgressData] = useState(null);
   const [loadingProgress, setLoadingProgress] = useState(true);
 
@@ -49,7 +49,7 @@ const EnrolledCourseCard = ({ enrollment, onUnenroll, unenrolling = false }) => 
     }
   }, [courseId]);
 
-  // ── Derived Progress Metrics ──
+  //  Derived Progress Metrics  
   const totalQuizzes = progressData?.totalQuizzes || 0;
   const completedQuizzes = progressData?.completedQuizzes || 0;
   const totalAssignments = progressData?.totalAssignments || 0;
@@ -64,7 +64,7 @@ const EnrolledCourseCard = ({ enrollment, onUnenroll, unenrolling = false }) => 
 
   return (
     <div className="group relative flex flex-col bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
-      {/* ── Thumbnail ── */}
+      {/*  Thumbnail  */}
       <div className="relative h-44 bg-gradient-to-br from-slate-100 to-slate-200 overflow-hidden flex-shrink-0">
         {thumbnail ? (
           <img
@@ -92,7 +92,7 @@ const EnrolledCourseCard = ({ enrollment, onUnenroll, unenrolling = false }) => 
         )}
       </div>
 
-      {/* ── Card body ── */}
+      {/*  Card body  */}
       <div className="flex flex-col flex-1 p-5 gap-3">
         <h3 className="text-base font-semibold text-slate-900 leading-snug line-clamp-2">
           {title || 'Untitled Course'}
@@ -116,11 +116,11 @@ const EnrolledCourseCard = ({ enrollment, onUnenroll, unenrolling = false }) => 
           </div>
         </div>
 
-        {/* ── Live Progress Breakdown ── */}
+        {/*  Live Progress Breakdown  */}
         <div className="mt-2 p-3.5 rounded-xl bg-gradient-to-br from-slate-50 to-purple-50/40 border border-slate-100 shadow-2xs transition-all duration-300 hover:shadow-sm">
           {loadingProgress ? (
             <div className="flex items-center justify-center py-4 gap-2 text-xs text-slate-400 animate-pulse">
-              <Loader2 className="h-4 w-4 animate-spin" style={{ color: '#5C29C2' }} />
+              <Loader2 className="h-4 w-4 animate-spin" />
               <span>Loading progress...</span>
             </div>
           ) : (
@@ -128,10 +128,10 @@ const EnrolledCourseCard = ({ enrollment, onUnenroll, unenrolling = false }) => 
               {/* Top row: Title & Percentage */}
               <div className="flex items-center justify-between text-xs font-bold text-slate-800">
                 <div className="flex items-center gap-1.5">
-                  <Award className="h-3.5 w-3.5" style={{ color: '#5C29C2' }} />
+                  <Award className="h-3.5 w-3.5" />
                   <span>Course Progress</span>
                 </div>
-                <span style={{ color: '#5C29C2' }}>{progressPercentage}%</span>
+                <span >{progressPercentage}%</span>
               </div>
 
               {/* Progressive Bar */}
@@ -139,7 +139,7 @@ const EnrolledCourseCard = ({ enrollment, onUnenroll, unenrolling = false }) => 
                 <div className="w-full h-2 bg-slate-200/80 rounded-full overflow-hidden p-0.5">
                   <div
                     className="h-full rounded-full transition-all duration-700 ease-out shadow-xs"
-                    style={{ width: `${progressPercentage}%`, backgroundColor: '#5C29C2' }}
+                    style={{ width: `${progressPercentage}%`, }}
                   />
                 </div>
               </div>
@@ -147,7 +147,7 @@ const EnrolledCourseCard = ({ enrollment, onUnenroll, unenrolling = false }) => 
               {/* Completion Details Breakdown Badges */}
               <div className="flex items-center gap-2 pt-1 border-t border-slate-200/60 text-[11px] font-medium text-slate-600">
                 <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-white border border-slate-200/80 shadow-2xs flex-1 justify-center">
-                  <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: '#5C29C2' }} />
+                  <span className="w-1.5 h-1.5 rounded-full shrink-0" />
                   <span>Quizzes: <strong className="text-slate-800">{completedQuizzes}/{totalQuizzes}</strong></span>
                 </div>
                 <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-white border border-slate-200/80 shadow-2xs flex-1 justify-center">
@@ -160,7 +160,7 @@ const EnrolledCourseCard = ({ enrollment, onUnenroll, unenrolling = false }) => 
         </div>
       </div>
 
-      {/* ── Actions ── */}
+      {/*  Actions  */}
       <div className="px-5 pb-5 pt-3 border-t border-slate-100 mt-auto flex flex-col gap-2">
         <Button
           id={`course-continue-${courseId}`}

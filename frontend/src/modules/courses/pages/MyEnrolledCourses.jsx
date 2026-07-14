@@ -20,7 +20,7 @@ import {
 
 
 
-// ── MyEnrolledCourses page ────────────────────────────────────────────────────
+// -------------------- MyEnrolledCourses page ----------------------------------------------------
 export default function MyEnrolledCourses() {
   const navigate = useNavigate();
   const { user } = useAuthStore();
@@ -35,11 +35,11 @@ export default function MyEnrolledCourses() {
     }
   }, [user, navigate]);
 
-  // ── Unenroll state (mirrors the delete pattern in CourseList.jsx) ──────────
+  // -------------------- Unenroll state (mirrors the delete pattern in CourseList.jsx) -------------------------------------
   const [enrollmentToRemove, setEnrollmentToRemove] = useState(null); // enrollment object
   const [unenrollingId, setUnenrollingId] = useState(null);           // enrollment id being deleted
 
-  // ── Fetch enrolled courses ────────────────────────────────────────────────
+  // -------------------- Fetch enrolled courses ------------------------------------------------
   const fetchEnrollments = async () => {
     setLoading(true);
     setError(null);
@@ -62,7 +62,7 @@ export default function MyEnrolledCourses() {
     fetchEnrollments();
   }, []);
 
-  // ── Unenroll handlers ─────────────────────────────────────────────────────
+  // -------------- Unenroll handlers -------------------------
 
   /**
    * Opens the confirmation dialog for the given enrollment.
@@ -100,13 +100,13 @@ export default function MyEnrolledCourses() {
     }
   };
 
-  // ── Render ────────────────────────────────────────────────────────────────
+  // ---------------------- Render ----------------------------------------------------------------
   return (
     <div className="flex flex-col gap-6">
 
 
 
-      {/* ── Page Header ── */}
+      {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-3">
           <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-muted">
@@ -132,7 +132,7 @@ export default function MyEnrolledCourses() {
         </Button>
       </div>
 
-      {/* ── Loading state ── */}
+      {/* Loading state */}
       {loading && (
         <div className="flex flex-col gap-3">
           <div className="flex items-center gap-2 text-slate-500 py-2">
@@ -170,7 +170,7 @@ export default function MyEnrolledCourses() {
         </div>
       )}
 
-      {/* ── Error state ── */}
+      {/* Error state */}
       {error && !loading && (
         <div
           role="alert"
@@ -192,7 +192,7 @@ export default function MyEnrolledCourses() {
         </div>
       )}
 
-      {/* ── Successful data loading & Empty state ── */}
+      {/*  Successful data loading & Empty state */}
       {!loading && !error && (
         enrollments.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 gap-4 text-slate-400 bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
@@ -227,7 +227,7 @@ export default function MyEnrolledCourses() {
         )
       )}
 
-      {/* ── Unenroll Confirmation Dialog (same pattern as CourseList.jsx) ── */}
+      {/* Unenroll Confirmation Dialog (same pattern as CourseList.jsx) */}
       <AlertDialog
         open={!!enrollmentToRemove}
         onOpenChange={(open) => !open && setEnrollmentToRemove(null)}

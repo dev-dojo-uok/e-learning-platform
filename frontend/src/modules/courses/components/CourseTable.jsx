@@ -17,7 +17,7 @@ import useAuthStore from '@/store/useAuthStore';
 const CourseTable = ({ courses = [], loading, onEdit, onDelete }) => {
   const { user } = useAuthStore();
 
-  // ── Loading state ────────────────────────────────────────────────────────────
+  // -------------------- Loading state -------------------------------------------
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-3 text-slate-500">
@@ -36,7 +36,7 @@ const CourseTable = ({ courses = [], loading, onEdit, onDelete }) => {
     );
   }
 
-  // ── Empty state ──────────────────────────────────────────────────────────────
+  // -------------------- Empty state -------------------------------------------
   if (!courses || courses.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-4 text-slate-400">
@@ -53,7 +53,7 @@ const CourseTable = ({ courses = [], loading, onEdit, onDelete }) => {
     );
   }
 
-  // ── Table ────────────────────────────────────────────────────────────────────
+  // -------------------- Table -----------------------------------------------------
   return (
     <div className="w-full overflow-x-auto rounded-2xl border border-slate-200 shadow-sm">
       <table className="min-w-full divide-y divide-slate-200 bg-white">
@@ -91,7 +91,7 @@ const CourseTable = ({ courses = [], loading, onEdit, onDelete }) => {
   );
 };
 
-// ── Private row sub-component ────────────────────────────────────────────────
+// -------------------- Private row sub-component ----------------------------------------------
 const CourseTableRow = ({ course, onEdit, onDelete }) => {
   const { _id, title, description, thumbnail } = course;
   const { user } = useAuthStore();

@@ -88,7 +88,7 @@ export default function CourseEvaluationAnalytics({ courseId }) {
   const quizCompletedCount = Math.min(completedQuizStudents, enrolledCount || completedQuizStudents);
   const quizRemainingCount = Math.max(0, enrolledCount - quizCompletedCount);
   const quizPieData = [
-    { name: "Completed", value: quizCompletedCount, color: "#5C29C2" },
+    { name: "Completed", value: quizCompletedCount, color: "#000000" },
     { name: "Pending", value: quizRemainingCount, color: "#DAD9DB" }
   ];
 
@@ -99,14 +99,14 @@ export default function CourseEvaluationAnalytics({ courseId }) {
   const assignmentCompletedCount = Math.min(completedAssignmentStudents, enrolledCount || completedAssignmentStudents);
   const assignmentRemainingCount = Math.max(0, enrolledCount - assignmentCompletedCount);
   const assignmentPieData = [
-    { name: "Completed", value: assignmentCompletedCount, color: "#5C29C2" },
+    { name: "Completed", value: assignmentCompletedCount, color: "#000000" },
     { name: "Pending", value: assignmentRemainingCount, color: "#DAD9DB" }
   ];
 
   if (statsLoading) {
     return (
       <div className="flex items-center justify-center py-12 bg-white rounded-2xl border border-slate-200 shadow-sm gap-2 text-xs text-slate-400 animate-pulse">
-        <Loader2 className="h-5 w-5 animate-spin" style={{ color: '#5C29C2' }} />
+        <Loader2 className="h-5 w-5 animate-spin" style={{ color: '#000000' }} />
         <span>Loading evaluation analytics for this course...</span>
       </div>
     );
@@ -127,7 +127,7 @@ export default function CourseEvaluationAnalytics({ courseId }) {
         </div>
 
         <div className="p-4 rounded-xl bg-gradient-to-br from-slate-50 to-purple-50/30 border border-slate-200/80 shadow-2xs flex items-center gap-3.5">
-          <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 font-bold" style={{ backgroundColor: '#EFEAFF', color: '#5C29C2' }}>
+          <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 font-bold" style={{ backgroundColor: '#EFEAFF', color: '#000000' }}>
             <HelpCircle className="h-5 w-5" />
           </div>
           <div>
@@ -137,7 +137,7 @@ export default function CourseEvaluationAnalytics({ courseId }) {
         </div>
 
         <div className="p-4 rounded-xl bg-gradient-to-br from-slate-50 to-purple-50/30 border border-slate-200/80 shadow-2xs flex items-center gap-3.5">
-          <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 font-bold" style={{ backgroundColor: '#EFEAFF', color: '#5C29C2' }}>
+          <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 font-bold" style={{ backgroundColor: '#EFEAFF', color: '#000000' }}>
             <FileText className="h-5 w-5" />
           </div>
           <div>
@@ -153,7 +153,7 @@ export default function CourseEvaluationAnalytics({ courseId }) {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
             <div>
               <h3 className="text-lg font-bold text-black flex items-center gap-2">
-                <HelpCircle className="h-5 w-5" style={{ color: '#5C29C2' }} />
+                <HelpCircle className="h-5 w-5" style={{ color: '#000000' }} />
                 <span>Quiz Completion Analytics</span>
               </h3>
               <p className="text-xs text-slate-500 mt-0.5">
@@ -167,7 +167,7 @@ export default function CourseEvaluationAnalytics({ courseId }) {
                 value={selectedQuizId}
                 onChange={(e) => setSelectedQuizId(e.target.value)}
                 className="px-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50 text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 cursor-pointer"
-                style={{ '--tw-ring-color': '#5C29C2' }}
+                style={{ '--tw-ring-color': '#000000' }}
               >
                 {quizzesList.map((q) => (
                   <option key={q._id || q.id} value={q._id || q.id}>
@@ -186,7 +186,7 @@ export default function CourseEvaluationAnalytics({ courseId }) {
             </div>
           ) : quizLoading ? (
             <div className="flex items-center justify-center py-12 gap-2 text-xs text-slate-400 animate-pulse">
-              <Loader2 className="h-5 w-5 animate-spin" style={{ color: '#5C29C2' }} />
+              <Loader2 className="h-5 w-5 animate-spin" style={{ color: '#000000' }} />
               <span>Loading quiz completion data...</span>
             </div>
           ) : (
@@ -216,7 +216,7 @@ export default function CourseEvaluationAnalytics({ courseId }) {
                   </PieChart>
                 </ResponsiveContainer>
                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                  <span className="text-xl font-black" style={{ color: '#5C29C2' }}>
+                  <span className="text-xl font-black" style={{ color: '#000000' }}>
                     {enrolledCount > 0 ? Math.round((quizCompletedCount / enrolledCount) * 100) : 0}%
                   </span>
                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Done</span>
@@ -226,7 +226,7 @@ export default function CourseEvaluationAnalytics({ courseId }) {
               {/* Text Breakdown */}
               <div className="flex flex-col justify-center space-y-3 p-4 bg-slate-50/70 rounded-xl border border-slate-100 w-full">
                 <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#5C29C2' }}></div>
+                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#000000' }}></div>
                   <span className="text-xs font-semibold text-slate-600">Completed: <strong className="text-slate-800">{quizCompletedCount}</strong></span>
                 </div>
                 <div className="flex items-center gap-2">
@@ -234,7 +234,7 @@ export default function CourseEvaluationAnalytics({ courseId }) {
                   <span className="text-xs font-semibold text-slate-600">Pending: <strong className="text-slate-800">{quizRemainingCount}</strong></span>
                 </div>
                 <div className="pt-2 border-t border-slate-200/60 text-xs text-slate-500">
-                  <span className="font-bold text-sm" style={{ color: '#5C29C2' }}>
+                  <span className="font-bold text-sm" style={{ color: '#000000' }}>
                     {enrolledCount > 0 ? Math.round((quizCompletedCount / enrolledCount) * 100) : 0}%
                   </span> of enrolled students have completed this evaluation.
                 </div>
@@ -248,7 +248,7 @@ export default function CourseEvaluationAnalytics({ courseId }) {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
             <div>
               <h3 className="text-lg font-bold text-black flex items-center gap-2">
-                <FileText className="h-5 w-5" style={{ color: '#5C29C2' }} />
+                <FileText className="h-5 w-5" style={{ color: '#000000' }} />
                 <span>Assignment Completion Analytics</span>
               </h3>
               <p className="text-xs text-slate-500 mt-0.5">
@@ -262,7 +262,7 @@ export default function CourseEvaluationAnalytics({ courseId }) {
                 value={selectedAssignmentId}
                 onChange={(e) => setSelectedAssignmentId(e.target.value)}
                 className="px-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50 text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 cursor-pointer"
-                style={{ '--tw-ring-color': '#5C29C2' }}
+                style={{ '--tw-ring-color': '#000000' }}
               >
                 {assignmentsList.map((a) => (
                   <option key={a._id || a.id} value={a._id || a.id}>
@@ -281,7 +281,7 @@ export default function CourseEvaluationAnalytics({ courseId }) {
             </div>
           ) : assignmentLoading ? (
             <div className="flex items-center justify-center py-12 gap-2 text-xs text-slate-400 animate-pulse">
-              <Loader2 className="h-5 w-5 animate-spin" style={{ color: '#5C29C2' }} />
+              <Loader2 className="h-5 w-5 animate-spin" style={{ color: '#000000' }} />
               <span>Loading assignment submission data...</span>
             </div>
           ) : (
@@ -311,7 +311,7 @@ export default function CourseEvaluationAnalytics({ courseId }) {
                   </PieChart>
                 </ResponsiveContainer>
                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                  <span className="text-xl font-black" style={{ color: '#5C29C2' }}>
+                  <span className="text-xl font-black" style={{ color: '#000000' }}>
                     {enrolledCount > 0 ? Math.round((assignmentCompletedCount / enrolledCount) * 100) : 0}%
                   </span>
                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Done</span>
@@ -321,7 +321,7 @@ export default function CourseEvaluationAnalytics({ courseId }) {
               {/* Text Breakdown */}
               <div className="flex flex-col justify-center space-y-3 p-4 bg-slate-50/70 rounded-xl border border-slate-100 w-full">
                 <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#5C29C2' }}></div>
+                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#000000' }}></div>
                   <span className="text-xs font-semibold text-slate-600">Completed: <strong className="text-slate-800">{assignmentCompletedCount}</strong></span>
                 </div>
                 <div className="flex items-center gap-2">
@@ -329,7 +329,7 @@ export default function CourseEvaluationAnalytics({ courseId }) {
                   <span className="text-xs font-semibold text-slate-600">Pending: <strong className="text-slate-800">{assignmentRemainingCount}</strong></span>
                 </div>
                 <div className="pt-2 border-t border-slate-200/60 text-xs text-slate-500">
-                  <span className="font-bold text-sm" style={{ color: '#5C29C2' }}>
+                  <span className="font-bold text-sm" style={{ color: '#000000' }}>
                     {enrolledCount > 0 ? Math.round((assignmentCompletedCount / enrolledCount) * 100) : 0}%
                   </span> of enrolled students have submitted this evaluation.
                 </div>

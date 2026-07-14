@@ -53,16 +53,16 @@ export default function EditCourse() {
     }
   };
 
-  // ── Loading skeleton while fetching the course ─────────────────────────────
+  // -------------------------Loading skeleton while fetching the course---------------------------
   const isFetching = loading && !selectedCourse;
 
-  // ── Guard: wrong course loaded (navigated from another) ───────────────────
+  // ------------------------ Guard: wrong course loaded (navigated from another)-------------------------
   const courseToEdit =
     selectedCourse && selectedCourse._id === id ? selectedCourse : null;
 
   return (
     <div className="flex flex-col gap-6 max-w-2xl mx-auto">
-      {/* ── Back navigation ── */}
+      {/* Back navigation  */}
       <button
         type="button"
         id="back-to-course-detail-btn"
@@ -73,7 +73,7 @@ export default function EditCourse() {
         Back to Course Details
       </button>
 
-      {/* ── Page header ── */}
+      {/* Page header  */}
       <div className="flex items-center gap-3">
         <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-amber-100">
           <Pencil className="h-5 w-5 text-amber-600" />
@@ -86,7 +86,7 @@ export default function EditCourse() {
         </div>
       </div>
 
-      {/* ── Fetch error ── */}
+      {/*  Fetch error  */}
       {fetchError && (
         <div
           role="alert"
@@ -100,7 +100,7 @@ export default function EditCourse() {
         </div>
       )}
 
-      {/* ── Success banner ── */}
+      {/*  Success banner  */}
       {successMsg && (
         <div
           role="status"
@@ -111,7 +111,7 @@ export default function EditCourse() {
         </div>
       )}
 
-      {/* ── Card wrapper ── */}
+      {/*  Card wrapper  */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-8">
         {isFetching ? (
           /* Loading skeleton */
