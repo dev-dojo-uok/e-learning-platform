@@ -25,7 +25,7 @@ const ModuleList = ({ courseId, isEnrolled, onAdd, onEdit, onDelete }) => {
     }
   }, [courseId, fetchModules]);
 
-  // ── Loading state ────────────────────────────────────────────────────────────
+  // --------------------Loading state---------------------------------
   if (loading && modules.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16 gap-3 text-slate-500 animate-in fade-in duration-300">
@@ -43,7 +43,7 @@ const ModuleList = ({ courseId, isEnrolled, onAdd, onEdit, onDelete }) => {
     );
   }
 
-  // ── Error state ──────────────────────────────────────────────────────────────
+  // --------------------Error state----------------------------------------------------
   if (error && modules.length === 0) {
     return (
       <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm flex items-center gap-2">
@@ -52,7 +52,7 @@ const ModuleList = ({ courseId, isEnrolled, onAdd, onEdit, onDelete }) => {
     );
   }
 
-  // ── Empty state ──────────────────────────────────────────────────────────────
+  // --------------------Empty state----------------------------------------
   if (!modules || modules.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16 px-6 gap-4 text-center animate-in fade-in duration-300">
@@ -79,7 +79,7 @@ const ModuleList = ({ courseId, isEnrolled, onAdd, onEdit, onDelete }) => {
     );
   }
 
-  // ── Render list ──────────────────────────────────────────────────────────────
+  // ----------------- Render list -------------------------------------
   return (
     <div className="flex flex-col gap-6 animate-in fade-in duration-300">
       {/* List Header containing the title and "Add Module" button */}

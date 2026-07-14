@@ -33,7 +33,7 @@ import {
   AlertDialogCancel,
 } from '@/components/ui/alert-dialog';
 
-// ── CourseDetails page ────────────────────────────────────────────────────────
+// ------------------ CourseDetails page --------------------------------------------------------
 export default function CourseDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -41,7 +41,7 @@ export default function CourseDetails() {
   const { user } = useAuthStore();
   const isTeacherOrAdmin = user?.role === 'TEACHER' || user?.role === 'ADMIN';
 
-  // ── Module State & Hook ──
+  // -------------- Module State & Hook --------------
   const {
     createModule,
     updateModule,
@@ -125,7 +125,7 @@ export default function CourseDetails() {
     }
   };
 
-  // ── Module Handlers ──
+  // ----------------- Module Handlers -----------
   const handleOpenAddModal = () => {
     setCurrentModule(null);
     setIsModalOpen(true);
@@ -170,7 +170,7 @@ export default function CourseDetails() {
 
   const course = selectedCourse?._id === id ? selectedCourse : null;
 
-  // ── Loading ──────────────────────────────────────────────────────────────────
+  // ----------------- Loading ----------------------------------------------------------
   if (loading && !course) {
     return (
       <div className="flex flex-col items-center justify-center py-24 gap-3 text-slate-500">
@@ -180,7 +180,7 @@ export default function CourseDetails() {
     );
   }
 
-  // ── Error ────────────────────────────────────────────────────────────────────
+  // ------------------------------------Error ---------------------------------------
   if (error && !course) {
     return (
       <div className="flex flex-col gap-6 max-w-2xl mx-auto">
@@ -216,7 +216,7 @@ export default function CourseDetails() {
 
   return (
     <div className="flex flex-col gap-6  mx-auto">
-      {/* ── Back navigation ── */}
+      {/* Back navigation */}
       <button
         type="button"
         id="back-to-courses-list-btn"
@@ -228,7 +228,7 @@ export default function CourseDetails() {
       </button>
 
 
-      {/* ── Plain Page Header & Course Info ── */}
+      {/* Plain Page Header & Course Info */}
       <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6 pb-6 border-b border-border">
         {/* Course Thumbnail */}
         <div className="w-full md:w-48 h-32 rounded-xl overflow-hidden bg-slate-100 flex-shrink-0 flex items-center justify-center border border-slate-200 shadow-sm">
@@ -346,7 +346,7 @@ export default function CourseDetails() {
         </div>
       </div>
 
-      {/* ── Discussion Forums inline list ── */}
+      {/* Discussion Forums inline list */}
       <section className="space-y-3">
         <div className="flex items-center justify-between gap-4">
           <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
@@ -412,7 +412,7 @@ export default function CourseDetails() {
         )}
       </section>
 
-      {/* ── Course Progress ── */}
+      {/* Course Progress */}
       {!isTeacherOrAdmin && (
         <section aria-labelledby="course-progress-heading">
           {isEnrolled ? (
@@ -426,7 +426,7 @@ export default function CourseDetails() {
         </section>
       )}
 
-      {/* ── Module Management ── */}
+      {/* Module Management */}
       <section aria-labelledby="module-mgmt-heading">
         {/* <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden p-6"> */}
         <ModuleList

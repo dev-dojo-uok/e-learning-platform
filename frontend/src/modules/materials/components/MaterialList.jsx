@@ -106,7 +106,7 @@ const MaterialList = ({ moduleId, courseId, isEnrolled, refreshTrigger, onDelete
     return { icon: <FileText className="h-5 w-5" />, color: 'text-muted-foreground bg-muted/50 border-border' };
   };
 
-  // ── Loading state ────────────────────────────────────────────────────────────
+  //-------------- Loading state ---------------------------------------------
   if (loading && materials.length === 0) {
     return (
       <div className="flex flex-col gap-4 animate-in fade-in duration-300">
@@ -123,7 +123,7 @@ const MaterialList = ({ moduleId, courseId, isEnrolled, refreshTrigger, onDelete
     );
   }
 
-  // ── Error state ──────────────────────────────────────────────────────────────
+  // ---------- Error state --------------------
   if (error && materials.length === 0) {
     return (
       <div className="p-4 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl">
@@ -132,7 +132,7 @@ const MaterialList = ({ moduleId, courseId, isEnrolled, refreshTrigger, onDelete
     );
   }
 
-  // ── Empty state ──────────────────────────────────────────────────────────────
+  // ----------------- Empty state --------------------
   if (!materials || materials.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-10 px-4 text-center border-2 border-dashed border-slate-100 rounded-2xl bg-slate-50/50 animate-in fade-in duration-300">

@@ -29,7 +29,7 @@ const EnrolledCourseCard = ({ enrollment, onUnenroll, unenrolling = false }) => 
     })
     : 'Unknown Date';
 
-  // ── Completion Progress State ──
+  //  Completion Progress State  
   const [progressData, setProgressData] = useState(null);
   const [loadingProgress, setLoadingProgress] = useState(true);
 
@@ -49,7 +49,7 @@ const EnrolledCourseCard = ({ enrollment, onUnenroll, unenrolling = false }) => 
     }
   }, [courseId]);
 
-  // ── Derived Progress Metrics ──
+  //  Derived Progress Metrics  
   const totalQuizzes = progressData?.totalQuizzes || 0;
   const completedQuizzes = progressData?.completedQuizzes || 0;
   const totalAssignments = progressData?.totalAssignments || 0;
@@ -64,7 +64,7 @@ const EnrolledCourseCard = ({ enrollment, onUnenroll, unenrolling = false }) => 
 
   return (
     <div className="group relative flex flex-col bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
-      {/* ── Thumbnail ── */}
+      {/*  Thumbnail  */}
       <div className="relative h-44 bg-gradient-to-br from-slate-100 to-slate-200 overflow-hidden flex-shrink-0">
         {thumbnail ? (
           <img
@@ -92,7 +92,7 @@ const EnrolledCourseCard = ({ enrollment, onUnenroll, unenrolling = false }) => 
         )}
       </div>
 
-      {/* ── Card body ── */}
+      {/*  Card body  */}
       <div className="flex flex-col flex-1 p-5 gap-3">
         <h3 className="text-base font-semibold text-slate-900 leading-snug line-clamp-2">
           {title || 'Untitled Course'}
@@ -116,7 +116,7 @@ const EnrolledCourseCard = ({ enrollment, onUnenroll, unenrolling = false }) => 
           </div>
         </div>
 
-        {/* ── Live Progress Breakdown ── */}
+        {/*  Live Progress Breakdown  */}
         <div className="mt-2 p-3.5 rounded-xl bg-gradient-to-br from-slate-50 to-purple-50/40 border border-slate-100 shadow-2xs transition-all duration-300 hover:shadow-sm">
           {loadingProgress ? (
             <div className="flex items-center justify-center py-4 gap-2 text-xs text-slate-400 animate-pulse">
@@ -160,7 +160,7 @@ const EnrolledCourseCard = ({ enrollment, onUnenroll, unenrolling = false }) => 
         </div>
       </div>
 
-      {/* ── Actions ── */}
+      {/*  Actions  */}
       <div className="px-5 pb-5 pt-3 border-t border-slate-100 mt-auto flex flex-col gap-2">
         <Button
           id={`course-continue-${courseId}`}

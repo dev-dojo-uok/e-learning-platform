@@ -24,14 +24,14 @@ const extractErrorMessage = (error, fallback) => {
 };
 
 const useMaterialStore = create((set) => ({
-  // ── Initial State ────────────────────────────────────────────────────────────
+  // ------------------- Initial State --------------------
   materials: [],
   loading: false,
   error: null,
   uploading: false,
   uploadProgress: 0,
 
-  // ── Actions ──────────────────────────────────────────────────────────────────
+  // ----------------- Actions --------------------
 
   /**
    * fetchMaterials

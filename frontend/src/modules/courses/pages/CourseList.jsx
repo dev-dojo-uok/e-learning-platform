@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 
-// ── Inline Toast notification component ──────────────────────────────────────
+// --------------- Inline Toast notification component -----------------------------------
 const Toast = ({ message, type = 'success', onClose }) => {
   useEffect(() => {
     const timer = setTimeout(onClose, 4000);
@@ -55,7 +55,7 @@ const Toast = ({ message, type = 'success', onClose }) => {
   );
 };
 
-// ── CourseList page ───────────────────────────────────────────────────────────
+// ---------------- CourseList page --------------------------------------------------------
 export default function CourseList() {
   const navigate = useNavigate();
   const { courses, loading, error, fetchCourses, deleteCourse } = useCourses();
@@ -67,7 +67,7 @@ export default function CourseList() {
     fetchCourses();
   }, [fetchCourses]);
 
-  // ── Handlers ────────────────────────────────────────────────────────────────
+  // ---------------- Handlers --------------------------------------------------------
 
   const handleView = (course) => {
     navigate(`/courses/${course._id}`);
@@ -94,7 +94,7 @@ export default function CourseList() {
     }
   };
 
-  // ── Render ──────────────────────────────────────────────────────────────────
+  // ---------------- Render --------------------------------------------------------
   return (
     <div className="flex flex-col gap-6">
       {/* Toast */}
@@ -134,7 +134,7 @@ export default function CourseList() {
         </Button>
       </div>
 
-      {/* ── Error state ── */}
+      {/*  Error state  */}
       {error && !loading && (
         <div
           role="alert"
@@ -148,7 +148,7 @@ export default function CourseList() {
         </div>
       )}
 
-      {/* ── Table ── */}
+      {/* Table */}
       <CourseTable
         courses={courses}
         loading={loading}
