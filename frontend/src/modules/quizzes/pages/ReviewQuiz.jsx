@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import useAuthStore from '../../../store/useAuthStore';
 import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 
 export default function ReviewQuiz() {
   const { attemptId } = useParams();
@@ -92,10 +93,39 @@ export default function ReviewQuiz() {
       await axios.put(`${backendBase}/quizzes/attempts/${attemptId}/finalize`);
       toast.success("Quiz finalized. Answer review unlocked!");
       
-      // Reload page to fetch and display the newly unlocked correct answers
-      window.location.reload();
+      // Fetch the updated attempt details containing correct answers (using cache-buster)
+      const res = await axios.get(`${backendBase}/quizzes/attempts/${attemptId}?t=${Date.now()}`);
+      setAttempt(res.data);
+
+      // Refresh attempts history to update finalize states (using cache-buster)
+      const attemptsRes = await axios.get(`${backendBase}/quizzes/${res.data.quizId}/attempts?t=${Date.now()}`);
+      setAttempts(attemptsRes.data);
     } catch (err) {
       toast.error("Failed to finalize quiz.");
+    }
+  };
+
+  const handleCheckReviewStatus = async () => {
+    try {
+      const backendBase = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+      const res = await axios.get(`${backendBase}/quizzes/attempts/${attemptId}?t=${Date.now()}`);
+      
+      const unlockedQuestions = res.data?.quiz?.questionsJson || [];
+      const unlocked = unlockedQuestions.length > 0 && (unlockedQuestions[0].correctAnswer !== undefined || unlockedQuestions[0].correctOption !== undefined);
+      
+      if (unlocked) {
+        toast.success("Detailed review unlocked and loaded!");
+      } else {
+        toast.info("Answer review is still restricted.");
+      }
+      
+      setAttempt(res.data);
+      
+      const attemptsRes = await axios.get(`${backendBase}/quizzes/${res.data.quizId}/attempts?t=${Date.now()}`);
+      setAttempts(attemptsRes.data);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to check review status.");
     }
   };
 
@@ -242,10 +272,18 @@ export default function ReviewQuiz() {
                 The instructor has disabled detailed answer reviews for this quiz. Only your final score is available.
               </p>
             ) : quiz?.reviewPolicy === 'IMMEDIATE' ? (
-              <div className="flex flex-col items-center gap-1.5 mt-1">
+              <div className="flex flex-col items-center gap-3 mt-1">
                 <p className="text-sm text-muted-foreground max-w-md leading-relaxed">
                   Answers and question breakdowns will become visible after you finalize your submission or exhaust all attempts.
                 </p>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={handleCheckReviewStatus}
+                  className="mt-2 text-xs font-bold cursor-pointer"
+                >
+                  Check Review
+                </Button>
               </div>
             ) : (
               <div className="flex flex-col items-center gap-1.5 mt-1">
@@ -277,7 +315,7 @@ export default function ReviewQuiz() {
                         ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' 
                         : 'bg-red-50 text-red-700 border border-red-200'
                     }`}>
-                      {isCorrect ? `+${q.points} Points` : '0 Points'}
+                      {isCorrect ? 'Correct' : 'Incorrect'}
                     </span>
                   </div>
 

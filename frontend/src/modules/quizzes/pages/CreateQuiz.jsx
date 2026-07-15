@@ -150,7 +150,7 @@ export default function CreateQuiz() {
           questionsJson: questions.map((q) => ({
             type: q.type,
             questionText: q.questionText.trim(),
-            points: Number(q.points),
+            points: 1,
             options: q.options.map((o) => o.trim()),
             correctAnswer: q.correctAnswer.trim()
           }))
@@ -385,17 +385,6 @@ export default function CreateQuiz() {
                 <div className="flex items-center justify-between pb-3 border-b border-border">
                   <span className="text-sm font-bold text-foreground">Question {qIdx + 1}</span>
                   <div className="flex items-center gap-3">
-                    {/* Points */}
-                    <div className="flex items-center gap-1">
-                      <span className="text-xs text-muted-foreground font-semibold uppercase">Points</span>
-                      <Input
-                        type="number"
-                        min="1"
-                        value={q.points}
-                        onChange={(e) => updateQuestionField(qIdx, 'points', Number(e.target.value))}
-                        className="w-16 h-8 text-center font-bold"
-                      />
-                    </div>
                     {/* Delete Question Button */}
                     <Button
                       type="button"

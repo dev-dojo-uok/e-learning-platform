@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Loader2, Eye, Download, Trash2, FileText, Video, Image, FileArchive, Inbox, HelpCircle, ClipboardList, Lock } from 'lucide-react';
 import { getMaterialsByModule, deleteMaterial } from '../services/materialService';
 import useAuthStore from '../../../store/useAuthStore';
 import MaterialViewer from './MaterialViewer';
 import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 
 // Date formatter helper
 const formatDate = (dateStr) => {
@@ -54,9 +55,12 @@ const MaterialList = ({ moduleId, courseId, isEnrolled, refreshTrigger, onDelete
     if (moduleId) {
       loadMaterials();
     }
-  }, [moduleId, refreshTrigger]);
+  }, [moduleId, refreshTrigger, isEnrolled]);
 
   const handleMaterialClick = (mat) => {
+    if (!(isTeacherOrAdmin || isEnrolled)) {
+      return toast.error("You are not authorized to access this material.");
+    }
     if (mat.type === 'QUIZ') {
       if (isTeacherOrAdmin) {
         navigate(`/quizzes/${mat.itemId}/manage`);
@@ -158,12 +162,13 @@ const MaterialList = ({ moduleId, courseId, isEnrolled, refreshTrigger, onDelete
             >
               <div className="flex items-start gap-3 min-w-0">
                 {/* Material Icon Badge */}
-                <div className={`w-10 h-10 rounded-lg flex items-center justify-center border flex-shrink-0 ${color}`}>
+                <div className={`w-10 h-10 rounded-lg flex items-center justify-center border flex-shrink-0 ${color}`} onClick={() => handleMaterialClick(mat)}>
                   {icon}
                 </div>
 
                 {/* Detail fields */}
-                <div className="flex-1 min-w-0 flex flex-col gap-0.5">
+
+                <div className="flex-1 min-w-0 flex flex-col gap-0.5" onClick={() => handleMaterialClick(mat)}>
                   <span className="text-sm font-bold text-slate-800 truncate" title={mat.title}>
                     {mat.title}
                   </span>

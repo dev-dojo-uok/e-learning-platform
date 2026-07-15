@@ -9,7 +9,7 @@ createRoot(document.getElementById('root')).render(
   <StrictMode>
     <TooltipProvider>
       <App />
-      <Toaster />
+      <Toaster position='top-right' />
     </TooltipProvider>
   </StrictMode>,
 )
