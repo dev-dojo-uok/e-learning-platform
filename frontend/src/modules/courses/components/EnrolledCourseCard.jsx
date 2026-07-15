@@ -169,7 +169,7 @@ const EnrolledCourseCard = ({ enrollment, onUnenroll, unenrolling = false }) => 
                 <div className="w-full h-2 bg-slate-200/80 rounded-full overflow-hidden p-0.5">
                   <div
                     className="h-full rounded-full transition-all duration-700 ease-out shadow-xs"
-                    style={{ width: `${progressPercentage}%`, }}
+                    style={{ width: `${progressPercentage}%`, backgroundColor: "#000000" }}
                   />
                 </div>
               </div>
