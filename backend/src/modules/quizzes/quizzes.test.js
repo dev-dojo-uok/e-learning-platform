@@ -291,10 +291,10 @@ test('PUT /api/quizzes/attempts/:attemptId/draft - Save Draft Answers', async ()
 
 test('PUT /api/quizzes/attempts/:attemptId/submit - Submit Attempt & Grading', async () => {
   const answers = {
-    q1: '4',       // Correct (10 points)
+    q1: '4',       // Correct (1 point)
     q2: 'False'    // Incorrect (0 points)
   };
-  // Total points: 15. Scored: 10. Percentage: 66.67%
+  // Total questions: 2. Correct: 1. Percentage: 50.0%
 
   const res = await fetch(`${BASE_URL}/quizzes/attempts/${attemptId}/submit`, {
     method: 'PUT',
@@ -310,7 +310,7 @@ test('PUT /api/quizzes/attempts/:attemptId/submit - Submit Attempt & Grading', a
   assert.strictEqual(res.status, 200);
   const data = await res.json();
   assert.ok(data.submittedAt !== null);
-  assert.strictEqual(data.score, 66.67);
+  assert.strictEqual(data.score, 50.0);
 });
 
 test('GET /api/quizzes/:id - Retrieve quiz as Student after attempt (Answers Visible for IMMEDIATE)', async () => {
@@ -339,7 +339,7 @@ test('GET /api/quizzes/attempts/:attemptId - Get single attempt info', async () 
   assert.strictEqual(res.status, 200);
   const data = await res.json();
   assert.strictEqual(data.id, attemptId);
-  assert.strictEqual(data.score, 66.67);
+  assert.strictEqual(data.score, 50.0);
 });
 
 test('PUT /api/quizzes/attempts/:attemptId/grade - Manual Grading & Feedback (Teacher)', async () => {

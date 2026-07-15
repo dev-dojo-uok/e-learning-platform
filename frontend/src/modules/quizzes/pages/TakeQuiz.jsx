@@ -116,7 +116,14 @@ export default function TakeQuiz() {
   };
 
   const handleSelectOption = (questionId, option) => {
-    const updated = { ...answers, [questionId]: option };
+    const isSelected = answers[questionId] === option;
+    let updated;
+    if (isSelected) {
+      updated = { ...answers };
+      delete updated[questionId];
+    } else {
+      updated = { ...answers, [questionId]: option };
+    }
     setAnswers(updated);
     saveDraftAnswers(updated);
   };
@@ -198,11 +205,11 @@ export default function TakeQuiz() {
 
       // Finalize the latest submitted attempt
       await axios.put(`${backendBase}/quizzes/attempts/${latestAttempt.id}/finalize`);
-      toast.success('Quiz finalized. Review sheet unlocked!');
+      toast.success('Quiz finalized and locked!');
       setShowFinalizeConfirm(false);
       
-      // Redirect to review page
-      navigate(`/quizzes/attempts/${latestAttempt.id}/review`);
+      // Update local attempts state so that UI updates reactively to finalized and locked state
+      setAttempts(prev => prev.map(a => a.id === latestAttempt.id ? { ...a, isFinal: true } : a));
     } catch (err) {
       console.error(err);
       toast.error('Failed to finalize quiz.');
@@ -415,7 +422,7 @@ export default function TakeQuiz() {
               <div className="p-4 bg-amber-50 border border-amber-200 text-amber-800 rounded-xl flex items-start gap-3 animate-in slide-in-from-top-2 duration-150">
                 <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
                 <div className="flex flex-col gap-0.5">
-                  <span className="text-sm font-bold">Quiz Finalized</span>
+                  <span className="text-sm font-bold">Quiz Finalized and Locked</span>
                   <span className="text-xs">You have finalized this quiz and unlocked detailed answers review. No further attempts can be started.</span>
                 </div>
               </div>
@@ -481,6 +488,8 @@ export default function TakeQuiz() {
                   <Loader2 className="h-4 w-4 animate-spin" />
                   Starting Exam…
                 </>
+              ) : isFinalized ? (
+                'Quiz Finalized and Locked'
               ) : isBlocked ? (
                 'Quiz Locked'
               ) : (
@@ -535,9 +544,6 @@ export default function TakeQuiz() {
               <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
                 Question {currentIdx + 1} of {questions.length}
               </span>
-              <Badge variant="secondary">
-                {currentQuestion?.points} Points
-              </Badge>
             </div>
 
             {/* Question Text */}
@@ -582,6 +588,17 @@ export default function TakeQuiz() {
               <ChevronLeft className="h-4 w-4" />
               Previous
             </Button>
+
+            {answers[currentQuestion?.id] !== undefined && (
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => handleSelectOption(currentQuestion.id, answers[currentQuestion.id])}
+                className="text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10 cursor-pointer"
+              >
+                Clear Choice
+              </Button>
+            )}
 
             {currentIdx < questions.length - 1 ? (
               <Button

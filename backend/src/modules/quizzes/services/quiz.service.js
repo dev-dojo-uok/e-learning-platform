@@ -320,16 +320,15 @@ export class QuizService {
       questions.forEach((q) => {
         const qId = q.id;
         const correctAns = q.correctAnswer !== undefined ? q.correctAnswer : q.correctOption;
-        const points = q.points !== undefined ? parseFloat(q.points) : 1.0;
         
-        totalPoints += points;
+        totalPoints += 1.0;
 
         const studentAns = answers[qId];
         if (correctAns !== undefined && studentAns !== undefined) {
           const formattedStudentAns = String(studentAns).trim().toLowerCase();
           const formattedCorrectAns = String(correctAns).trim().toLowerCase();
           if (formattedStudentAns === formattedCorrectAns) {
-            earnedPoints += points;
+            earnedPoints += 1.0;
           }
         }
       });
