@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import api from '@/lib/axios';
-import { ClipboardList, Upload, CheckCircle, Clock, AlertCircle, Star, ChevronDown, ChevronUp, X } from 'lucide-react';
+import { ClipboardList, Upload, CheckCircle, Clock, AlertCircle, Star, ChevronDown, ChevronUp, X, ArrowLeft } from 'lucide-react';
 import useAuthStore from '@/store/useAuthStore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -491,10 +491,23 @@ export default function AssignmentsModule({ courseId: propCourseId }) {
   const isTeacher = user?.role === 'TEACHER' || user?.role === 'ADMIN';
   const [searchParams] = useSearchParams();
   const courseId = propCourseId || searchParams.get('courseId');
+  const navigate = useNavigate();
 
   return (
-    <div className="p-6 bg-card text-card-foreground rounded-2xl border border-border shadow-sm min-h-64">
-      {isTeacher ? <TeacherView courseId={courseId} /> : <StudentView courseId={courseId} />}
+    <div className="space-y-4">
+      {courseId && (
+        <button
+          type="button"
+          onClick={() => navigate(`/courses/${courseId}`)}
+          className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-primary transition-colors duration-150 self-start group cursor-pointer"
+        >
+          <ArrowLeft className="h-4 w-4 group-hover:-translate-x-0.5 transition-transform" />
+          Back to Course
+        </button>
+      )}
+      <div className="p-6 bg-card text-card-foreground rounded-2xl border border-border shadow-sm min-h-64">
+        {isTeacher ? <TeacherView courseId={courseId} /> : <StudentView courseId={courseId} />}
+      </div>
     </div>
   );
 }
