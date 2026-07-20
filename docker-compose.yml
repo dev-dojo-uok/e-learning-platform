@@ -6,8 +6,6 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     container_name: elearning-backend
-    ports:
-      - "5001:5001"
     environment:
       - PORT=${PORT:-5001}
       - FRONTEND_URL=${FRONTEND_URL:-http://localhost:5173}
@@ -22,8 +20,6 @@ services:
       args:
         - VITE_API_URL=${VITE_API_URL:-http://localhost:5001}
     container_name: elearning-frontend
-    ports:
-      - "5173:80"
     depends_on:
       - backend
     restart: unless-stopped
