@@ -143,7 +143,6 @@ export default function LandingPage() {
             <a href="#overview" className="hover:text-neutral-950 transition-colors">Overview</a>
             <a href="#architecture" className="hover:text-neutral-950 transition-colors">Architecture</a>
             <a href="#cloud-diagram" className="hover:text-neutral-950 transition-colors">AWS & CI/CD</a>
-            <a href="#materials" className="hover:text-neutral-950 transition-colors">6 Media Engines</a>
             <a href="#modules" className="hover:text-neutral-950 transition-colors">Team & Domains</a>
             <a href="#credentials" className="hover:text-neutral-950 transition-colors">Demo Logins</a>
           </nav>
@@ -217,13 +216,6 @@ export default function LandingPage() {
               className="block px-3 py-2 rounded-md text-sm font-medium text-neutral-700 hover:bg-neutral-100"
             >
               AWS & CI/CD
-            </a>
-            <a
-              href="#materials"
-              onClick={() => setMobileMenuOpen(false)}
-              className="block px-3 py-2 rounded-md text-sm font-medium text-neutral-700 hover:bg-neutral-100"
-            >
-              6 Media Engines
             </a>
             <a
               href="#modules"
@@ -859,132 +851,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* 5. The 6 Core Material Engines (The Central Feature Showcase) */}
-      <section id="materials" className="py-20 border-b border-neutral-200 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-3xl mx-auto mb-16">
-            <span className="text-xs font-mono font-bold tracking-wider uppercase text-neutral-500">Native Media Handlers</span>
-            <h2 className="text-3xl sm:text-4xl font-extrabold text-neutral-950 tracking-tight mt-1">
-              6 Core Learning Material Engines
-            </h2>
-            <p className="text-neutral-600 mt-3 text-base">
-              The platform natively recognizes, parses, and presents six distinct course content modalities distributed across academic weeks and topics.
-            </p>
-          </div>
-
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {/* 1. PDF */}
-            <div className="bg-white border border-neutral-200 rounded-2xl p-6 hover:border-neutral-900 transition-all shadow-2xs">
-              <div className="h-10 w-10 rounded-xl bg-neutral-100 flex items-center justify-center text-neutral-900 font-bold border border-neutral-200 mb-4">
-                <FileText className="h-5 w-5" />
-              </div>
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-bold text-neutral-950">1. PDF Engine</h3>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-neutral-100 text-neutral-700 border border-neutral-200">PDF</span>
-              </div>
-              <p className="text-xs text-neutral-500 font-mono mt-0.5">In-Browser Document Inspection</p>
-              <p className="text-sm text-neutral-600 mt-3 leading-relaxed">
-                Full-screen or embedded PDF viewer for lecture slides, syllabi, and research papers with clean pagination and zoom controls.
-              </p>
-              <div className="mt-4 pt-3 border-t border-neutral-100 text-xs text-neutral-500">
-                Supports direct viewing without requiring third-party PDF readers.
-              </div>
-            </div>
-
-            {/* 2. Downloadable Files */}
-            <div className="bg-white border border-neutral-200 rounded-2xl p-6 hover:border-neutral-900 transition-all shadow-2xs">
-              <div className="h-10 w-10 rounded-xl bg-neutral-100 flex items-center justify-center text-neutral-900 font-bold border border-neutral-200 mb-4">
-                <Download className="h-5 w-5" />
-              </div>
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-bold text-neutral-950">2. File Engine</h3>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-neutral-100 text-neutral-700 border border-neutral-200">FILE</span>
-              </div>
-              <p className="text-xs text-neutral-500 font-mono mt-0.5">Downloadable Course Resources</p>
-              <p className="text-sm text-neutral-600 mt-3 leading-relaxed">
-                Secure binary downloads for datasets, laboratory assignments, zipped codebases, and supplementary Word/Excel files.
-              </p>
-              <div className="mt-4 pt-3 border-t border-neutral-100 text-xs text-neutral-500">
-                Integrates weight metrics and optional graded download events.
-              </div>
-            </div>
-
-            {/* 3. Video Embed */}
-            <div className="bg-white border border-neutral-200 rounded-2xl p-6 hover:border-neutral-900 transition-all shadow-2xs">
-              <div className="h-10 w-10 rounded-xl bg-neutral-100 flex items-center justify-center text-neutral-900 font-bold border border-neutral-200 mb-4">
-                <Video className="h-5 w-5" />
-              </div>
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-bold text-neutral-950">3. Video Embed Engine</h3>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-neutral-100 text-neutral-700 border border-neutral-200">VIDEO_EMBED</span>
-              </div>
-              <p className="text-xs text-neutral-500 font-mono mt-0.5">Third-Party Streaming Players</p>
-              <p className="text-sm text-neutral-600 mt-3 leading-relaxed">
-                Sanitized iframe embed engine for external media from YouTube, Vimeo, and institutional video repositories.
-              </p>
-              <div className="mt-4 pt-3 border-t border-neutral-100 text-xs text-neutral-500">
-                Responsive aspect ratio preservation with XSS sanitizer guards.
-              </div>
-            </div>
-
-            {/* 4. Direct Video Stream */}
-            <div className="bg-white border border-neutral-200 rounded-2xl p-6 hover:border-neutral-900 transition-all shadow-2xs">
-              <div className="h-10 w-10 rounded-xl bg-neutral-100 flex items-center justify-center text-neutral-900 font-bold border border-neutral-200 mb-4">
-                <PlayCircle className="h-5 w-5" />
-              </div>
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-bold text-neutral-950">4. Video Stream Engine</h3>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-neutral-100 text-neutral-700 border border-neutral-200">VIDEO_SRC</span>
-              </div>
-              <p className="text-xs text-neutral-500 font-mono mt-0.5">Direct Streaming Player</p>
-              <p className="text-sm text-neutral-600 mt-3 leading-relaxed">
-                Hardware-accelerated HTML5 video player streaming MP4 and WebM videos directly from cloud storage or local media endpoints.
-              </p>
-              <div className="mt-4 pt-3 border-t border-neutral-100 text-xs text-neutral-500">
-                Playback rate adjustment, scrub preview, and completion tracking.
-              </div>
-            </div>
-
-            {/* 5. Interactive Quizzes */}
-            <div className="bg-white border border-neutral-200 rounded-2xl p-6 hover:border-neutral-900 transition-all shadow-2xs">
-              <div className="h-10 w-10 rounded-xl bg-neutral-100 flex items-center justify-center text-neutral-900 font-bold border border-neutral-200 mb-4">
-                <CheckSquare className="h-5 w-5" />
-              </div>
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-bold text-neutral-950">5. Quiz Activity Engine</h3>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-neutral-100 text-neutral-700 border border-neutral-200">QUIZ</span>
-              </div>
-              <p className="text-xs text-neutral-500 font-mono mt-0.5">Timed Assessments & Scoring</p>
-              <p className="text-sm text-neutral-600 mt-3 leading-relaxed">
-                Complete assessment suite featuring server-validated timers, auto-grading controllers, attempt history, and question review summaries.
-              </p>
-              <div className="mt-4 pt-3 border-t border-neutral-100 text-xs text-neutral-500">
-                Server-side anti-cheat logic with automated gradebook integration.
-              </div>
-            </div>
-
-            {/* 6. Assignment Dropbox */}
-            <div className="bg-white border border-neutral-200 rounded-2xl p-6 hover:border-neutral-900 transition-all shadow-2xs">
-              <div className="h-10 w-10 rounded-xl bg-neutral-100 flex items-center justify-center text-neutral-900 font-bold border border-neutral-200 mb-4">
-                <FileUp className="h-5 w-5" />
-              </div>
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-bold text-neutral-950">6. Assignment Engine</h3>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-neutral-100 text-neutral-700 border border-neutral-200">ASSIGNMENT</span>
-              </div>
-              <p className="text-xs text-neutral-500 font-mono mt-0.5">Submission & Grading Queue</p>
-              <p className="text-sm text-neutral-600 mt-3 leading-relaxed">
-                Task dropbox enabling students to submit files and project links, paired with a teacher evaluation panel for marks and feedback.
-              </p>
-              <div className="mt-4 pt-3 border-t border-neutral-100 text-xs text-neutral-500">
-                Deadline cutoff enforcement and submission version auditing.
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 6. 5-Member Engineering Team & Domain Segregation Matrix */}
+      {/* 5. 5-Member Engineering Team & Domain Segregation Matrix */}
       <section id="modules" className="py-20 border-b border-neutral-200 bg-neutral-50/60 relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto mb-16">
@@ -1264,7 +1131,6 @@ export default function LandingPage() {
               <a href="#overview" className="hover:text-neutral-950">Overview</a>
               <a href="#architecture" className="hover:text-neutral-950">Architecture</a>
               <a href="#cloud-diagram" className="hover:text-neutral-950">AWS Blueprint</a>
-              <a href="#materials" className="hover:text-neutral-950">Materials</a>
               <a href="#modules" className="hover:text-neutral-950">Team & Domains</a>
               <a 
                 href="https://learn-sac.akaigen.com" 
