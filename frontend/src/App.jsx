@@ -13,6 +13,7 @@ import CompletionPlaceholder from './modules/completion';
 import AssignmentsPlaceholder from './modules/assignments';
 import useAuthStore from './store/useAuthStore';
 import TeacherDashboard from './modules/dashboard/TeacherDashboard';
+import LandingPage from './pages/LandingPage';
 import Loader from './components/Loader';
 
 // Set base URL for API calls
@@ -48,14 +49,17 @@ function App() {
   return (
     <Router>
       <Routes>
+        {/* Public Landing Page */}
+        <Route path="/" element={<LandingPage />} />
+
         {/* Auth routes */}
         <Route 
           path="/login" 
-          element={user ? <Navigate to="/" replace /> : <Login />} 
+          element={user ? <Navigate to="/dashboard" replace /> : <Login />} 
         />
         <Route 
           path="/register" 
-          element={user ? <Navigate to="/" replace /> : <Register />} 
+          element={user ? <Navigate to="/dashboard" replace /> : <Register />} 
         />
 
         {/* Protected App Layout */}
@@ -65,7 +69,10 @@ function App() {
             user ? (
               <Layout>
                 <Routes>
-                  <Route path="/" element={user?.role === 'TEACHER' || user?.role === 'ADMIN' ? <TeacherDashboard /> : <Navigate to="/courses/enrolled" replace />} />
+                  <Route 
+                    path="/dashboard" 
+                    element={user?.role === 'TEACHER' || user?.role === 'ADMIN' ? <TeacherDashboard /> : <Navigate to="/courses/enrolled" replace />} 
+                  />
                   {/* Course routes */}
                   {courseRoutes.map((route) => (
                     <Route key={route.path} path={route.path} element={route.element} />
@@ -82,7 +89,7 @@ function App() {
                   <Route path="/forums" element={<ForumsIndex />} />
                   <Route path="/completion" element={<CompletionPlaceholder />} />
                   <Route path="/assignments" element={<AssignmentsPlaceholder />} />
-                  <Route path="*" element={<Navigate to="/" replace />} />
+                  <Route path="*" element={<Navigate to="/dashboard" replace />} />
                 </Routes>
               </Layout>
             ) : (

@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
@@ -21,11 +21,19 @@ axios.defaults.withCredentials = true;
 
 export default function Login() {
   const setUser = useAuthStore((state) => state.setUser);
+  const [searchParams] = useSearchParams();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const emailParam = searchParams.get('email');
+    const passParam = searchParams.get('password');
+    if (emailParam) setEmail(emailParam);
+    if (passParam) setPassword(passParam);
+  }, [searchParams]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -39,7 +47,7 @@ export default function Login() {
         setUser(response.data.user);
       }
       
-      navigate('/');
+      navigate('/dashboard');
     } catch (err) {
       console.error(err);
       setError(err.response?.data?.error || 'Invalid email or password. Please try again.');
@@ -107,6 +115,11 @@ export default function Login() {
               Don't have an account?{' '}
               <Link to="/register" className="font-semibold text-black hover:underline">
                 Create an account
+              </Link>
+            </div>
+            <div className="text-center pt-2 border-t border-slate-100">
+              <Link to="/" className="text-xs font-semibold text-slate-500 hover:text-black transition-colors">
+                ← Back to Project Overview
               </Link>
             </div>
           </CardFooter>

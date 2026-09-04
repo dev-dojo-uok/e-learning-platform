@@ -10,6 +10,7 @@ export function SiteHeader() {
   const getHeaderTitle = () => {
     switch (location.pathname) {
       case "/":
+      case "/dashboard":
         return user?.role === "STUDENT" ? "My Enrolled Courses" : "Dashboard Overview"
       case "/courses":
         return "Course Shell & Materials"

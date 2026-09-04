@@ -44,7 +44,7 @@ export default function Register() {
       }
       
       setTimeout(() => {
-        navigate('/');
+        navigate('/dashboard');
       }, 1000);
     } catch (err) {
       console.error(err);
@@ -144,6 +144,11 @@ export default function Register() {
               Already have an account?{' '}
               <Link to="/login" className="font-semibold text-black hover:underline">
                 Sign in
+              </Link>
+            </div>
+            <div className="text-center pt-2 border-t border-slate-100">
+              <Link to="/" className="text-xs font-semibold text-slate-500 hover:text-black transition-colors">
+                ← Back to Project Overview
               </Link>
             </div>
           </CardFooter>

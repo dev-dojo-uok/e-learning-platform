@@ -147,7 +147,7 @@ export function AppSidebar({
     ...(user?.role === "TEACHER" || user?.role === "ADMIN" ? [
       {
         title: "Dashboard",
-        url: "/",
+        url: "/dashboard",
         icon: <LayoutDashboardIcon />,
       },
       ...(displayCourses && displayCourses.length > 0 ? [{
@@ -156,6 +156,11 @@ export function AppSidebar({
         icon: <Users />,
       }] : [])
     ] : [
+      {
+        title: "Dashboard",
+        url: "/dashboard",
+        icon: <LayoutDashboardIcon />,
+      },
       {
         title: "My Enrolled Courses",
         url: "/courses/enrolled",
@@ -166,6 +171,11 @@ export function AppSidebar({
       title: "Courses",
       url: "/courses",
       icon: <BookOpen />,
+    },
+    {
+      title: "Project Overview",
+      url: "/",
+      icon: <CircleHelpIcon />,
     },
   ];
 
