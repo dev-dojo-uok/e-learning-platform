@@ -285,27 +285,6 @@ export default function LandingPage() {
         {/* Ambient Pulsing Radial Spotlight */}
         <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[350px] bg-neutral-200/50 rounded-full blur-3xl pointer-events-none animate-pulse-glow" />
 
-        {/* Animated Horizontal Beam */}
-        <div className="absolute top-0 left-0 w-48 h-[2px] bg-gradient-to-r from-transparent via-neutral-900 to-transparent animate-beam pointer-events-none" />
-
-        {/* Floating Architectural Badge - Left */}
-        {/* <div className="absolute left-6 top-32 hidden xl:flex items-center gap-2 px-3.5 py-2 rounded-xl border border-neutral-200 bg-white/90 backdrop-blur-md shadow-sm text-xs font-mono text-neutral-800 animate-float-slow z-10 pointer-events-none">
-          <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-          </span>
-          <span className="text-neutral-500">API:</span>
-          <span className="font-bold text-neutral-900">GET /api/courses</span>
-          <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 font-bold border border-emerald-200">200 OK</span>
-        </div> */}
-
-        {/* Floating Architectural Badge - Right */}
-        {/* <div className="absolute right-6 top-36 hidden xl:flex items-center gap-2 px-3.5 py-2 rounded-xl border border-neutral-200 bg-white/90 backdrop-blur-md shadow-sm text-xs font-mono text-neutral-800 animate-float-delayed z-10 pointer-events-none">
-          <Database className="h-3.5 w-3.5 text-neutral-800" />
-          <span className="font-bold text-neutral-900">Prisma • PostgreSQL</span>
-          <span className="text-[10px] px-1.5 py-0.5 rounded bg-neutral-100 text-neutral-600 font-sans border border-neutral-200">Layer 3</span>
-        </div> */}
-
         {/* Corner Blueprint Crosshairs */}
         <div className="absolute top-4 left-4 font-mono text-xs text-neutral-300 pointer-events-none select-none">+</div>
         <div className="absolute top-4 right-4 font-mono text-xs text-neutral-300 pointer-events-none select-none">+</div>
